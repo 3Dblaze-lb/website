@@ -13,10 +13,10 @@
       desc: 'Three Lebanese flag keychains for the family, the car keys and the friend abroad. Perfect for 22 November.',
       specs: ['3 keychains, about 6 × 4 cm each', 'Metal key rings included', 'Great for diaspora gifts'] },
     { id: 'my-village', col: 'lebanon', name: '“My Village” Desk Map', price: 15, tag: 'Personalized', printMin: 150,
-      colors: ['black', 'white'], text: { label: 'Your village or town', max: 18, ph: 'e.g. Hadchit', required: true },
+      colors: ['black'], text: { label: 'Your village or town', max: 18, ph: 'e.g. Hadchit', required: true },
       blurb: 'Lebanon in 3D, with your village on it.',
       desc: 'A raised map of Lebanon standing on a base with your village name printed in. We place a red pin where your village is. A desk piece that starts conversations.',
-      specs: ['About 14 cm tall', 'Your village name on the base (up to 18 letters)', 'Red pin placed on your village', 'Base in black or white'] },
+      specs: ['About 14 cm tall', 'Your village name on the base (up to 18 letters)', 'Red pin placed on your village', 'Black base, white map'] },
 
     { id: 'name-ornament', col: 'xmas', name: 'Personalized Name Ornament', price: 7, tag: 'Personalized', printMin: 40,
       colors: ['red', 'green', 'white'], text: { label: 'Name on the ornament', max: 10, ph: 'e.g. Maria', required: true },
@@ -243,7 +243,7 @@
           mk('3DB-DEMO1', 1, 'Rita K.', '70123456', 'Metn', 'Jdeideh', [it('my-village', 1, 'black', 'Bikfaya'), it('flag-keychain', 2)], 'whish', 'new', false),
           mk('3DB-DEMO2', 5, 'Georges H.', '03987654', 'Keserwan', 'Jounieh', [it('name-ornament', 4, 'red', 'Elie'), it('cedar-ornament', 2, 'green')], 'cash', 'confirmed', false),
           mk('3DB-DEMO3', 26, 'Maya S.', '76111222', 'Beirut', 'Achrafieh', [it('flag-3pack', 1)], 'cash', 'printing', false),
-          mk('3DB-DEMO4', 50, 'Charbel A.', '71333444', 'North (Tripoli, Batroun, Koura, Zgharta)', 'Batroun', [it('my-village', 1, 'white', 'Hadchit')], 'whish', 'delivered', true)
+          mk('3DB-DEMO4', 50, 'Charbel A.', '71333444', 'North (Tripoli, Batroun, Koura, Zgharta)', 'Batroun', [it('my-village', 1, 'black', 'Hadchit')], 'whish', 'delivered', true)
         ].forEach(function (o) { state.orders[o.code] = o; });
         ls('orders', state.orders); emit();
       },
@@ -328,6 +328,53 @@
   // ---------- views ----------
   var app = $('#app');
 
+  // ---------- motion: scroll reveals, floating section tabs, header on scroll ----------
+  var Motion = (function () {
+    var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var io = ('IntersectionObserver' in window) ? new IntersectionObserver(function (es) {
+      es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 }) : null;
+    var SEL = '.hero .grid > div, .stage, .sechead, .pcard, .step, .faq details, .panel, .countdown, .cd, .ppage > *, .soon-badge';
+    function scan() {
+      if (window.BLAZE_ADMIN) return;
+      var groups = {};
+      $$(SEL, app).forEach(function (el) {
+        if (el.classList.contains('rv')) return;
+        el.classList.add('rv');
+        var p = el.parentNode, k = p ? (p.__rvk || (p.__rvk = Math.random())) : 0;
+        var i = groups[k] = (groups[k] || 0) + 1;
+        el.style.transitionDelay = Math.min(i - 1, 6) * 70 + 'ms';
+        if (reduce || !io) el.classList.add('in'); else io.observe(el);
+      });
+    }
+    // floating section tabs
+    var bar = document.createElement('nav');
+    bar.className = 'sectabs'; bar.setAttribute('aria-label', 'Sections');
+    bar.innerHTML = [['shop', 'Lebanon drop'], ['christmas', 'Christmas'], ['how', 'How it works'], ['faq', 'FAQ']].map(function (t) { return '<a href="#' + (t[0] === 'how' ? 'home' : t[0]) + '" data-sec="' + t[0] + '">' + t[1] + '</a>'; }).join('');
+    if (!window.BLAZE_ADMIN) document.body.appendChild(bar);
+    $$('a', bar).forEach(function (a) { a.addEventListener('click', function (e) { var el = $('#sec-' + a.dataset.sec); if (el) { e.preventDefault(); el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' }); } }); });
+    var head = $('header.top'), prog = document.createElement('div'); prog.className = 'scrollprog'; document.body.appendChild(prog);
+    var ticking = false;
+    function onScroll() {
+      ticking = false;
+      var y = window.scrollY || 0;
+      var home = !window.BLAZE_ADMIN && $('#sec-shop');
+      if (head) head.classList.toggle('scrolled', y > 10);
+      var hero = $('.hero');
+      var on = !!home && !!hero && y > hero.offsetHeight - 120; bar.classList.toggle('show', on); document.body.classList.toggle('tabs-on', on);
+      var max = document.documentElement.scrollHeight - innerHeight;
+      prog.style.transform = 'scaleX(' + (max > 0 ? Math.min(1, y / max) : 0) + ')';
+      if (home) {
+        var cur = null;
+        ['shop', 'christmas', 'how', 'faq'].forEach(function (k) { var el = $('#sec-' + k); if (el && el.getBoundingClientRect().top < 160) cur = k; });
+        $$('a', bar).forEach(function (a) { a.classList.toggle('on', a.dataset.sec === cur); });
+      }
+    }
+    window.addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(onScroll); } }, { passive: true });
+    new MutationObserver(function () { scan(); onScroll(); }).observe(app, { childList: true });
+    return { scan: scan };
+  })();
+
   function card(p) {
     var out = p.soldOut || p.available === false;
     return '<a class="pcard" href="#p-' + p.id + '"><div class="art">' + thumb(p) +
@@ -355,11 +402,11 @@
       '<section class="blk" id="sec-shop" style="padding-top:40px"><div class="wrap"><div class="sechead"><div><div class="eyebrow">The Lebanon drop</div><h2 style="margin-top:10px">For 22 November, and every day after.</h2><p>Our launch line. Made for the house, the car keys, and the cousins abroad.</p></div></div>' +
         '<div class="products">' + leb.map(card).join('') + '</div></div></section>' +
 
-      '<section class="blk xmas" id="sec-christmas"><div class="snow"></div><div class="wrap" style="position:relative"><div class="sechead"><div><div class="eyebrow">Christmas 2026</div><h2 style="margin-top:10px">Printed for the tree.</h2><p>Ornaments with names, a cedar for the branches, a star for the top and a nativity for the shelf.</p></div>' +
+      '<section class="blk xmas soon" id="sec-christmas"><div class="snow"></div><div class="wrap" style="position:relative"><div class="soon-badge">Coming soon</div><div class="soon-blur" aria-hidden="true"><div class="sechead"><div><div class="eyebrow">Christmas 2026</div><h2 style="margin-top:10px">Printed for the tree.</h2><p>Ornaments with names, a cedar for the branches, a star for the top and a nativity for the shelf.</p></div>' +
         '<div class="cut">Order by ' + cut.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }) + ' for delivery before Christmas</div></div>' +
-        '<div class="products">' + xm.map(card).join('') + '</div></div></section>' +
+        '<div class="products">' + xm.map(card).join('') + '</div></div></div></section>' +
 
-      '<section class="blk"><div class="wrap"><div class="sechead"><div><div class="eyebrow">How it works</div><h2 style="margin-top:10px">From our printer to your door.</h2></div></div><div class="steps">' +
+      '<section class="blk" id="sec-how"><div class="wrap"><div class="sechead"><div><div class="eyebrow">How it works</div><h2 style="margin-top:10px">From our printer to your door.</h2></div></div><div class="steps">' +
         step(1, 'Pick', 'Choose a piece and a colour. Add a name or your village if you like.') +
         step(2, 'We confirm', 'We send you a WhatsApp message to confirm the details.') +
         step(3, 'We print', 'Printed and checked by hand in 2–4 days. Track it any time.') +
@@ -420,7 +467,7 @@
       '<div class="eyebrow">' + (p.col === 'xmas' ? 'Christmas 2026' : 'The Lebanon drop') + '</div>' +
       '<h1>' + esc(p.name) + '</h1><div class="price">' + money(p.price) + (p.was ? '<s>' + money(p.was) + '</s>' : '') + '</div>' +
       '<p style="color:#3A4352;font-size:17px;margin:16px 0 0">' + esc(p.desc || p.blurb || '') + '</p>' +
-      (p.colors ? '<div class="opt"><span class="lab">Colour</span><div class="swatches">' + p.colors.map(function (c) { return '<button class="sw' + (c === st.color ? ' on' : '') + '" data-c="' + c + '"><i style="background:' + (COLOR_HEX[c] || c) + '"></i>' + c + '</button>'; }).join('') + '</div></div>' : '') +
+      (p.colors && p.colors.length > 1 ? '<div class="opt"><span class="lab">Colour</span><div class="swatches">' + p.colors.map(function (c) { return '<button class="sw' + (c === st.color ? ' on' : '') + '" data-c="' + c + '"><i style="background:' + (COLOR_HEX[c] || c) + '"></i>' + c + '</button>'; }).join('') + '</div></div>' : '') +
       (p.text ? '<div class="opt"><label class="field">' + esc(p.text.label) + '<input id="pText" maxlength="' + p.text.max + '" placeholder="' + esc(p.text.ph) + '" value="' + esc(st.text) + '"></label><div class="err" id="pErr"></div></div>' : '') +
       '<div class="opt"><span class="lab">Quantity</span><div class="qty"><button data-q="-1" aria-label="Less">−</button><span id="pQty">1</span><button data-q="1" aria-label="More">+</button></div></div>' +
       '<div class="buyrow"><button class="btn pri" id="pAdd"' + (out ? ' disabled' : '') + '>' + (out ? 'Sold out' : 'Add to cart') + '</button>' + (out ? '' : '<button class="btn sec" id="pBuy">Buy now</button>') + '</div>' +
@@ -565,6 +612,52 @@
     window.scrollTo(0, 0);
   }
 
+
+  // ---------- live visitors (who has the shop open right now) ----------
+  var Presence = (function () {
+    var id = 'v' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    var count = 0, watching = false, me = null, subs = [];
+    function emit() { subs.forEach(function (f) { f(count); }); }
+    function isStaff() { return !!window.BLAZE_ADMIN; }
+    function liveOk() { return Store.live && window.firebase && firebase.apps && firebase.apps.length; }
+    function demoBeat() {
+      var m = ls('presence') || {}, now = Date.now();
+      Object.keys(m).forEach(function (k) { if (now - m[k] > 15000) delete m[k]; });
+      if (isStaff()) delete m[id]; else m[id] = now;
+      ls('presence', m); recount();
+    }
+    function recount() {
+      if (!watching) return;
+      var m = ls('presence') || {}, now = Date.now();
+      var n = Object.keys(m).filter(function (k) { return now - m[k] <= 15000; }).length;
+      if (n !== count) { count = n; emit(); }
+    }
+    function liveSync() {
+      if (isStaff()) return;
+      var db = firebase.database();
+      if (!me) me = db.ref('presence/' + id);
+      me.onDisconnect().remove();
+      me.set({ t: firebase.database.ServerValue.TIMESTAMP, page: (location.hash || '#home').slice(1).slice(0, 40) });
+    }
+    function start() {
+      if (liveOk()) {
+        if (isStaff()) return;
+        firebase.database().ref('.info/connected').on('value', function (s) { if (s.val()) liveSync(); });
+        window.addEventListener('hashchange', function () { if (me) liveSync(); });
+      } else {
+        demoBeat(); setInterval(demoBeat, 5000);
+        window.addEventListener('storage', function (e) { if (e.key === '3db:presence') recount(); });
+        window.addEventListener('beforeunload', function () { var m = ls('presence') || {}; delete m[id]; ls('presence', m); });
+      }
+    }
+    function watch() {
+      if (watching) return; watching = true;
+      if (liveOk()) firebase.database().ref('presence').on('value', function (s) { count = s.numChildren(); emit(); }, function () { count = 0; emit(); });
+      else recount();
+    }
+    return { start: start, watch: watch, count: function () { return count; }, on: function (f) { subs.push(f); } };
+  })();
+
   // ---------- admin ----------
   var adm = { tab: 'orders', filter: 'active', q: '' };
   function statusBadge(k) { var s = STATUSES.filter(function (x) { return x.k === k; })[0] || STATUSES[0]; return '<span class="badge s-' + s.k + '">' + s.l + '</span>'; }
@@ -597,10 +690,11 @@
     app.innerHTML = '<div class="wrap admin">' + (Store.live ? '' : '<div class="demo">Demo mode: orders are saved in this browser only. <button class="upl" id="clrDemo">Clear sample orders</button></div>') +
       '<div class="adm-top"><h1>Manager</h1><div class="tabs">' + [['orders', 'Orders' + (newCount ? ' (' + newCount + ')' : '')], ['queue', 'Print queue'], ['requests', 'Design requests' + (function () { var n = Store.requests().filter(function (r) { return r.status !== 'done'; }).length; return n ? ' (' + n + ')' : ''; })()], ['calc', 'Calculator'], ['products', 'Products'], ['settings', 'Settings']].map(function (t) { return '<button data-tab="' + t[0] + '" class="' + (adm.tab === t[0] ? 'on' : '') + '">' + t[1] + '</button>'; }).join('') +
       '</div><button class="btn sec" id="logout" style="min-height:42px;padding:8px 14px;font-size:14px">Log out</button></div>' +
-      '<div class="kpis"><div class="kpi o"><small>New orders</small><b>' + newCount + '</b></div><div class="kpi"><small>Orders today</small><b>' + today + '</b></div><div class="kpi g"><small>Sales · profit this month</small><b>' + money(revMonth) + ' · ' + money(profMonth) + '</b></div><div class="kpi"><small>To collect · in queue</small><b>' + money(toCollect) + ' · ' + inQueue + '</b></div></div>' +
+      '<div class="kpis"><div class="kpi live"><small><i class="dot"></i>On the site now</small><b id="liveNow">' + Presence.count() + '</b></div><div class="kpi o"><small>New orders</small><b>' + newCount + '</b></div><div class="kpi"><small>Orders today</small><b>' + today + '</b></div><div class="kpi g"><small>Sales · profit this month</small><b>' + money(revMonth) + ' · ' + money(profMonth) + '</b></div><div class="kpi"><small>To collect · in queue</small><b>' + money(toCollect) + ' · ' + inQueue + '</b></div></div>' +
       '<div id="admBody"></div></div>';
     $$('[data-tab]').forEach(function (b) { b.onclick = function () { adm.tab = b.dataset.tab; renderAdmin(); }; });
     $('#logout').onclick = function () { Store.logout(); viewAdmin(); };
+    Presence.watch();
     var cd = $('#clrDemo'); if (cd) cd.onclick = function () { Store.clearDemo(); toast('Sample orders removed'); };
     ({ orders: admOrders, queue: admQueue, requests: admRequests, calc: admCalc, products: admProducts, settings: admSettings })[adm.tab]();
   }
@@ -675,7 +769,7 @@
         var nt; box.querySelector('#mNote').oninput = function (e) { clearTimeout(nt); nt = setTimeout(function () { Store.updateOrder(o.code, { note: e.target.value }); }, 600); };
         var rqb = box.querySelector('#mReq'); if (rqb) rqb.onclick = function () {
           var it = o.items.filter(function (i) { return i.id === 'my-village'; })[0] || o.items.filter(function (i) { return i.text; })[0];
-          var data = { type: it.id === 'my-village' ? 'map' : 'custom', geo: it.geo || null, title: it.id === 'my-village' ? (it.text || '') : it.name + (it.text ? ' with “' + it.text + '”' : ''), base: it.color === 'white' ? 'white' : 'black', mapc: it.color === 'white' ? 'green' : 'white', place: o.customer.region || '', notes: '', size: '', order: o.code, status: 'sent', createdAt: Date.now() };
+          var data = { type: it.id === 'my-village' ? 'map' : 'custom', geo: it.geo || null, title: it.id === 'my-village' ? (it.text || '') : it.name + (it.text ? ' with “' + it.text + '”' : ''), base: it.id === 'my-village' ? 'black' : (it.color === 'white' ? 'white' : 'black'), mapc: it.id === 'my-village' ? 'white' : (it.color === 'white' ? 'green' : 'white'), place: o.customer.region || '', notes: '', size: '', order: o.code, status: 'sent', createdAt: Date.now() };
           Store.saveRequest(null, data).then(function (id) { data.id = id; copy(requestText(data), 'Copied — paste it in your Claude chat'); close(); adm.tab = 'requests'; renderAdmin(); });
         };
         box.querySelector('#mCpMsg').onclick = function () { copy(setWa(), 'Message copied'); };
@@ -1050,7 +1144,9 @@
 
   window.addEventListener('hashchange', route);
   Cart.save();
+  Presence.on(function (n) { var el = document.getElementById('liveNow'); if (el) el.textContent = n; });
   Store.init().then(function () {
+    Presence.start();
     route();
     var firstEmit = true;
     Store.on(function () {

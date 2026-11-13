@@ -244,8 +244,12 @@ footer a:hover{color:var(--text)}
 .tabs{display:flex;gap:4px;background:var(--soft);border:1px solid var(--line);border-radius:14px;padding:4px;flex-wrap:wrap}
 .tabs button{background:none;border:0;border-radius:10px;padding:9px 16px;font-weight:600;cursor:pointer;color:var(--muted);min-height:42px}
 .tabs button.on{background:#fff;color:var(--text);box-shadow:0 1px 3px rgba(11,18,32,.12)}
-.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
 @media (max-width:800px){.kpis{grid-template-columns:1fr 1fr}}
+.kpi.live{background:#F1FAF5;border-color:#CDEBD9}.kpi.live b{color:var(--green)}
+.kpi .dot{display:inline-block;width:8px;height:8px;border-radius:9px;background:var(--green);margin-right:6px;vertical-align:1px;animation:livepulse 1.6s ease-in-out infinite}
+@keyframes livepulse{0%,100%{opacity:1}50%{opacity:.3}}
+
 .kpi{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 18px}
 .kpi small{color:var(--muted);font-size:13px}
 .kpi b{display:block;font-family:var(--head);font-size:26px;font-weight:700;margin-top:4px;letter-spacing:-.02em}
