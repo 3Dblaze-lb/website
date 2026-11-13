@@ -361,6 +361,7 @@
       var y = window.scrollY || 0;
       var home = !window.BLAZE_ADMIN && $('#sec-shop');
       if (head) head.classList.toggle('scrolled', y > 10);
+      $$('.rv:not(.in)', app).forEach(function (el) { if (el.getBoundingClientRect().top < innerHeight) el.classList.add('in'); });
       var hero = $('.hero');
       var on = !!home && !!hero && y > hero.offsetHeight - 120; bar.classList.toggle('show', on); document.body.classList.toggle('tabs-on', on);
       var max = document.documentElement.scrollHeight - innerHeight;
@@ -473,7 +474,7 @@
       (p.text ? '<div class="opt"><label class="field">' + esc(p.text.label) + '<input id="pText" maxlength="' + p.text.max + '" placeholder="' + esc(p.text.ph) + '" value="' + esc(st.text) + '"></label><div class="err" id="pErr"></div></div>' : '') +
       '<div class="opt"><span class="lab">Quantity</span><div class="qty"><button data-q="-1" aria-label="Less">−</button><span id="pQty">1</span><button data-q="1" aria-label="More">+</button></div></div>' +
       '<div class="buyrow"><button class="btn pri" id="pAdd"' + (out ? ' disabled' : '') + '>' + (soon ? 'Coming soon' : out ? 'Sold out' : 'Add to cart') + '</button>' + (out ? '' : '<button class="btn sec" id="pBuy">Buy now</button>') + '</div>' +
-      '<div class="specs">' + (p.specs || []).map(function (s) { return '<div>' + esc(s) + '</div>'; }).join('') + '<div>Made to order in Lebanon · ready in 2–4 days</div><div>Cash on delivery or Whish</div></div>' +
+      '<div class="specs">' + (p.specs || []).map(function (s) { return '<div>' + esc(s) + '</div>'; }).join('') + '<div>Made to order · ready in 2–4 days</div><div>Cash on delivery or Whish</div></div>' +
       '</div></div></div>';
     var draw = function () { $('#pArt').innerHTML = thumb(p, { color: st.color, text: st.text || undefined, lat: st.geo && st.geo.lat, lon: st.geo && st.geo.lon }); };
     draw();
@@ -484,7 +485,7 @@
     if (isMap && ti) { ti.insertAdjacentHTML('afterend', '<div class="geo" id="pGeo"></div>'); if (st.text) geoLook(); }
     $$('[data-q]').forEach(function (b) { b.onclick = function () { st.qty = Math.max(1, Math.min(50, st.qty + +b.dataset.q)); $('#pQty').textContent = st.qty; }; });
     var add = function () {
-      if (p.text && p.text.required && !st.text) { $('#pErr').textContent = 'Please write the ' + p.text.label.toLowerCase() + '.'; ti.focus(); return false; }
+      if (p.text && p.text.required && !st.text) { $('#pErr').textContent = 'Please fill in “' + p.text.label + '”.'; ti.focus(); return false; }
       Cart.add(p, st.qty, st.color, st.text, isMap ? st.geo : null); return true;
     };
     if (!out) {
@@ -1132,7 +1133,7 @@
     var s = Store.settings(), an = $('#announce');
     an.textContent = s.banner || ''; an.classList.toggle('hidden', !s.banner || !!window.BLAZE_ADMIN);
     if (window.BLAZE_ADMIN) return viewAdmin();
-    if (h !== 'admin') document.title = '3DBlaze — 3D printed in Lebanon';
+    if (h !== 'admin') document.title = '3DBlaze — Personalized 3D printed gifts';
     if (h === 'home' || h === '') return viewHome();
     if (h === 'shop' || h === 'christmas' || h === 'faq') return viewHome(h);
     if (h.indexOf('p-') === 0) return viewProduct(h.slice(2));
