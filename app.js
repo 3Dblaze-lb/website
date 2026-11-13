@@ -70,7 +70,7 @@
     feeBeirut: 3, feeMount: 3, feeOther: 5, freeOver: 40, pickup: true, open: true,
     banner: '🇱🇧 Independence Day drop is live — order by 19 Nov for delivery before the 22nd',
     xmasCutoff: '2026-12-18',
-    calcPla: 25, calcMachine: 0.35, calcPack: 0.25, calcFail: 10, calcMarkup: 3, calcMin: 5
+    calcPla: 25, calcMachine: 0.35, calcPack: 0.25, calcFail: 10, calcMarkup: 3, calcMin: 5, calcInfill: 15, calcGph: 15
   };
 
   // ---------- utils ----------
@@ -267,6 +267,22 @@
     return g === 'beirut' ? +s.feeBeirut : g === 'mount' ? +s.feeMount : +s.feeOther;
   }
 
+  // cost of one piece from its print data (grams + minutes)
+  function pieceCost(grams, minutes) {
+    if (grams == null && minutes == null) return null;
+    var S = Store.settings(), base = (+grams || 0) * S.calcPla / 1000 + (+minutes || 0) / 60 * S.calcMachine + (+S.calcPack || 0);
+    return Math.round(base * (1 + S.calcFail / 100) * 100) / 100;
+  }
+  function orderCost(o) {
+    var c = 0, known = true;
+    o.items.forEach(function (i) {
+      if (i.id === 'design') return;
+      var u = i.unitCost != null ? i.unitCost : (function () { var p = Store.product(i.id); return p && p.grams != null ? pieceCost(p.grams, p.printMin) : null; })();
+      if (u == null) known = false; else c += u * i.qty;
+    });
+    return known ? Math.round(c * 100) / 100 : null;
+  }
+
   // ---------- views ----------
   var app = $('#app');
 
@@ -448,7 +464,7 @@
       ls('customer', cust);
       var order = {
         code: newCode(), createdAt: now, status: 'new', paid: false, payment: f.payment.value, method: method, customer: cust,
-        items: Cart.lines().map(function (l) { return { id: l.id, name: l.p.name, price: l.p.price, qty: l.qty, color: l.color, text: l.text }; }),
+        items: Cart.lines().map(function (l) { var it = { id: l.id, name: l.p.name, price: l.p.price, qty: l.qty, color: l.color, text: l.text }; if (l.p.grams != null) { it.unitCost = pieceCost(l.p.grams, l.p.printMin); it.printMin = l.p.printMin; } return it; }),
         subtotal: c.sub, delivery: c.del, total: c.sub + c.del, history: [{ s: 'new', t: now }]
       };
       $('#coBtn').disabled = true; $('#coBtn').textContent = 'Placing order…';
@@ -526,6 +542,7 @@
     var now = new Date(), monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime(), dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
     var valid = orders.filter(function (o) { return o.status !== 'cancelled'; });
     var revMonth = valid.filter(function (o) { return o.createdAt >= monthStart; }).reduce(function (n, o) { return n + (o.subtotal || 0); }, 0);
+    var profMonth = valid.filter(function (o) { return o.createdAt >= monthStart; }).reduce(function (n, o) { var c = orderCost(o); return n + (c == null ? 0 : (o.subtotal || 0) - c); }, 0);
     var toCollect = valid.filter(function (o) { return !o.paid && o.status !== 'delivered'; }).reduce(function (n, o) { return n + o.total; }, 0);
     var inQueue = valid.filter(function (o) { return ['confirmed', 'printing'].indexOf(o.status) >= 0; }).length;
     var today = orders.filter(function (o) { return o.createdAt >= dayStart; }).length;
@@ -533,7 +550,7 @@
     app.innerHTML = '<div class="wrap admin">' + (Store.live ? '' : '<div class="demo">Demo mode: orders are saved in this browser only. <button class="upl" id="clrDemo">Clear sample orders</button></div>') +
       '<div class="adm-top"><h1>Manager</h1><div class="tabs">' + [['orders', 'Orders' + (newCount ? ' (' + newCount + ')' : '')], ['queue', 'Print queue'], ['calc', 'Calculator'], ['products', 'Products'], ['settings', 'Settings']].map(function (t) { return '<button data-tab="' + t[0] + '" class="' + (adm.tab === t[0] ? 'on' : '') + '">' + t[1] + '</button>'; }).join('') +
       '</div><button class="btn sec" id="logout" style="min-height:42px;padding:8px 14px;font-size:14px">Log out</button></div>' +
-      '<div class="kpis"><div class="kpi o"><small>New orders</small><b>' + newCount + '</b></div><div class="kpi"><small>Orders today</small><b>' + today + '</b></div><div class="kpi g"><small>Sales this month</small><b>' + money(revMonth) + '</b></div><div class="kpi"><small>To collect · in queue</small><b>' + money(toCollect) + ' · ' + inQueue + '</b></div></div>' +
+      '<div class="kpis"><div class="kpi o"><small>New orders</small><b>' + newCount + '</b></div><div class="kpi"><small>Orders today</small><b>' + today + '</b></div><div class="kpi g"><small>Sales · profit this month</small><b>' + money(revMonth) + ' · ' + money(profMonth) + '</b></div><div class="kpi"><small>To collect · in queue</small><b>' + money(toCollect) + ' · ' + inQueue + '</b></div></div>' +
       '<div id="admBody"></div></div>';
     $$('[data-tab]').forEach(function (b) { b.onclick = function () { adm.tab = b.dataset.tab; renderAdmin(); }; });
     $('#logout').onclick = function () { Store.logout(); viewAdmin(); };
@@ -592,7 +609,7 @@
       '<p class="muted" style="margin:4px 0 16px;font-size:14px">' + fmtDate(o.createdAt) + '</p>' +
       '<div class="lab muted" style="font-size:13px">Move to</div><div class="stepper">' + STATUSES.map(function (s) { return '<button data-s="' + s.k + '" class="' + (o.status === s.k ? 'on' : '') + '">' + s.l + '</button>'; }).join('') + '</div>' +
       '<div class="panel" style="padding:16px 18px;background:var(--card2)">' + o.items.map(function (i) { var p = Store.product(i.id) || { id: i.id, name: i.name }; return '<div class="line" style="grid-template-columns:56px 1fr auto"><div class="th" style="width:56px;height:56px">' + thumb(p, { color: i.color, text: i.text }) + '</div><div><div class="nm">' + esc(i.name) + ' × ' + i.qty + '</div><div class="meta">' + esc([i.color, i.text ? '“' + i.text + '”' : ''].filter(Boolean).join(' · ')) + '</div></div><b>' + money(i.price * i.qty) + '</b></div>'; }).join('') +
-      '<div class="sum" style="margin-top:10px"><div><span>Delivery</span><b>' + (o.delivery ? money(o.delivery) : 'Free') + '</b></div><div class="tot" style="font-size:18px"><span>Total</span><span>' + money(o.total) + '</span></div></div></div>' +
+      '<div class="sum" style="margin-top:10px">' + (function () { var c = orderCost(o); return c == null ? '<div class="muted" style="font-size:13px"><span>Profit</span><span>add the Bambu file to each product to see it</span></div>' : '<div><span>Cost · profit</span><b style="color:var(--green)">' + money(c) + ' · ' + money((o.subtotal || 0) - c) + '</b></div>'; })() + '<div><span>Delivery</span><b>' + (o.delivery ? money(o.delivery) : 'Free') + '</b></div><div class="tot" style="font-size:18px"><span>Total</span><span>' + money(o.total) + '</span></div></div></div>' +
       '<div class="kv"><span>Customer</span><b>' + esc(c.name) + '</b><span>Phone</span><b>' + esc(c.phone) + '</b><span>' + (o.method === 'pickup' ? 'Method' : 'Address') + '</span><b>' + (o.method === 'pickup' ? 'Pickup' : esc(c.address + ', ' + c.town + ' — ' + c.region)) + '</b>' +
       (c.notes ? '<span>Notes</span><b>' + esc(c.notes) + '</b>' : '') +
       '<span>Payment</span><b>' + (o.payment === 'whish' ? 'Whish' : 'Cash on delivery') + ' · <label class="switch" style="display:inline-flex"><input type="checkbox" id="mPaid"' + (o.paid ? ' checked' : '') + '> paid</label></b>' +
@@ -656,11 +673,113 @@
       parts: [mat, mac, pack, fail], unitCost: unitCost, minutes: Math.round(h * 60) };
   }
 
+
+  // ---------- read a 3D file and estimate weight + time ----------
+  var FileCost = (function () {
+    function loadZip() {
+      if (window.JSZip) return Promise.resolve(window.JSZip);
+      return new Promise(function (res, rej) { var sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'; sc.onload = function () { res(window.JSZip); }; sc.onerror = function () { rej(new Error('Could not load the 3MF reader')); }; document.head.appendChild(sc); });
+    }
+    function meshStats(tris) { // tris: Float array of 9 numbers per triangle (mm)
+      var vol = 0, area = 0, mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9];
+      for (var i = 0; i < tris.length; i += 9) {
+        var ax = tris[i], ay = tris[i + 1], az = tris[i + 2], bx = tris[i + 3], by = tris[i + 4], bz = tris[i + 5], cx = tris[i + 6], cy = tris[i + 7], cz = tris[i + 8];
+        vol += (ax * (by * cz - bz * cy) - ay * (bx * cz - bz * cx) + az * (bx * cy - by * cx)) / 6;
+        var ux = bx - ax, uy = by - ay, uz = bz - az, vx = cx - ax, vy = cy - ay, vz = cz - az;
+        var nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+        area += Math.sqrt(nx * nx + ny * ny + nz * nz) / 2;
+        for (var k = 0; k < 9; k += 3) for (var d = 0; d < 3; d++) { var v = tris[i + k + d]; if (v < mn[d]) mn[d] = v; if (v > mx[d]) mx[d] = v; }
+      }
+      return { vol: Math.abs(vol) / 1000, area: area / 100, size: [0, 1, 2].map(function (d) { return Math.round(mx[d] - mn[d]); }).join(' × ') + ' mm' };
+    }
+    function estimate(st, S) {
+      var shell = Math.min(st.vol, st.area * 0.1); // ~1 mm of walls / top / bottom
+      var grams = 1.24 * (shell + (st.vol - shell) * (S.calcInfill || 15) / 100);
+      var minutes = grams / (S.calcGph || 15) * 60 + 8;
+      return { grams: grams, minutes: minutes, volume: st.vol, size: st.size, exact: false };
+    }
+    function parseSTL(buf) {
+      var dv = new DataView(buf), n = buf.byteLength >= 84 ? dv.getUint32(80, true) : 0;
+      if (n > 0 && 84 + n * 50 === buf.byteLength) {
+        var t = new Float32Array(n * 9);
+        for (var i = 0; i < n; i++) for (var j = 0; j < 9; j++) t[i * 9 + j] = dv.getFloat32(84 + i * 50 + 12 + j * 4, true);
+        return t;
+      }
+      var txt = new TextDecoder().decode(buf), re = /vertex\s+([-\d.eE+]+)\s+([-\d.eE+]+)\s+([-\d.eE+]+)/g, m, a = [];
+      while ((m = re.exec(txt))) a.push(+m[1], +m[2], +m[3]);
+      if (!a.length) throw new Error('This STL looks empty');
+      return new Float32Array(a);
+    }
+    function parseOBJ(txt) {
+      var v = [], t = [];
+      txt.split('\n').forEach(function (l) {
+        var p = l.trim().split(/\s+/);
+        if (p[0] === 'v') v.push([+p[1], +p[2], +p[3]]);
+        else if (p[0] === 'f') { var ix = p.slice(1).map(function (q) { var k = parseInt(q, 10); return k < 0 ? v.length + k : k - 1; }); for (var i = 1; i + 1 < ix.length; i++) [ix[0], ix[i], ix[i + 1]].forEach(function (k) { t.push(v[k][0], v[k][1], v[k][2]); }); }
+      });
+      return new Float32Array(t);
+    }
+    function parse3MFModel(xml) {
+      var d = new DOMParser().parseFromString(xml, 'application/xml'), out = [];
+      Array.prototype.forEach.call(d.getElementsByTagName('mesh'), function (mesh) {
+        var vs = mesh.getElementsByTagName('vertex'), v = new Float32Array(vs.length * 3);
+        for (var i = 0; i < vs.length; i++) { v[i * 3] = +vs[i].getAttribute('x'); v[i * 3 + 1] = +vs[i].getAttribute('y'); v[i * 3 + 2] = +vs[i].getAttribute('z'); }
+        var ts = mesh.getElementsByTagName('triangle');
+        for (var j = 0; j < ts.length; j++) ['v1', 'v2', 'v3'].forEach(function (a) { var k = +ts[j].getAttribute(a) * 3; out.push(v[k], v[k + 1], v[k + 2]); });
+      });
+      return out;
+    }
+    function gcodeHeader(txt) { // Bambu / Orca / Prusa comments
+      var g = txt.match(/total filament weight \[g\]\s*:\s*([\d.]+)/i) || txt.match(/filament used \[g\]\s*=\s*([\d.]+)/i);
+      var t = txt.match(/(?:model printing time|total estimated time|estimated printing time \(normal mode\))\s*[:=]\s*([^;\n]+)/i);
+      if (!g || !t) return null;
+      var s = 0, tm = t[1]; [['d', 86400], ['h', 3600], ['m', 60], ['s', 1]].forEach(function (u) { var mm = tm.match(new RegExp('(\\d+)\\s*' + u[0])); if (mm) s += +mm[1] * u[1]; });
+      return { grams: +g[1], minutes: s / 60, exact: true };
+    }
+    return {
+      read: function (file, S) {
+        var name = file.name.replace(/\.(gcode\.3mf|3mf|stl|gcode|obj)$/i, '').replace(/[_-]+/g, ' ').trim() || 'Custom print';
+        var ext = (file.name.match(/\.(gcode\.3mf|3mf|stl|gcode|obj)$/i) || [, ''])[1].toLowerCase();
+        var done = function (r) { r.name = name; r.file = file.name; return r; };
+        if (!ext) return Promise.reject(new Error('Use an STL, 3MF, OBJ or G-code file'));
+        if (file.size > 150e6) return Promise.reject(new Error('File is too big (max 150 MB)'));
+        return file.arrayBuffer().then(function (buf) {
+          if (ext === 'stl') return done(estimate(meshStats(parseSTL(buf)), S));
+          if (ext === 'obj') return done(estimate(meshStats(parseOBJ(new TextDecoder().decode(buf))), S));
+          if (ext === 'gcode') { var h = gcodeHeader(new TextDecoder().decode(buf.slice(0, Math.min(buf.byteLength, 400000)))) || gcodeHeader(new TextDecoder().decode(buf.slice(Math.max(0, buf.byteLength - 400000)))); if (!h) throw new Error('No weight/time found in this G-code'); return done(h); }
+          return loadZip().then(function (JSZip) { return JSZip.loadAsync(buf); }).then(function (zip) {
+            var info = zip.file(/slice_info\.config$/i)[0];
+            if (info) return info.async('string').then(function (x) {
+              var d = new DOMParser().parseFromString(x, 'application/xml'), g = 0, sec = 0, plates = 0;
+              Array.prototype.forEach.call(d.getElementsByTagName('plate'), function (pl) {
+                var md = {}; Array.prototype.forEach.call(pl.getElementsByTagName('metadata'), function (m) { md[m.getAttribute('key')] = m.getAttribute('value'); });
+                if (md.weight || md.prediction) { plates++; g += +md.weight || 0; sec += +md.prediction || 0; }
+              });
+              if (!plates) return null;
+              return { grams: g, minutes: sec / 60, exact: true, plates: plates };
+            }).then(function (r) { return r || fromMeshes(zip); });
+            return fromMeshes(zip);
+          }).then(done);
+          function fromMeshes(zip) {
+            var files = zip.file(/\.model$/i);
+            if (!files.length) throw new Error('No 3D model found inside this 3MF');
+            return Promise.all(files.map(function (f) { return f.async('string'); })).then(function (xs) {
+              var all = []; xs.forEach(function (x) { all = all.concat(parse3MFModel(x)); });
+              if (!all.length) throw new Error('No 3D model found inside this 3MF');
+              return estimate(meshStats(new Float32Array(all)), S);
+            });
+          }
+        });
+      }
+    };
+  })();
+
   function admCalc() {
     var S = Store.settings(), c = calcIn;
     var num = function (id, label, val, step, extra) { return '<label class="field">' + label + '<input type="number" id="' + id + '" min="0" step="' + step + '" value="' + esc(val) + '"' + (extra || '') + '></label>'; };
     $('#admBody').innerHTML = '<div class="calc"><div style="display:grid;gap:16px"><div class="panel">' +
-      '<h3>1 · Pick a product</h3><div class="presets">' + PRESETS.map(function (p) { return '<button class="preset' + (c.preset === p.n ? ' on' : '') + '" data-pr="' + esc(p.n) + '">' + esc(p.n) + '</button>'; }).join('') + '</div>' +
+      '<h3>1 · Drop your file</h3><label class="drop" id="c_drop"><input type="file" id="c_file" accept=".stl,.3mf,.gcode,.obj" hidden><b>Drop a file here or tap to choose</b><span>Best: the sliced <b>.gcode.3mf</b> from Bambu Studio (File → Export → Export plate sliced file) gives the exact weight and time. STL / 3MF also work as an estimate.</span></label><div id="c_fileinfo"></div>' +
+      '<h3 style="margin-top:22px">…or pick a product</h3><div class="presets">' + PRESETS.map(function (p) { return '<button class="preset' + (c.preset === p.n ? ' on' : '') + '" data-pr="' + esc(p.n) + '">' + esc(p.n) + '</button>'; }).join('') + '</div>' +
       '<h3>2 · Print details</h3><div class="grid2">' +
         '<label class="field">Product name<input id="c_name" value="' + esc(c.name) + '"></label>' + num('c_qty', 'Quantity', c.qty, 1, ' min="1"') +
         num('c_grams', 'Weight per piece (g)', c.grams, 1) +
@@ -670,7 +789,7 @@
       '<p class="hint">Discount: 3+ pieces −15%, 10+ −25%, 20+ −35%. Weight and time come straight from Bambu Studio after slicing.</p></div>' +
       '<div class="panel"><button class="upl" id="c_tog" style="font-size:15px">' + (calcOpen ? '▾' : '▸') + ' Cost settings</button><div id="c_set"' + (calcOpen ? '' : ' class="hidden"') + ' style="margin-top:14px"><div class="grid3">' +
         num('s_calcPla', 'PLA price ($/kg)', S.calcPla, 0.5) + num('s_calcMachine', 'Machine cost ($/hour)', S.calcMachine, 0.05) + num('s_calcPack', 'Packaging ($/piece)', S.calcPack, 0.05) +
-        num('s_calcFail', 'Failure buffer (%)', S.calcFail, 1) + num('s_calcMarkup', 'Markup (× cost)', S.calcMarkup, 0.1) + num('s_calcMin', 'Minimum price / piece ($)', S.calcMin, 0.5) +
+        num('s_calcFail', 'Failure buffer (%)', S.calcFail, 1) + num('s_calcMarkup', 'Markup (× cost)', S.calcMarkup, 0.1) + num('s_calcMin', 'Minimum price / piece ($)', S.calcMin, 0.5) + num('s_calcInfill', 'Infill % (for STL estimates)', S.calcInfill, 5) + num('s_calcGph', 'Print speed (grams / hour)', S.calcGph, 1) +
       '</div><p class="hint">Machine cost = electricity (~$0.05/h on generator power) + wear and spares (~$0.30/h). Saved to your shop settings.</p></div></div></div>' +
       '<div class="panel res"><div class="lbl">Customer pays</div><div class="big" id="r_total"></div><div class="muted" id="r_sub" style="font-size:15px"></div>' +
       '<div class="stats"><div class="stat"><div class="k">Your cost</div><div class="v" id="r_cost"></div></div><div class="stat"><div class="k">Profit</div><div class="v good" id="r_profit"></div></div><div class="stat"><div class="k">Margin</div><div class="v good" id="r_margin"></div></div></div>' +
@@ -696,20 +815,35 @@
       var el = $('#' + id);
       el.addEventListener(kind === 'check' ? 'change' : 'input', function () {
         calcIn[key] = kind === 'check' ? el.checked : kind === 'text' ? el.value : el.value;
-        if (['grams', 'hours', 'mins'].indexOf(key) >= 0) calcIn.fixed = null;
+        if (['grams', 'hours', 'mins'].indexOf(key) >= 0) { calcIn.fixed = null; calcIn.fileInfo = null; }
         save(); draw();
       });
     };
+    var fin = $('#c_file'), drop = $('#c_drop');
+    var useFile = function (f) {
+      if (!f) return;
+      $('#c_fileinfo').innerHTML = '<p class="muted" style="font-size:14px">Reading ' + esc(f.name) + '…</p>';
+      FileCost.read(f, Store.settings()).then(function (r) {
+        var mins = Math.max(1, Math.round(r.minutes));
+        Object.assign(calcIn, { preset: null, name: r.name, grams: Math.round(r.grams * 10) / 10, hours: Math.floor(mins / 60), mins: mins % 60, fixed: null, fileInfo: r });
+        save(); admCalc();
+      }).catch(function (e) { $('#c_fileinfo').innerHTML = '<p class="err" style="font-size:14px">' + esc(e.message || 'Could not read this file') + '</p>'; });
+    };
+    fin.onchange = function () { useFile(fin.files[0]); };
+    ['dragenter', 'dragover'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('over'); }); });
+    ['dragleave', 'drop'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('over'); }); });
+    drop.addEventListener('drop', function (e) { useFile(e.dataTransfer.files[0]); });
+    if (calcIn.fileInfo) { var fi = calcIn.fileInfo; $('#c_fileinfo').innerHTML = '<div class="note" style="margin-top:12px"><b>' + esc(fi.file) + '</b> — ' + (fi.exact ? '✓ exact from Bambu slice' : 'estimate from model') + '<br>' + Math.round(fi.grams * 10) / 10 + ' g · ' + Math.floor(fi.minutes / 60) + 'h ' + Math.round(fi.minutes % 60) + 'm' + (fi.volume ? ' · ' + fi.volume.toFixed(1) + ' cm³ · ' + fi.size : '') + (fi.plates > 1 ? ' · ' + fi.plates + ' plates' : '') + '</div>'; }
     bind('c_name', 'name', 'text'); ['qty', 'grams', 'hours', 'mins', 'design', 'delivery'].forEach(function (k) { bind('c_' + k, k); });
     ['rush', 'pickup', 'bulk'].forEach(function (k) { bind('c_' + k, k, 'check'); });
     $$('[data-pr]').forEach(function (b) { b.onclick = function () {
       var p = PRESETS.filter(function (x) { return x.n === b.dataset.pr; })[0];
-      Object.assign(calcIn, { preset: p.n, name: p.n, grams: p.g, hours: Math.floor(p.m / 60), mins: p.m % 60, fixed: p.p }); save(); admCalc();
+      Object.assign(calcIn, { preset: p.n, name: p.n, grams: p.g, hours: Math.floor(p.m / 60), mins: p.m % 60, fixed: p.p, fileInfo: null }); save(); admCalc();
     }; });
     var st;
-    ['calcPla', 'calcMachine', 'calcPack', 'calcFail', 'calcMarkup', 'calcMin'].forEach(function (k) {
+    ['calcPla', 'calcMachine', 'calcPack', 'calcFail', 'calcMarkup', 'calcMin', 'calcInfill', 'calcGph'].forEach(function (k) {
       var el = $('#s_' + k);
-      el.addEventListener('input', function () { Store.settings()[k] = +el.value || 0; draw(); clearTimeout(st); st = setTimeout(function () { var o = {}; ['calcPla', 'calcMachine', 'calcPack', 'calcFail', 'calcMarkup', 'calcMin'].forEach(function (x) { o[x] = +$('#s_' + x).value || 0; }); Store.saveSettings(o); }, 700); });
+      el.addEventListener('input', function () { Store.settings()[k] = +el.value || 0; draw(); clearTimeout(st); st = setTimeout(function () { var o = {}; ['calcPla', 'calcMachine', 'calcPack', 'calcFail', 'calcMarkup', 'calcMin', 'calcInfill', 'calcGph'].forEach(function (x) { o[x] = +$('#s_' + x).value || 0; }); Store.saveSettings(o); }, 700); });
     });
     $('#c_tog').onclick = function () { calcOpen = !calcOpen; $('#c_set').classList.toggle('hidden', !calcOpen); this.textContent = (calcOpen ? '▾' : '▸') + ' Cost settings'; };
     $('#c_copy').onclick = function () { copy(lastQuote, 'Quote copied'); };
@@ -723,7 +857,7 @@
           var now = Date.now(), sub = r.items;
           var o = { code: newCode(), createdAt: now, status: 'confirmed', paid: false, payment: f.payment.value, method: calcIn.pickup ? 'pickup' : 'delivery', source: 'manual',
             customer: { name: f.name.value.trim(), phone: f.phone.value.replace(/[^\d+]/g, ''), region: calcIn.pickup ? '' : f.region.value, town: f.town.value.trim(), address: f.address.value.trim(), notes: '' },
-            items: [{ id: 'custom', name: calcIn.name || 'Custom print', price: r.unitFinal, qty: r.qty, color: null, text: f.text.value.trim() || null, printMin: r.minutes }].concat(r.design ? [{ id: 'design', name: 'Design / personalization', price: r.design, qty: 1, color: null, text: null, printMin: 0 }] : []),
+            items: [{ id: 'custom', name: calcIn.name || 'Custom print', price: r.unitFinal, qty: r.qty, color: null, text: f.text.value.trim() || null, printMin: r.minutes, unitCost: Math.round(r.unitCost * 100) / 100 }].concat(r.design ? [{ id: 'design', name: 'Design / personalization', price: r.design, qty: 1, color: null, text: null, printMin: 0 }] : []),
             subtotal: sub, delivery: r.delivery, total: r.total, history: [{ s: 'confirmed', t: now }] };
           Store.placeOrder(o).then(function () { close(); adm.tab = 'orders'; adm.filter = 'active'; renderAdmin(); toast('Order ' + o.code + ' created'); });
         };
@@ -736,16 +870,30 @@
     var list = Store.products();
     $('#admBody').innerHTML = '<div class="panel" style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><b style="font-family:var(--head)">Products</b><div class="muted" style="font-size:14px">These are <b>example items</b> to show the layout. Edit, remove or replace them with what you actually sell, and upload real photos.</div></div><button class="btn pri" id="addP" style="min-height:44px;padding:10px 16px;font-size:14px">+ Add product</button></div>' +
       list.map(function (p) {
-        return '<div class="prow" data-p="' + p.id + '"><div class="th">' + thumb(p) + '</div><div><b>' + esc(p.name) + '</b><div class="muted" style="font-size:13px">' + (p.col === 'xmas' ? 'Christmas' : 'Lebanon drop') + ' · <button class="upl" data-ed="' + p.id + '">Edit</button> · <button class="upl" data-up="' + p.id + '">' + (p.photo ? 'Change photo' : 'Upload photo') + '</button> · <button class="upl" data-del="' + p.id + '">Remove</button></div></div>' +
+        var pc = p.grams != null ? pieceCost(p.grams, p.printMin) : null;
+        var costLine = pc == null ? '<div class="muted" style="font-size:12px;margin-top:3px">No print file yet — add one to see cost & profit</div>' :
+          '<div style="font-size:12px;margin-top:3px;color:#2C3443">' + (Math.round(p.grams * 10) / 10) + ' g · ' + Math.floor(p.printMin / 60) + 'h ' + Math.round(p.printMin % 60) + 'm' + (p.printFile ? ' · ' + esc(p.printFile) : '') + (p.printExact ? ' ✓' : ' (estimate)') + '<br>Cost ' + money(pc) + ' · <b style="color:' + (p.price - pc > 0 ? 'var(--green)' : 'var(--red)') + '">profit ' + money(p.price - pc) + ' (' + (p.price > 0 ? Math.round((p.price - pc) / p.price * 100) : 0) + '%)</b> per piece</div>';
+        return '<div class="prow" data-p="' + p.id + '"><div class="th">' + thumb(p) + '</div><div><b>' + esc(p.name) + '</b><div class="muted" style="font-size:13px">' + (p.col === 'xmas' ? 'Christmas' : 'Lebanon drop') + ' · <button class="upl" data-ed="' + p.id + '">Edit</button> · <button class="upl" data-bf="' + p.id + '">' + (p.grams != null ? 'Replace Bambu file' : '+ Bambu file') + '</button> · <button class="upl" data-up="' + p.id + '">' + (p.photo ? 'Change photo' : 'Upload photo') + '</button> · <button class="upl" data-del="' + p.id + '">Remove</button></div>' + costLine + '</div>' +
           '<label class="field" style="font-size:12px">Price $<input type="number" min="0" step="0.5" value="' + p.price + '" data-price="' + p.id + '"></label>' +
           '<label class="switch"><input type="checkbox" data-av="' + p.id + '"' + (p.available === false ? '' : ' checked') + '> On sale</label>' +
           '<label class="switch"><input type="checkbox" data-so="' + p.id + '"' + (p.soldOut ? ' checked' : '') + '> Sold out</label></div>';
-      }).join('') + '<input type="file" accept="image/*" id="photoIn" class="hidden">';
+      }).join('') + '<input type="file" accept="image/*" id="photoIn" class="hidden"><input type="file" accept=".3mf,.gcode,.stl,.obj" id="bambuIn" class="hidden">';
     var target = null;
     $$('[data-price]').forEach(function (i) { i.onchange = function () { Store.saveProduct(i.dataset.price, { price: Math.max(0, +i.value || 0) }).then(function () { toast('Price saved'); }); }; });
     $$('[data-av]').forEach(function (i) { i.onchange = function () { Store.saveProduct(i.dataset.av, { available: i.checked }).then(function () { toast(i.checked ? 'Back on sale' : 'Hidden as unavailable'); }); }; });
     $$('[data-so]').forEach(function (i) { i.onchange = function () { Store.saveProduct(i.dataset.so, { soldOut: i.checked }).then(function () { toast(i.checked ? 'Marked sold out' : 'Back in stock'); }); }; });
     $$('[data-up]').forEach(function (b) { b.onclick = function () { target = b.dataset.up; $('#photoIn').click(); }; });
+    var bTarget = null;
+    $$('[data-bf]').forEach(function (b) { b.onclick = function () { bTarget = b.dataset.bf; $('#bambuIn').value = ''; $('#bambuIn').click(); }; });
+    $('#bambuIn').onchange = function (e) {
+      var f = e.target.files[0]; if (!f || !bTarget) return;
+      toast('Reading ' + f.name + '…');
+      FileCost.read(f, Store.settings()).then(function (r) {
+        return Store.saveProduct(bTarget, { grams: Math.round(r.grams * 10) / 10, printMin: Math.max(1, Math.round(r.minutes)), printFile: f.name, printExact: !!r.exact }).then(function () {
+          toast((r.exact ? 'Exact from Bambu: ' : 'Estimate: ') + Math.round(r.grams) + ' g, ' + Math.floor(r.minutes / 60) + 'h ' + Math.round(r.minutes % 60) + 'm'); admProducts();
+        });
+      }).catch(function (err) { toast(err.message || 'Could not read that file'); });
+    };
     $$('[data-del]').forEach(function (b) { b.onclick = function () { var p = Store.product(b.dataset.del); confirmBox('Remove “' + p.name + '” from the shop?', 'Remove', function () { Store.saveProduct(p.id, { removed: true }).then(function () { toast('Removed'); admProducts(); }); }); }; });
     $$('[data-ed]').forEach(function (b) { b.onclick = function () { var p = Store.product(b.dataset.ed);
       modal('<h3 style="font-size:20px;margin-bottom:16px">Edit product</h3><form id="ep" style="display:grid;gap:12px"><label class="field">Name<input name="name" value="' + esc(p.name) + '"></label><div class="grid2"><label class="field">Price $<input name="price" type="number" min="0" step="0.5" value="' + p.price + '"></label><label class="field">Collection<select name="col"><option value="lebanon"' + (p.col !== 'xmas' ? ' selected' : '') + '>Lebanon drop</option><option value="xmas"' + (p.col === 'xmas' ? ' selected' : '') + '>Christmas</option></select></label></div><label class="field">Label on the card (e.g. New, Bestseller)<input name="tag" value="' + esc(p.tag || '') + '"></label><label class="field">Short line<input name="blurb" value="' + esc(p.blurb || '') + '"></label><label class="field">Description<textarea name="desc">' + esc(p.desc || '') + '</textarea></label><label class="field">Details (one per line)<textarea name="specs">' + esc((p.specs || []).join('\n')) + '</textarea></label><label class="field">Colours to choose from (comma separated, empty = none)<input name="colors" value="' + esc((p.colors || []).join(', ')) + '"></label><label class="field">Personalization question (empty = none)<input name="tq" value="' + esc(p.text ? p.text.label : '') + '"></label><button class="btn pri">Save</button></form>', function (box, close) {
