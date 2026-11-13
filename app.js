@@ -242,7 +242,7 @@
   // ---------- cart ----------
   var Cart = {
     items: ls('cart') || [],
-    save: function () { ls('cart', this.items); $('#cartCount').textContent = this.count(); },
+    save: function () { ls('cart', this.items); var cc = $('#cartCount'); if (cc) cc.textContent = this.count(); },
     count: function () { return this.items.reduce(function (n, i) { return n + i.qty; }, 0); },
     add: function (p, qty, color, text) {
       var key = p.id + '|' + (color || '') + '|' + (text || '');
@@ -509,7 +509,7 @@
   function viewAdmin() {
     var u = Store.user();
     if (!u) {
-      app.innerHTML = '<div class="wrap"><div class="login"><h1 style="font-size:28px">Staff login</h1><p class="muted">3DBlaze order manager</p><form class="panel" id="lg">' +
+      app.innerHTML = '<div class="wrap"><div class="login"><h1 style="font-size:28px">3DBlaze Studio</h1><p class="muted">3DBlaze order manager</p><form class="panel" id="lg">' +
         (Store.live ? '<p class="muted" style="margin:0">Sign in with the 3DBlaze Google account.</p>' : '<div class="demo">Demo mode — passcode is <b>blaze2026</b>.</div><label class="field">Passcode<input name="pass" type="password" autocomplete="current-password"></label>') +
         '<div class="err" id="lgErr"></div><button class="btn pri full">' + (Store.live ? 'Sign in with Google' : 'Log in') + '</button></form></div></div>';
       $('#lg').onsubmit = function (e) { e.preventDefault(); var f = e.target; Store.login('', f.pass ? f.pass.value : '').then(function () { viewAdmin(); }).catch(function () { $('#lgErr').textContent = 'Wrong login.'; }); };
@@ -791,7 +791,8 @@
   function route() {
     var h = (location.hash || '#home').slice(1);
     var s = Store.settings(), an = $('#announce');
-    an.textContent = s.banner || ''; an.classList.toggle('hidden', !s.banner || h === 'admin');
+    an.textContent = s.banner || ''; an.classList.toggle('hidden', !s.banner || !!window.BLAZE_ADMIN);
+    if (window.BLAZE_ADMIN) return viewAdmin();
     if (h !== 'admin') document.title = '3DBlaze — 3D printed in Lebanon';
     if (h === 'home' || h === '') return viewHome();
     if (h === 'shop' || h === 'christmas' || h === 'faq') return viewHome(h);
@@ -800,7 +801,7 @@
     if (h === 'checkout') return viewCheckout();
     if (h.indexOf('order-') === 0) return viewDone(h.slice(6));
     if (h === 'track') return viewTrack();
-    if (h === 'admin') return viewAdmin();
+    if (h === 'admin') return viewHome();
     viewHome();
   }
 
@@ -811,9 +812,9 @@
     var firstEmit = true;
     Store.on(function () {
       var h = location.hash.slice(1);
-      if (h === 'admin' && Store.user()) { if (!document.querySelector('.modal')) renderAdmin(); }
+      if (window.BLAZE_ADMIN && Store.user()) { if (!document.querySelector('.modal')) renderAdmin(); }
       else if (firstEmit && Store.live) { firstEmit = false; route(); }
-      $('#cartCount').textContent = Cart.count();
+      var cc = $('#cartCount'); if (cc) cc.textContent = Cart.count();
     });
   });
 })();
