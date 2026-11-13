@@ -270,8 +270,20 @@
     clear: function () { this.items = []; this.save(); }
   };
 
+  // product options (e.g. colours), each with its own photo — set in the manager
+  function optList(p) {
+    var o = p && p.options; if (!o) return [];
+    if (!Array.isArray(o)) o = Object.keys(o).sort(function (a, b) { return a - b; }).map(function (k) { return o[k]; });
+    return o.filter(function (x) { return x && x.name; });
+  }
+  function optFor(p, name) { return name ? optList(p).filter(function (o) { return o.name === name; })[0] : null; }
+  function allOptsOut(p) { var l = optList(p); return l.length > 0 && l.every(function (o) { return o.out; }); }
   function thumb(p, opts) {
+    var so = opts && opts.color ? optFor(p, opts.color) : null;
+    if (so && so.photo) return '<img src="' + so.photo + '" alt="' + esc(p.name + ' — ' + so.name) + '">';
     if (p.photo) return '<img src="' + p.photo + '" alt="' + esc(p.name) + '">';
+    var fo = (p.art || p.id) === 'my-village' ? null : optList(p).filter(function (o) { return o.photo; })[0];
+    if (fo) return '<img src="' + fo.photo + '" alt="' + esc(p.name) + '">';
     if ((p.art || p.id) === 'my-village' && window.BlazeArt) return '<div class="mapart">' + BlazeArt.draw('my-village', opts || { color: 'black' }) + '</div>';
     return '<div class="ph"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="13" width="36" height="26" rx="6" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M17 13 l3-5 h8 l3 5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><circle cx="24" cy="26" r="7" fill="none" stroke="currentColor" stroke-width="2.5"/></svg><span>' + esc(p.name) + '</span><small>Photo coming soon</small></div>';
   }
@@ -378,7 +390,7 @@
   })();
 
   function card(p) {
-    var out = p.soldOut || p.available === false;
+    var out = p.soldOut || p.available === false || allOptsOut(p);
     return '<a class="pcard" href="#p-' + p.id + '"><div class="art">' + thumb(p) +
       (out ? '<span class="tag out">Sold out</span>' : p.tag ? '<span class="tag">' + esc(p.tag) + '</span>' : '') +
       '</div><div class="info"><h3>' + esc(p.name) + '</h3><div class="muted" style="font-size:14px">' + esc(p.blurb || '') + '</div>' +
@@ -462,15 +474,17 @@
     var p = Store.product(id);
     if (!p) { app.innerHTML = '<div class="wrap page empty"><h1>Not found</h1><a class="btn pri" href="#shop">Back to the shop</a></div>'; return; }
     var soon = p.col === 'xmas';
-    var out = soon || p.soldOut || p.available === false;
-    var st = { color: p.colors ? p.colors[0] : null, text: '', qty: 1 };
+    var ol = optList(p);
+    var out = soon || p.soldOut || p.available === false || allOptsOut(p);
+    var st = { color: ol.length ? (ol.filter(function (o) { return !o.out; })[0] || ol[0]).name : p.colors ? p.colors[0] : null, text: '', qty: 1 };
     if (p.id === 'my-village') st.text = ls('prefillVillage') || '';
     app.innerHTML = '<div class="wrap"><a class="back" href="#' + (p.col === 'xmas' ? 'christmas' : 'shop') + '">← Back</a><div class="ppage">' +
       '<div class="big" id="pArt"></div><div>' +
       '<div class="eyebrow">' + (p.col === 'xmas' ? 'Christmas 2026' : 'The Lebanon drop') + '</div>' +
       '<h1>' + esc(p.name) + '</h1><div class="price">' + money(p.price) + (p.was ? '<s>' + money(p.was) + '</s>' : '') + '</div>' +
       '<p style="color:#3A4352;font-size:17px;margin:16px 0 0">' + esc(p.desc || p.blurb || '') + '</p>' +
-      (p.colors && p.colors.length > 1 ? '<div class="opt"><span class="lab">Colour</span><div class="swatches">' + p.colors.map(function (c) { return '<button class="sw' + (c === st.color ? ' on' : '') + '" data-c="' + c + '"><i style="background:' + (COLOR_HEX[c] || c) + '"></i>' + c + '</button>'; }).join('') + '</div></div>' : '') +
+      (ol.length ? '<div class="opt"><span class="lab">' + esc(p.optLabel || 'Colour') + '</span><div class="swatches">' + ol.map(function (o) { return '<button class="sw osw' + (o.name === st.color ? ' on' : '') + '" data-c="' + esc(o.name) + '"' + (o.out ? ' disabled title="Sold out"' : '') + '>' + (o.photo ? '<img src="' + o.photo + '" alt="">' : '<i style="background:' + (COLOR_HEX[o.name.toLowerCase()] || '#D9DDE3') + '"></i>') + esc(o.name) + (o.out ? '<small>sold out</small>' : '') + '</button>'; }).join('') + '</div></div>' :
+       p.colors && p.colors.length > 1 ? '<div class="opt"><span class="lab">Colour</span><div class="swatches">' + p.colors.map(function (c) { return '<button class="sw' + (c === st.color ? ' on' : '') + '" data-c="' + c + '"><i style="background:' + (COLOR_HEX[c] || c) + '"></i>' + c + '</button>'; }).join('') + '</div></div>' : '') +
       (p.text ? '<div class="opt"><label class="field">' + esc(p.text.label) + '<input id="pText" maxlength="' + p.text.max + '" placeholder="' + esc(p.text.ph) + '" value="' + esc(st.text) + '"></label><div class="err" id="pErr"></div></div>' : '') +
       '<div class="opt"><span class="lab">Quantity</span><div class="qty"><button data-q="-1" aria-label="Less">−</button><span id="pQty">1</span><button data-q="1" aria-label="More">+</button></div></div>' +
       '<div class="buyrow"><button class="btn pri" id="pAdd"' + (out ? ' disabled' : '') + '>' + (soon ? 'Coming soon' : out ? 'Sold out' : 'Add to cart') + '</button>' + (out ? '' : '<button class="btn sec" id="pBuy">Buy now</button>') + '</div>' +
@@ -485,6 +499,7 @@
     if (isMap && ti) { ti.insertAdjacentHTML('afterend', '<div class="geo" id="pGeo"></div>'); if (st.text) geoLook(); }
     $$('[data-q]').forEach(function (b) { b.onclick = function () { st.qty = Math.max(1, Math.min(50, st.qty + +b.dataset.q)); $('#pQty').textContent = st.qty; }; });
     var add = function () {
+      var so = optFor(p, st.color); if (so && so.out) { toast(so.name + ' is sold out'); return false; }
       if (p.text && p.text.required && !st.text) { $('#pErr').textContent = 'Please fill in “' + p.text.label + '”.'; ti.focus(); return false; }
       Cart.add(p, st.qty, st.color, st.text, isMap ? st.geo : null); return true;
     };
@@ -1065,7 +1080,7 @@
         var pc = p.grams != null ? pieceCost(p.grams, p.printMin) : null;
         var costLine = pc == null ? '<div class="muted" style="font-size:12px;margin-top:3px">No print file yet — add one to see cost & profit</div>' :
           '<div style="font-size:12px;margin-top:3px;color:#2C3443">' + (Math.round(p.grams * 10) / 10) + ' g · ' + Math.floor(p.printMin / 60) + 'h ' + Math.round(p.printMin % 60) + 'm' + (p.printFile ? ' · ' + esc(p.printFile) : '') + (p.printExact ? ' ✓' : ' (estimate)') + '<br>Cost ' + money(pc) + ' · <b style="color:' + (p.price - pc > 0 ? 'var(--green)' : 'var(--red)') + '">profit ' + money(p.price - pc) + ' (' + (p.price > 0 ? Math.round((p.price - pc) / p.price * 100) : 0) + '%)</b> per piece</div>';
-        return '<div class="prow" data-p="' + p.id + '"><div class="th">' + thumb(p) + '</div><div><b>' + esc(p.name) + '</b><div class="muted" style="font-size:13px">' + (p.col === 'xmas' ? 'Christmas' : 'Lebanon drop') + ' · <button class="upl" data-ed="' + p.id + '">Edit</button> · <button class="upl" data-bf="' + p.id + '">' + (p.grams != null ? 'Replace Bambu file' : '+ Bambu file') + '</button> · <button class="upl" data-up="' + p.id + '">' + (p.photo ? 'Change photo' : 'Upload photo') + '</button> · <button class="upl" data-del="' + p.id + '">Remove</button></div>' + costLine + '</div>' +
+        return '<div class="prow" data-p="' + p.id + '"><div class="th">' + thumb(p) + '</div><div><b>' + esc(p.name) + '</b><div class="muted" style="font-size:13px">' + (p.col === 'xmas' ? 'Christmas' : 'Lebanon drop') + ' · <button class="upl" data-ed="' + p.id + '">Edit</button> · <button class="upl" data-bf="' + p.id + '">' + (p.grams != null ? 'Replace Bambu file' : '+ Bambu file') + '</button> · <button class="upl" data-up="' + p.id + '">' + (p.photo ? 'Change photo' : 'Upload photo') + '</button> · <button class="upl" data-opt="' + p.id + '">Options' + (optList(p).length ? ' (' + optList(p).length + ')' : '') + '</button> · <button class="upl" data-del="' + p.id + '">Remove</button></div>' + costLine + '</div>' +
           '<label class="field" style="font-size:12px">Price $<input type="number" min="0" step="0.5" value="' + p.price + '" data-price="' + p.id + '"></label>' +
           '<label class="switch"><input type="checkbox" data-av="' + p.id + '"' + (p.available === false ? '' : ' checked') + '> On sale</label>' +
           '<label class="switch"><input type="checkbox" data-so="' + p.id + '"' + (p.soldOut ? ' checked' : '') + '> Sold out</label></div>';
@@ -1086,6 +1101,7 @@
         });
       }).catch(function (err) { toast(err.message || 'Could not read that file'); });
     };
+    $$('[data-opt]').forEach(function (b) { b.onclick = function () { optionsModal(b.dataset.opt); }; });
     $$('[data-del]').forEach(function (b) { b.onclick = function () { var p = Store.product(b.dataset.del); confirmBox('Remove “' + p.name + '” from the shop?', 'Remove', function () { Store.saveProduct(p.id, { removed: true }).then(function () { toast('Removed'); admProducts(); }); }); }; });
     $$('[data-ed]').forEach(function (b) { b.onclick = function () { var p = Store.product(b.dataset.ed);
       modal('<h3 style="font-size:20px;margin-bottom:16px">Edit product</h3><form id="ep" style="display:grid;gap:12px"><label class="field">Name<input name="name" value="' + esc(p.name) + '"></label><div class="grid2"><label class="field">Price $<input name="price" type="number" min="0" step="0.5" value="' + p.price + '"></label><label class="field">Collection<select name="col"><option value="lebanon"' + (p.col !== 'xmas' ? ' selected' : '') + '>Lebanon drop</option><option value="xmas"' + (p.col === 'xmas' ? ' selected' : '') + '>Christmas</option></select></label></div><label class="field">Label on the card (e.g. New, Bestseller)<input name="tag" value="' + esc(p.tag || '') + '"></label><label class="field">Short line<input name="blurb" value="' + esc(p.blurb || '') + '"></label><label class="field">Description<textarea name="desc">' + esc(p.desc || '') + '</textarea></label><label class="field">Details (one per line)<textarea name="specs">' + esc((p.specs || []).join('\n')) + '</textarea></label><label class="field">Colours to choose from (comma separated, empty = none)<input name="colors" value="' + esc((p.colors || []).join(', ')) + '"></label><label class="field">Personalization question (empty = none)<input name="tq" value="' + esc(p.text ? p.text.label : '') + '"></label><button class="btn pri">Save</button></form>', function (box, close) {
@@ -1106,6 +1122,43 @@
         };
       });
     };
+  }
+
+  function optionsModal(id) {
+    var p = Store.product(id); if (!p) return;
+    var arr = optList(p).map(function (o) { return { name: o.name, photo: o.photo || null, out: !!o.out }; });
+    modal('<h3 style="font-size:20px;margin:0 40px 6px 0">Options · ' + esc(p.name) + '</h3><p class="muted" style="font-size:14px;margin:0 0 16px">Each option is a choice on the product page with its own photo (e.g. Black, White, Green). The order here is the order customers see.</p>' +
+      '<label class="field" style="margin-bottom:14px">Title above the choices<input id="oLab" value="' + esc(p.optLabel || 'Colour') + '" maxlength="24"></label>' +
+      '<div id="oList"></div><button class="btn sec" id="oAdd" style="margin-top:6px">+ Add option</button><div class="err" id="oErr"></div>' +
+      '<div class="actions" style="margin-top:18px"><button class="btn pri" id="oSave">Save options</button></div><input type="file" accept="image/*" id="oPhoto" class="hidden">', function (box, close) {
+      var q = function (s) { return box.querySelector(s); }, qa = function (s) { return [].slice.call(box.querySelectorAll(s)); }, tgt = null;
+      var render = function () {
+        q('#oList').innerHTML = arr.length ? arr.map(function (o, i) {
+          return '<div class="optrow"><button class="oth" data-ph="' + i + '" title="Choose photo">' + (o.photo ? '<img src="' + o.photo + '" alt="">' : '<span>+ Photo</span>') + '</button>' +
+            '<input data-n="' + i + '" value="' + esc(o.name) + '" placeholder="e.g. Black" maxlength="24" aria-label="Option name">' +
+            '<label class="switch"><input type="checkbox" data-out="' + i + '"' + (o.out ? ' checked' : '') + '> Sold out</label>' +
+            '<div class="obtn"><button data-mv="' + i + '" data-d="-1" aria-label="Move up"' + (i ? '' : ' disabled') + '>↑</button><button data-mv="' + i + '" data-d="1" aria-label="Move down"' + (i < arr.length - 1 ? '' : ' disabled') + '>↓</button><button data-rmo="' + i + '" aria-label="Remove">✕</button></div></div>';
+        }).join('') : '<div class="muted" style="font-size:14px;padding:10px 0">No options yet. Add one for each colour you sell.</div>';
+        qa('[data-n]').forEach(function (i) { i.oninput = function () { arr[+i.dataset.n].name = i.value; }; });
+        qa('[data-out]').forEach(function (i) { i.onchange = function () { arr[+i.dataset.out].out = i.checked; }; });
+        qa('[data-ph]').forEach(function (b) { b.onclick = function () { tgt = +b.dataset.ph; q('#oPhoto').value = ''; q('#oPhoto').click(); }; });
+        qa('[data-mv]').forEach(function (b) { b.onclick = function () { var i = +b.dataset.mv, j = i + +b.dataset.d; if (j < 0 || j >= arr.length) return; var t = arr[i]; arr[i] = arr[j]; arr[j] = t; render(); }; });
+        qa('[data-rmo]').forEach(function (b) { b.onclick = function () { arr.splice(+b.dataset.rmo, 1); render(); }; });
+      };
+      render();
+      q('#oPhoto').onchange = function (e) { var f = e.target.files[0]; if (!f || tgt == null) return; var i = tgt; resizeImage(f, 800, function (url) { arr[i].photo = url; render(); }); };
+      q('#oAdd').onclick = function () { arr.push({ name: '', photo: null, out: false }); render(); var ins = qa('[data-n]'); ins[ins.length - 1].focus(); };
+      q('#oSave').onclick = function () {
+        var clean = arr.map(function (o) { return { name: String(o.name || '').trim(), photo: o.photo || null, out: !!o.out }; });
+        var seen = {}, bad = '';
+        clean.forEach(function (o) { var k = o.name.toLowerCase(); if (!o.name) bad = 'Every option needs a name.'; else if (seen[k]) bad = '“' + o.name + '” is there twice.'; seen[k] = 1; });
+        if (bad) { q('#oErr').textContent = bad; return; }
+        var lab = q('#oLab').value.trim() || 'Colour';
+        q('#oSave').disabled = true;
+        Store.saveProduct(id, { options: clean.length ? clean : null, optLabel: lab === 'Colour' ? null : lab }).then(function () { close(); toast('Options saved'); admProducts(); })
+          .catch(function () { q('#oSave').disabled = false; q('#oErr').textContent = 'Could not save — check you are signed in, then try again.'; });
+      };
+    });
   }
 
   function admSettings() {
