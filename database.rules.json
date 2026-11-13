@@ -32,6 +32,13 @@
     "requests": {
       ".read": "auth != null && auth.token.email === '3dbllaze@gmail.com' && auth.token.email_verified === true",
       ".write": "auth != null && auth.token.email === '3dbllaze@gmail.com' && auth.token.email_verified === true"
+    },
+    "presence": {
+      ".read": "auth != null && auth.token.email === '3dbllaze@gmail.com' && auth.token.email_verified === true",
+      "$id": {
+        ".write": true,
+        ".validate": "!newData.exists() || (newData.hasChildren(['t']) && (!newData.child('page').exists() || (newData.child('page').isString() && newData.child('page').val().length <= 40)))"
+      }
     }
   }
 }

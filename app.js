@@ -54,7 +54,7 @@
   var CUSTOMER_STEPS = [
     { k: 'new', l: 'Order received', d: 'We got it and will confirm on WhatsApp.' },
     { k: 'confirmed', l: 'Confirmed', d: 'Your order is in the print queue.' },
-    { k: 'printing', l: 'Printing', d: 'Layer by layer on our printer.' },
+    { k: 'printing', l: 'Printing', d: 'Your piece is on our printer now.' },
     { k: 'ready', l: 'Ready', d: 'Checked, packed and waiting for the driver.' },
     { k: 'out', l: 'Out for delivery', d: 'On its way to you.' },
     { k: 'delivered', l: 'Delivered', d: 'Enjoy it!' }
@@ -257,13 +257,14 @@
     save: function () { ls('cart', this.items); var cc = $('#cartCount'); if (cc) cc.textContent = this.count(); },
     count: function () { return this.items.reduce(function (n, i) { return n + i.qty; }, 0); },
     add: function (p, qty, color, text, geo) {
+      if (!p || p.col === 'xmas') return;
       var key = p.id + '|' + (color || '') + '|' + (text || '');
       var ex = this.items.filter(function (i) { return i.key === key; })[0];
       if (ex) ex.qty += qty; else this.items.push({ key: key, id: p.id, qty: qty, color: color || null, text: text || null, geo: geo || null });
       this.save();
     },
     lines: function () {
-      return this.items.map(function (i) { var p = Store.product(i.id); return p ? Object.assign({}, i, { p: p, total: p.price * i.qty }) : null; }).filter(Boolean);
+      return this.items.map(function (i) { var p = Store.product(i.id); return p && p.col !== 'xmas' ? Object.assign({}, i, { p: p, total: p.price * i.qty }) : null; }).filter(Boolean);
     },
     subtotal: function () { return this.lines().reduce(function (n, l) { return n + l.total; }, 0); },
     clear: function () { this.items = []; this.save(); }
@@ -459,7 +460,8 @@
   function viewProduct(id) {
     var p = Store.product(id);
     if (!p) { app.innerHTML = '<div class="wrap page empty"><h1>Not found</h1><a class="btn pri" href="#shop">Back to the shop</a></div>'; return; }
-    var out = p.soldOut || p.available === false;
+    var soon = p.col === 'xmas';
+    var out = soon || p.soldOut || p.available === false;
     var st = { color: p.colors ? p.colors[0] : null, text: '', qty: 1 };
     if (p.id === 'my-village') st.text = ls('prefillVillage') || '';
     app.innerHTML = '<div class="wrap"><a class="back" href="#' + (p.col === 'xmas' ? 'christmas' : 'shop') + '">← Back</a><div class="ppage">' +
@@ -470,7 +472,7 @@
       (p.colors && p.colors.length > 1 ? '<div class="opt"><span class="lab">Colour</span><div class="swatches">' + p.colors.map(function (c) { return '<button class="sw' + (c === st.color ? ' on' : '') + '" data-c="' + c + '"><i style="background:' + (COLOR_HEX[c] || c) + '"></i>' + c + '</button>'; }).join('') + '</div></div>' : '') +
       (p.text ? '<div class="opt"><label class="field">' + esc(p.text.label) + '<input id="pText" maxlength="' + p.text.max + '" placeholder="' + esc(p.text.ph) + '" value="' + esc(st.text) + '"></label><div class="err" id="pErr"></div></div>' : '') +
       '<div class="opt"><span class="lab">Quantity</span><div class="qty"><button data-q="-1" aria-label="Less">−</button><span id="pQty">1</span><button data-q="1" aria-label="More">+</button></div></div>' +
-      '<div class="buyrow"><button class="btn pri" id="pAdd"' + (out ? ' disabled' : '') + '>' + (out ? 'Sold out' : 'Add to cart') + '</button>' + (out ? '' : '<button class="btn sec" id="pBuy">Buy now</button>') + '</div>' +
+      '<div class="buyrow"><button class="btn pri" id="pAdd"' + (out ? ' disabled' : '') + '>' + (soon ? 'Coming soon' : out ? 'Sold out' : 'Add to cart') + '</button>' + (out ? '' : '<button class="btn sec" id="pBuy">Buy now</button>') + '</div>' +
       '<div class="specs">' + (p.specs || []).map(function (s) { return '<div>' + esc(s) + '</div>'; }).join('') + '<div>Made to order in Lebanon · ready in 2–4 days</div><div>Cash on delivery or Whish</div></div>' +
       '</div></div></div>';
     var draw = function () { $('#pArt').innerHTML = thumb(p, { color: st.color, text: st.text || undefined, lat: st.geo && st.geo.lat, lon: st.geo && st.geo.lon }); };
