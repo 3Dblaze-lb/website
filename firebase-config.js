@@ -1,14 +1,10 @@
-/*
-  3DBlaze — Firebase connection.
-  Leave as null  -> DEMO MODE (orders saved only in this browser, admin passcode: blaze2026).
-  Paste your Firebase web config here -> LIVE MODE (real orders, shared admin, login by email).
-
-  window.BLAZE_FIREBASE = {
-    apiKey: "...",
-    authDomain: "your-project.firebaseapp.com",
-    databaseURL: "https://your-project-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "your-project",
-    appId: "..."
-  };
-*/
-window.BLAZE_FIREBASE = null;
+/* 3DBlaze — Firebase connection (LIVE). Web config keys are public by design; security comes from database rules. */
+window.BLAZE_FIREBASE = {
+  apiKey: "AIzaSyDyzOu0hfTt8N6jpx1U2q-ruk1E_APnUuQ",
+  authDomain: "dblaze-c9315.firebaseapp.com",
+  databaseURL: "https://dblaze-c9315-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "dblaze-c9315",
+  storageBucket: "dblaze-c9315.firebasestorage.app",
+  messagingSenderId: "428960663396",
+  appId: "1:428960663396:web:a58b4169a4bd5be0711c71"
+};

@@ -213,7 +213,8 @@
       },
       login: function (email, pass) {
         if (!live) { if (pass === 'blaze2026') { state.user = { email: 'demo' }; ls('demoAdmin', true); emit(); return Promise.resolve(); } return Promise.reject(new Error('Wrong passcode')); }
-        return firebase.auth().signInWithEmailAndPassword(email, pass);
+        var p = new firebase.auth.GoogleAuthProvider(); p.setCustomParameters({ prompt: 'select_account' });
+        return firebase.auth().signInWithPopup(p).then(function (r) { if (!r.user || r.user.email !== '3dbllaze@gmail.com') { firebase.auth().signOut(); throw new Error('Not the shop account'); } });
       },
       logout: function () { if (!live) { state.user = null; ls('demoAdmin', false); emit(); return; } firebase.auth().signOut(); },
       seedDemo: function () {
@@ -509,9 +510,9 @@
     var u = Store.user();
     if (!u) {
       app.innerHTML = '<div class="wrap"><div class="login"><h1 style="font-size:28px">Staff login</h1><p class="muted">3DBlaze order manager</p><form class="panel" id="lg">' +
-        (Store.live ? '<label class="field">Email<input name="email" type="email" autocomplete="username"></label>' : '<div class="demo">Demo mode — passcode is <b>blaze2026</b>. Connect Firebase to go live.</div>') +
-        '<label class="field">' + (Store.live ? 'Password' : 'Passcode') + '<input name="pass" type="password" autocomplete="current-password"></label><div class="err" id="lgErr"></div><button class="btn pri full">Log in</button></form></div></div>';
-      $('#lg').onsubmit = function (e) { e.preventDefault(); var f = e.target; Store.login(f.email ? f.email.value : '', f.pass.value).then(function () { viewAdmin(); }).catch(function () { $('#lgErr').textContent = 'Wrong login.'; }); };
+        (Store.live ? '<p class="muted" style="margin:0">Sign in with the 3DBlaze Google account.</p>' : '<div class="demo">Demo mode — passcode is <b>blaze2026</b>.</div><label class="field">Passcode<input name="pass" type="password" autocomplete="current-password"></label>') +
+        '<div class="err" id="lgErr"></div><button class="btn pri full">' + (Store.live ? 'Sign in with Google' : 'Log in') + '</button></form></div></div>';
+      $('#lg').onsubmit = function (e) { e.preventDefault(); var f = e.target; Store.login('', f.pass ? f.pass.value : '').then(function () { viewAdmin(); }).catch(function () { $('#lgErr').textContent = 'Wrong login.'; }); };
       return;
     }
     if (!Store.live && !ls('demoSeeded')) { ls('demoSeeded', true); Store.seedDemo(); }
