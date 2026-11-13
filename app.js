@@ -123,7 +123,7 @@
   // ---------- data store: demo (this browser) or live (Firebase) ----------
   var Store = (function () {
     var cfg = window.BLAZE_FIREBASE, live = !!(cfg && cfg.apiKey);
-    var state = { overrides: {}, extra: {}, settings: Object.assign({}, DEFAULT_SETTINGS), orders: {}, user: null };
+    var state = { overrides: {}, extra: {}, settings: Object.assign({}, DEFAULT_SETTINGS), orders: {}, requests: {}, user: null };
     var subs = [];
     function emit() { subs.forEach(function (f) { f(); }); }
     var fb = null;
@@ -135,6 +135,7 @@
         state.overrides = ls('overrides') || {}; state.extra = ls('extra') || {};
         state.settings = Object.assign({}, DEFAULT_SETTINGS, ls('settings') || {});
         state.orders = ls('orders') || {};
+        state.requests = ls('requests') || {};
         state.user = ls('demoAdmin') ? { email: 'demo' } : null;
         window.addEventListener('storage', function () { state.orders = ls('orders') || {}; emit(); });
         return Promise.resolve();
@@ -150,8 +151,9 @@
           var ordersRef = null;
           firebase.auth().onAuthStateChanged(function (u) {
             state.user = u ? { email: u.email, uid: u.uid } : null;
-            if (ordersRef) { ordersRef.off(); ordersRef = null; state.orders = {}; }
-            if (u) { ordersRef = fb.ref('orders'); ordersRef.on('value', function (s) { state.orders = s.val() || {}; emit(); }, function () { state.orders = {}; emit(); }); }
+            if (ordersRef) { ordersRef.off(); ordersRef = null; state.orders = {}; fb.ref('requests').off(); state.requests = {}; }
+            if (u) { ordersRef = fb.ref('orders'); ordersRef.on('value', function (s) { state.orders = s.val() || {}; emit(); }, function () { state.orders = {}; emit(); });
+              fb.ref('requests').on('value', function (s) { state.requests = s.val() || {}; emit(); }, function () { state.requests = {}; emit(); }); }
             emit();
           });
         })
@@ -172,6 +174,16 @@
       settings: function () { return state.settings; },
       orders: function () { return Object.keys(state.orders).map(function (k) { return state.orders[k]; }).filter(Boolean).sort(function (a, b) { return b.createdAt - a.createdAt; }); },
       user: function () { return state.user; },
+      requests: function () { return Object.keys(state.requests).map(function (k) { return Object.assign({ id: k }, state.requests[k]); }).sort(function (a, b) { return b.createdAt - a.createdAt; }); },
+      saveRequest: function (id, data) {
+        id = id || 'R' + Date.now().toString(36).toUpperCase();
+        if (!live) { state.requests[id] = Object.assign(state.requests[id] || {}, data); ls('requests', state.requests); emit(); return Promise.resolve(id); }
+        return fb.ref('requests/' + id).update(data).then(function () { return id; });
+      },
+      deleteRequest: function (id) {
+        if (!live) { delete state.requests[id]; ls('requests', state.requests); emit(); return Promise.resolve(); }
+        return fb.ref('requests/' + id).remove();
+      },
 
       placeOrder: function (o) {
         var track = { status: o.status, total: o.total, paid: false, payment: o.payment, createdAt: o.createdAt, updatedAt: o.createdAt, items: o.items.reduce(function (n, i) { return n + i.qty; }, 0) };
@@ -548,14 +560,14 @@
     var today = orders.filter(function (o) { return o.createdAt >= dayStart; }).length;
 
     app.innerHTML = '<div class="wrap admin">' + (Store.live ? '' : '<div class="demo">Demo mode: orders are saved in this browser only. <button class="upl" id="clrDemo">Clear sample orders</button></div>') +
-      '<div class="adm-top"><h1>Manager</h1><div class="tabs">' + [['orders', 'Orders' + (newCount ? ' (' + newCount + ')' : '')], ['queue', 'Print queue'], ['calc', 'Calculator'], ['products', 'Products'], ['settings', 'Settings']].map(function (t) { return '<button data-tab="' + t[0] + '" class="' + (adm.tab === t[0] ? 'on' : '') + '">' + t[1] + '</button>'; }).join('') +
+      '<div class="adm-top"><h1>Manager</h1><div class="tabs">' + [['orders', 'Orders' + (newCount ? ' (' + newCount + ')' : '')], ['queue', 'Print queue'], ['requests', 'Design requests' + (function () { var n = Store.requests().filter(function (r) { return r.status !== 'done'; }).length; return n ? ' (' + n + ')' : ''; })()], ['calc', 'Calculator'], ['products', 'Products'], ['settings', 'Settings']].map(function (t) { return '<button data-tab="' + t[0] + '" class="' + (adm.tab === t[0] ? 'on' : '') + '">' + t[1] + '</button>'; }).join('') +
       '</div><button class="btn sec" id="logout" style="min-height:42px;padding:8px 14px;font-size:14px">Log out</button></div>' +
       '<div class="kpis"><div class="kpi o"><small>New orders</small><b>' + newCount + '</b></div><div class="kpi"><small>Orders today</small><b>' + today + '</b></div><div class="kpi g"><small>Sales · profit this month</small><b>' + money(revMonth) + ' · ' + money(profMonth) + '</b></div><div class="kpi"><small>To collect · in queue</small><b>' + money(toCollect) + ' · ' + inQueue + '</b></div></div>' +
       '<div id="admBody"></div></div>';
     $$('[data-tab]').forEach(function (b) { b.onclick = function () { adm.tab = b.dataset.tab; renderAdmin(); }; });
     $('#logout').onclick = function () { Store.logout(); viewAdmin(); };
     var cd = $('#clrDemo'); if (cd) cd.onclick = function () { Store.clearDemo(); toast('Sample orders removed'); };
-    ({ orders: admOrders, queue: admQueue, calc: admCalc, products: admProducts, settings: admSettings })[adm.tab]();
+    ({ orders: admOrders, queue: admQueue, requests: admRequests, calc: admCalc, products: admProducts, settings: admSettings })[adm.tab]();
   }
 
   function admOrders() {
@@ -614,7 +626,7 @@
       (c.notes ? '<span>Notes</span><b>' + esc(c.notes) + '</b>' : '') +
       '<span>Payment</span><b>' + (o.payment === 'whish' ? 'Whish' : 'Cash on delivery') + ' · <label class="switch" style="display:inline-flex"><input type="checkbox" id="mPaid"' + (o.paid ? ' checked' : '') + '> paid</label></b>' +
       '<span>Internal note</span><input id="mNote" class="search" style="min-width:0" placeholder="Only you see this" value="' + esc(o.note || '') + '"></div>' +
-      '<div class="actions"><a class="btn wa" id="mWa" target="_blank" rel="noopener">WhatsApp customer</a><button class="btn sec" id="mCpMsg">Copy message</button><button class="btn sec" id="mCpAddr">Copy for driver</button></div>' +
+      '<div class="actions">' + (o.items.some(function (i) { return i.id === 'my-village' || (i.text && i.id !== 'design'); }) ? '<button class="btn pri" id="mReq">Request 3MF</button>' : '') + '<a class="btn wa" id="mWa" target="_blank" rel="noopener">WhatsApp customer</a><button class="btn sec" id="mCpMsg">Copy message</button><button class="btn sec" id="mCpAddr">Copy for driver</button></div>' +
       '<p class="muted" style="font-size:13px;margin:12px 0 0" id="mMsgPrev"></p>', function (box, close) {
         var setWa = function () { var msg = CUSTOMER_MSG[o.status](o); box.querySelector('#mWa').href = waLink(c.phone, msg); box.querySelector('#mMsgPrev').textContent = 'Message for “' + (STATUSES.filter(function (s) { return s.k === o.status; })[0].l) + '”: ' + msg; return msg; };
         setWa();
@@ -626,9 +638,57 @@
         });
         box.querySelector('#mPaid').onchange = function (e) { Store.updateOrder(o.code, { paid: e.target.checked }).then(function () { o.paid = e.target.checked; renderAdmin(); toast(e.target.checked ? 'Marked paid' : 'Marked unpaid'); }); };
         var nt; box.querySelector('#mNote').oninput = function (e) { clearTimeout(nt); nt = setTimeout(function () { Store.updateOrder(o.code, { note: e.target.value }); }, 600); };
+        var rqb = box.querySelector('#mReq'); if (rqb) rqb.onclick = function () {
+          var it = o.items.filter(function (i) { return i.id === 'my-village'; })[0] || o.items.filter(function (i) { return i.text; })[0];
+          var data = { type: it.id === 'my-village' ? 'map' : 'custom', title: it.id === 'my-village' ? (it.text || '') : it.name + (it.text ? ' with “' + it.text + '”' : ''), base: it.color === 'white' ? 'white' : 'black', mapc: it.color === 'white' ? 'green' : 'white', place: o.customer.region || '', notes: '', size: '', order: o.code, status: 'sent', createdAt: Date.now() };
+          Store.saveRequest(null, data).then(function (id) { data.id = id; copy(requestText(data), 'Copied — paste it in your Claude chat'); close(); adm.tab = 'requests'; renderAdmin(); });
+        };
         box.querySelector('#mCpMsg').onclick = function () { copy(setWa(), 'Message copied'); };
         box.querySelector('#mCpAddr').onclick = function () { copy(o.code + '\n' + c.name + ' — ' + c.phone + '\n' + (o.method === 'pickup' ? 'PICKUP' : c.address + ', ' + c.town + ' (' + c.region + ')') + '\nCollect: ' + (o.paid ? '$0 (paid)' : money(o.total)), 'Driver details copied'); };
       });
+  }
+
+
+  // ---------- design requests (files Claude makes) ----------
+  var REQ_STATUS = [['new', 'New'], ['sent', 'Sent to Claude'], ['ready', 'File ready'], ['done', 'Printed']];
+  function requestText(r) {
+    var t = '3DBlaze design request ' + r.id + '\n';
+    if (r.type === 'map') t += 'Product: "My Village" map (.3mf for Bambu Studio)\nVillage / name on it: ' + r.title + (r.place ? '\nWhere: ' + r.place : '') + '\nColours: base ' + (r.base || 'black') + ', map ' + (r.mapc || 'white') + ', name ' + (r.mapc || 'white') + ', pin red';
+    else t += 'Product: custom design (.3mf for Bambu Studio)\nWhat: ' + r.title;
+    if (r.size) t += '\nSize: ' + r.size;
+    if (r.notes) t += '\nNotes: ' + r.notes;
+    if (r.order) t += '\nFor order: ' + r.order;
+    return t;
+  }
+  function admRequests() {
+    var list = Store.requests();
+    $('#admBody').innerHTML = '<div class="calc"><form class="panel" id="rq" style="display:grid;gap:12px;align-self:start">' +
+      '<h3 style="margin:0">New design request</h3><p class="muted" style="margin:0;font-size:14px">Write what you need, press <b>Copy for Claude</b>, and paste it in your Claude chat. Claude makes the .3mf for Bambu Studio and sends it back.</p>' +
+      '<div class="paysel"><label class="on"><input type="radio" name="type" value="map" checked><span><b>Village map</b><small>Lebanon + pin + name</small></span></label><label><input type="radio" name="type" value="custom"><span><b>Custom</b><small>Anything else</small></span></label></div>' +
+      '<label class="field" id="rqT">Village / name on it<input name="title" placeholder="e.g. Hadchit" required></label>' +
+      '<label class="field" id="rqP">Where is it? (district, optional)<input name="place" placeholder="e.g. Bsharri district"></label>' +
+      '<div class="grid2" id="rqC"><label class="field">Base colour<select name="base"><option>black</option><option>white</option><option>red</option><option>green</option></select></label><label class="field">Map & name colour<select name="mapc"><option>white</option><option>black</option><option>red</option><option>green</option></select></label></div>' +
+      '<label class="field">Size (optional)<input name="size" placeholder="Standard is 9 × 15 cm"></label>' +
+      '<label class="field">Notes<textarea name="notes" placeholder="Anything special…"></textarea></label>' +
+      '<label class="field">Order code (optional)<input name="order" placeholder="3DB-XXXXX"></label>' +
+      '<div class="err" id="rqErr"></div><button class="btn pri">Save & copy for Claude</button></form>' +
+      '<div style="display:grid;gap:10px;align-self:start">' + (list.length ? list.map(function (r) {
+        return '<div class="panel" style="padding:18px"><div style="display:flex;justify-content:space-between;gap:10px;align-items:start"><div><b>' + esc(r.type === 'map' ? 'Village map — ' + r.title : r.title) + '</b><div class="muted" style="font-size:13px">' + esc(r.id) + ' · ' + fmtDate(r.createdAt) + (r.order ? ' · ' + esc(r.order) : '') + '</div></div>' +
+          '<select data-rs="' + r.id + '" class="search" style="flex:none;min-width:0;width:auto">' + REQ_STATUS.map(function (s) { return '<option value="' + s[0] + '"' + (r.status === s[0] ? ' selected' : '') + '>' + s[1] + '</option>'; }).join('') + '</select></div>' +
+          (r.notes ? '<p style="font-size:14px;margin:8px 0 0">' + esc(r.notes) + '</p>' : '') +
+          '<div class="actions" style="margin-top:12px"><button class="btn sec" data-rc="' + r.id + '">Copy for Claude</button><button class="btn sec" data-rd="' + r.id + '">Delete</button></div></div>';
+      }).join('') : '<div class="panel empty"><p class="muted">No requests yet. When a “My Village” order comes in, open it and press “Request 3MF”.</p></div>') + '</div></div>';
+    var f = $('#rq');
+    var sync = function () { var m = f.type.value === 'map'; $('#rqP').style.display = m ? '' : 'none'; $('#rqC').style.display = m ? '' : 'none'; $('#rqT').firstChild.textContent = m ? 'Village / name on it' : 'What should Claude design?'; $$('.paysel label', f).forEach(function (l) { l.classList.toggle('on', l.querySelector('input').checked); }); };
+    f.addEventListener('change', sync); sync();
+    f.onsubmit = function (e) {
+      e.preventDefault(); if (!f.title.value.trim()) { $('#rqErr').textContent = 'Write the village or what you need.'; return; }
+      var data = { type: f.type.value, title: f.title.value.trim(), place: f.place.value.trim(), base: f.base.value, mapc: f.mapc.value, size: f.size.value.trim(), notes: f.notes.value.trim(), order: f.order.value.trim().toUpperCase(), status: 'sent', createdAt: Date.now() };
+      Store.saveRequest(null, data).then(function (id) { data.id = id; copy(requestText(data), 'Copied — paste it in your Claude chat'); admRequests(); });
+    };
+    $$('[data-rc]').forEach(function (b) { b.onclick = function () { var r = list.filter(function (x) { return x.id === b.dataset.rc; })[0]; copy(requestText(r), 'Copied — paste it in your Claude chat'); if (r.status === 'new') Store.saveRequest(r.id, { status: 'sent' }); }; });
+    $$('[data-rs]').forEach(function (s) { s.onchange = function () { Store.saveRequest(s.dataset.rs, { status: s.value }).then(function () { toast('Updated'); }); }; });
+    $$('[data-rd]').forEach(function (b) { b.onclick = function () { confirmBox('Delete this request?', 'Delete', function () { Store.deleteRequest(b.dataset.rd).then(admRequests); }); }; });
   }
 
   function admQueue() {

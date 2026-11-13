@@ -1,6 +1,9 @@
 {
   "rules": {
-    "admins": { ".read": false, ".write": false },
+    "admins": {
+      ".read": false,
+      ".write": false
+    },
     "products": {
       ".read": true,
       ".write": "auth != null && auth.token.email === '3dbllaze@gmail.com' && auth.token.email_verified === true"
@@ -25,6 +28,10 @@
         ".read": true,
         ".write": "!data.exists() || (auth != null && auth.token.email === '3dbllaze@gmail.com' && auth.token.email_verified === true)"
       }
+    },
+    "requests": {
+      ".read": "auth != null && auth.token.email === '3dbllaze@gmail.com' && auth.token.email_verified === true",
+      ".write": "auth != null && auth.token.email === '3dbllaze@gmail.com' && auth.token.email_verified === true"
     }
   }
 }
