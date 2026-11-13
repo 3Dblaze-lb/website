@@ -1,0 +1,818 @@
+/* 3DBlaze storefront + order manager */
+(function () {
+  'use strict';
+
+  // ---------- catalog (defaults; admin can override price / availability / photos) ----------
+  var CATALOG = [
+    { id: 'flag-keychain', col: 'lebanon', name: 'Lebanese Flag Keychain', price: 4, tag: 'Bestseller', printMin: 24,
+      blurb: 'Red, white and cedar green, on your keys every day.',
+      desc: 'Our Lebanese flag in three real colours of PLA, printed in one go so the cedar sits flush in the white band. Light, tough and made to be carried.',
+      specs: ['About 6 × 4 cm', '3-colour print, no paint, no stickers', 'Metal key ring included'] },
+    { id: 'flag-3pack', art: 'flag-keychain', col: 'lebanon', name: 'Flag Keychain — Pack of 3', price: 10, was: 12, tag: 'Save $2', printMin: 72,
+      blurb: 'One for you, two to give.',
+      desc: 'Three Lebanese flag keychains for the family, the car keys and the friend abroad. Perfect for 22 November.',
+      specs: ['3 keychains, about 6 × 4 cm each', 'Metal key rings included', 'Great for diaspora gifts'] },
+    { id: 'my-village', col: 'lebanon', name: '“My Village” Desk Map', price: 15, tag: 'Personalized', printMin: 150,
+      colors: ['black', 'white'], text: { label: 'Your village or town', max: 18, ph: 'e.g. Hadchit', required: true },
+      blurb: 'Lebanon in 3D, with your village on it.',
+      desc: 'A raised map of Lebanon standing on a base with your village name printed in. We place a red pin where your village is. A desk piece that starts conversations.',
+      specs: ['About 14 cm tall', 'Your village name on the base (up to 18 letters)', 'Red pin placed on your village', 'Base in black or white'] },
+
+    { id: 'name-ornament', col: 'xmas', name: 'Personalized Name Ornament', price: 7, tag: 'Personalized', printMin: 40,
+      colors: ['red', 'green', 'white'], text: { label: 'Name on the ornament', max: 10, ph: 'e.g. Maria', required: true },
+      blurb: 'A name for every branch of the tree.',
+      desc: 'A round ornament with a name and the year, printed in two colours. Order one for each person in the family.',
+      specs: ['About 7 cm across', 'Name up to 10 letters + “2026”', 'Gold string included'] },
+    { id: 'cedar-ornament', col: 'xmas', name: 'Cedar Tree Ornament', price: 6, tag: 'New', printMin: 36,
+      colors: ['green', 'red', 'white'],
+      blurb: 'The cedar, hanging on your Christmas tree.',
+      desc: 'Our own cedar design, made to hang. A little Lebanon on the tree this year.',
+      specs: ['About 8 cm tall', 'Choose green, red or white', 'Gold string included'] },
+    { id: 'snowflake-set', col: 'xmas', name: 'Snowflake Set of 3', price: 9, printMin: 60,
+      blurb: 'Three different flakes, light as anything.',
+      desc: 'Three snowflake ornaments in three sizes. Hang them on the tree, a window or the gift wrap.',
+      specs: ['3 pieces: 6, 7 and 8 cm', 'White PLA', 'Strings included'] },
+    { id: 'star-topper', col: 'xmas', name: 'Blaze Star Tree Topper', price: 14, printMin: 180,
+      blurb: 'The top of the tree, with a spark.',
+      desc: 'A bold red star with our lightning bolt, on a spring that grips the top of the tree.',
+      specs: ['About 15 cm wide', 'Fits most tree tops', 'Red + white'] },
+    { id: 'mini-nativity', col: 'xmas', name: 'Mini Nativity Scene', price: 22, tag: 'Limited', printMin: 300,
+      blurb: 'The crib, small enough for a shelf.',
+      desc: 'A simple, modern nativity: stable, Mary, Joseph and the Child under the star. Pieces stand on their own.',
+      specs: ['Stable about 12 cm wide', '5 pieces', 'Limited number before Christmas'] },
+    { id: 'gift-bundle', col: 'xmas', name: 'Christmas Gift Bundle', price: 15, was: 17, tag: 'Save $2', printMin: 100,
+      text: { label: 'Name for the ornament', max: 10, ph: 'e.g. Elie', required: true },
+      blurb: 'Flag keychain + cedar ornament + name ornament, boxed.',
+      desc: 'Our three favourites in one gift box: a Lebanese flag keychain, a cedar ornament and a personalized name ornament.',
+      specs: ['3 pieces in a gift box', 'Name on the ornament up to 10 letters', 'Ready to give'] }
+  ];
+  var COLOR_HEX = { black: '#30343B', white: '#F2F3F5', red: '#E2262B', green: '#1FA14E', orange: '#FF6A1F' };
+  var STATUSES = [
+    { k: 'new', l: 'New' }, { k: 'confirmed', l: 'Confirmed' }, { k: 'printing', l: 'Printing' },
+    { k: 'ready', l: 'Ready' }, { k: 'out', l: 'Out for delivery' }, { k: 'delivered', l: 'Delivered' }, { k: 'cancelled', l: 'Cancelled' }
+  ];
+  var CUSTOMER_STEPS = [
+    { k: 'new', l: 'Order received', d: 'We got it and will confirm on WhatsApp.' },
+    { k: 'confirmed', l: 'Confirmed', d: 'Your order is in the print queue.' },
+    { k: 'printing', l: 'Printing', d: 'Layer by layer on our printer.' },
+    { k: 'ready', l: 'Ready', d: 'Checked, packed and waiting for the driver.' },
+    { k: 'out', l: 'Out for delivery', d: 'On its way to you.' },
+    { k: 'delivered', l: 'Delivered', d: 'Enjoy it!' }
+  ];
+  var REGIONS = [
+    ['Beirut', 'beirut'], ['Metn', 'mount'], ['Baabda', 'mount'], ['Aley', 'mount'], ['Chouf', 'mount'],
+    ['Keserwan', 'mount'], ['Jbeil (Byblos)', 'mount'], ['North (Tripoli, Batroun, Koura, Zgharta)', 'other'],
+    ['Akkar', 'other'], ['South (Saida, Tyre, Jezzine)', 'other'], ['Nabatieh', 'other'],
+    ['Bekaa (Zahle, West Bekaa)', 'other'], ['Baalbek-Hermel', 'other']
+  ];
+  var DEFAULT_SETTINGS = {
+    whatsapp: '96178801186', whish: '', whishName: '3DBlaze', instagram: '3dblaze.lb',
+    feeBeirut: 3, feeMount: 3, feeOther: 5, freeOver: 40, pickup: true, open: true,
+    banner: '🇱🇧 Independence Day drop is live — order by 19 Nov for delivery before the 22nd',
+    xmasCutoff: '2026-12-18',
+    calcPla: 25, calcMachine: 0.35, calcPack: 0.25, calcFail: 10, calcMarkup: 3, calcMin: 5
+  };
+
+  // ---------- utils ----------
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function money(v) { v = Math.round((+v || 0) * 100) / 100; return '$' + (v % 1 === 0 ? v : v.toFixed(2)); }
+  function ls(k, v) {
+    try { if (v === undefined) { var s = localStorage.getItem('3db:' + k); return s ? JSON.parse(s) : null; } localStorage.setItem('3db:' + k, JSON.stringify(v)); } catch (e) { mem[k] = v; return v === undefined ? (mem[k] || null) : null; }
+  }
+  var mem = {};
+  function toast(msg) { var t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(function () { t.classList.remove('show'); }, 2200); }
+  function fmtDate(t) { var d = new Date(t); return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ' · ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }); }
+  function newCode() { var a = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', s = ''; var r = new Uint32Array(5); (window.crypto || {}).getRandomValues ? crypto.getRandomValues(r) : r.forEach(function (_, i) { r[i] = Math.random() * 1e9; }); for (var i = 0; i < 5; i++) s += a[r[i] % a.length]; return '3DB-' + s; }
+  function waLink(num, text) { num = String(num || '').replace(/\D/g, ''); if (num && num.length <= 8) num = '961' + num.replace(/^0/, ''); return 'https://wa.me/' + num + '?text=' + encodeURIComponent(text); }
+  function copy(text, ok) {
+    try { navigator.clipboard.writeText(text).then(function () { toast(ok || 'Copied'); }, function () { fallbackCopy(text, ok); }); } catch (e) { fallbackCopy(text, ok); }
+  }
+  function fallbackCopy(text, ok) { var ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); toast(ok || 'Copied'); } catch (e) { toast('Select and copy manually'); } ta.remove(); }
+  function modal(html, onMount) {
+    var m = document.createElement('div'); m.className = 'modal';
+    m.innerHTML = '<div class="box"><button class="x" aria-label="Close">✕</button>' + html + '</div>';
+    document.body.appendChild(m); document.body.style.overflow = 'hidden';
+    var close = function () { m.remove(); document.body.style.overflow = ''; };
+    m.addEventListener('click', function (e) { if (e.target === m || e.target.classList.contains('x')) close(); });
+    if (onMount) onMount(m.querySelector('.box'), close);
+    return close;
+  }
+  function confirmBox(msg, yes, cb) {
+    modal('<h3 style="font-size:18px;margin:0 40px 12px 0">' + esc(msg) + '</h3><div class="actions" style="margin-top:20px"><button class="btn pri" data-y>' + esc(yes) + '</button><button class="btn sec" data-n>Keep it</button></div>', function (box, close) {
+      box.querySelector('[data-y]').onclick = function () { close(); cb(); };
+      box.querySelector('[data-n]').onclick = close;
+    });
+  }
+  function resizeImage(file, max, cb) {
+    var r = new FileReader();
+    r.onload = function () {
+      var img = new Image();
+      img.onload = function () {
+        var s = Math.min(1, max / Math.max(img.width, img.height)), c = document.createElement('canvas');
+        c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        cb(c.toDataURL('image/jpeg', 0.82));
+      };
+      img.src = r.result;
+    };
+    r.readAsDataURL(file);
+  }
+
+  // ---------- data store: demo (this browser) or live (Firebase) ----------
+  var Store = (function () {
+    var cfg = window.BLAZE_FIREBASE, live = !!(cfg && cfg.apiKey);
+    var state = { overrides: {}, extra: {}, settings: Object.assign({}, DEFAULT_SETTINGS), orders: {}, user: null };
+    var subs = [];
+    function emit() { subs.forEach(function (f) { f(); }); }
+    var fb = null;
+
+    function loadScript(src) { return new Promise(function (res, rej) { var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); }); }
+
+    function init() {
+      if (!live) {
+        state.overrides = ls('overrides') || {}; state.extra = ls('extra') || {};
+        state.settings = Object.assign({}, DEFAULT_SETTINGS, ls('settings') || {});
+        state.orders = ls('orders') || {};
+        state.user = ls('demoAdmin') ? { email: 'demo' } : null;
+        window.addEventListener('storage', function () { state.orders = ls('orders') || {}; emit(); });
+        return Promise.resolve();
+      }
+      var v = '10.12.2', base = 'https://www.gstatic.com/firebasejs/' + v + '/';
+      return loadScript(base + 'firebase-app-compat.js')
+        .then(function () { return Promise.all([loadScript(base + 'firebase-database-compat.js'), loadScript(base + 'firebase-auth-compat.js')]); })
+        .then(function () {
+          firebase.initializeApp(cfg); fb = firebase.database();
+          fb.ref('products').on('value', function (s) { state.overrides = s.val() || {}; emit(); });
+          fb.ref('extraProducts').on('value', function (s) { state.extra = s.val() || {}; emit(); });
+          fb.ref('settings').on('value', function (s) { state.settings = Object.assign({}, DEFAULT_SETTINGS, s.val() || {}); emit(); });
+          var ordersRef = null;
+          firebase.auth().onAuthStateChanged(function (u) {
+            state.user = u ? { email: u.email, uid: u.uid } : null;
+            if (ordersRef) { ordersRef.off(); ordersRef = null; state.orders = {}; }
+            if (u) { ordersRef = fb.ref('orders'); ordersRef.on('value', function (s) { state.orders = s.val() || {}; emit(); }, function () { state.orders = {}; emit(); }); }
+            emit();
+          });
+        })
+        .catch(function () { live = false; toast('Could not reach the server — showing demo mode'); return init(); });
+    }
+
+    function products() {
+      var list = CATALOG.map(function (p) { return Object.assign({}, p, state.overrides[p.id] || {}); });
+      Object.keys(state.extra || {}).forEach(function (k) { var e = state.extra[k]; if (e && e.name) list.push(Object.assign({ id: k, col: 'lebanon', price: 0, specs: [] }, e, state.overrides[k] || {})); });
+      return list.filter(function (p) { return !p.removed; });
+    }
+
+    return {
+      get live() { return live; },
+      init: init, on: function (f) { subs.push(f); },
+      products: products,
+      product: function (id) { return products().filter(function (p) { return p.id === id; })[0]; },
+      settings: function () { return state.settings; },
+      orders: function () { return Object.keys(state.orders).map(function (k) { return state.orders[k]; }).filter(Boolean).sort(function (a, b) { return b.createdAt - a.createdAt; }); },
+      user: function () { return state.user; },
+
+      placeOrder: function (o) {
+        var track = { status: o.status, total: o.total, paid: false, payment: o.payment, createdAt: o.createdAt, updatedAt: o.createdAt, items: o.items.reduce(function (n, i) { return n + i.qty; }, 0) };
+        if (!live) {
+          state.orders[o.code] = o; ls('orders', state.orders);
+          var tr = ls('tracking') || {}; tr[o.code] = track; ls('tracking', tr); emit(); return Promise.resolve(o);
+        }
+        return fb.ref('orders/' + o.code).set(o).then(function () { return fb.ref('tracking/' + o.code).set(track); }).then(function () { return o; });
+      },
+      track: function (code) {
+        if (!live) { var tr = ls('tracking') || {}; return Promise.resolve(tr[code] || null); }
+        return fb.ref('tracking/' + code).once('value').then(function (s) { return s.val(); });
+      },
+      updateOrder: function (code, patch) {
+        var o = state.orders[code]; if (!o) return Promise.reject();
+        var now = Date.now();
+        if (patch.status && patch.status !== o.status) patch.history = (o.history || []).concat([{ s: patch.status, t: now }]);
+        var tpatch = { updatedAt: now };
+        if ('status' in patch) tpatch.status = patch.status;
+        if ('paid' in patch) tpatch.paid = patch.paid;
+        if (!live) {
+          Object.assign(o, patch); ls('orders', state.orders);
+          var tr = ls('tracking') || {}; tr[code] = Object.assign(tr[code] || {}, tpatch); ls('tracking', tr); emit(); return Promise.resolve();
+        }
+        return fb.ref('orders/' + code).update(patch).then(function () { return fb.ref('tracking/' + code).update(tpatch); });
+      },
+      saveProduct: function (id, patch) {
+        if (!live) { state.overrides[id] = Object.assign(state.overrides[id] || {}, patch); ls('overrides', state.overrides); emit(); return Promise.resolve(); }
+        return fb.ref('products/' + id).update(patch);
+      },
+      addProduct: function (p) {
+        var id = 'p' + Date.now().toString(36);
+        if (!live) { state.extra[id] = p; ls('extra', state.extra); emit(); return Promise.resolve(id); }
+        return fb.ref('extraProducts/' + id).set(p).then(function () { return id; });
+      },
+      saveSettings: function (s) {
+        if (!live) { state.settings = Object.assign({}, state.settings, s); ls('settings', state.settings); emit(); return Promise.resolve(); }
+        return fb.ref('settings').update(s);
+      },
+      login: function (email, pass) {
+        if (!live) { if (pass === 'blaze2026') { state.user = { email: 'demo' }; ls('demoAdmin', true); emit(); return Promise.resolve(); } return Promise.reject(new Error('Wrong passcode')); }
+        return firebase.auth().signInWithEmailAndPassword(email, pass);
+      },
+      logout: function () { if (!live) { state.user = null; ls('demoAdmin', false); emit(); return; } firebase.auth().signOut(); },
+      seedDemo: function () {
+        if (live) return;
+        var now = Date.now(), H = 3600e3;
+        var mk = function (code, ago, name, phone, region, town, items, pay, status, paid) {
+          var sub = items.reduce(function (n, i) { return n + i.price * i.qty; }, 0), del = region === 'Beirut' || region === 'Metn' ? 3 : 5;
+          return { code: code, demo: true, createdAt: now - ago * H, status: status, paid: paid, payment: pay, method: 'delivery',
+            customer: { name: name, phone: phone, region: region, town: town, address: 'Near the church, 2nd floor', notes: '' },
+            items: items, subtotal: sub, delivery: del, total: sub + del, history: [{ s: 'new', t: now - ago * H }] };
+        };
+        var it = function (id, qty, color, text) { var p = CATALOG.filter(function (x) { return x.id === id; })[0]; return { id: id, name: p.name, price: p.price, qty: qty, color: color || null, text: text || null }; };
+        [
+          mk('3DB-DEMO1', 1, 'Rita K.', '70123456', 'Metn', 'Jdeideh', [it('my-village', 1, 'black', 'Bikfaya'), it('flag-keychain', 2)], 'whish', 'new', false),
+          mk('3DB-DEMO2', 5, 'Georges H.', '03987654', 'Keserwan', 'Jounieh', [it('name-ornament', 4, 'red', 'Elie'), it('cedar-ornament', 2, 'green')], 'cash', 'confirmed', false),
+          mk('3DB-DEMO3', 26, 'Maya S.', '76111222', 'Beirut', 'Achrafieh', [it('flag-3pack', 1)], 'cash', 'printing', false),
+          mk('3DB-DEMO4', 50, 'Charbel A.', '71333444', 'North (Tripoli, Batroun, Koura, Zgharta)', 'Batroun', [it('my-village', 1, 'white', 'Hadchit')], 'whish', 'delivered', true)
+        ].forEach(function (o) { state.orders[o.code] = o; });
+        ls('orders', state.orders); emit();
+      },
+      clearDemo: function () { if (live) return; Object.keys(state.orders).forEach(function (k) { if (state.orders[k].demo) delete state.orders[k]; }); ls('orders', state.orders); emit(); }
+    };
+  })();
+
+  // ---------- cart ----------
+  var Cart = {
+    items: ls('cart') || [],
+    save: function () { ls('cart', this.items); $('#cartCount').textContent = this.count(); },
+    count: function () { return this.items.reduce(function (n, i) { return n + i.qty; }, 0); },
+    add: function (p, qty, color, text) {
+      var key = p.id + '|' + (color || '') + '|' + (text || '');
+      var ex = this.items.filter(function (i) { return i.key === key; })[0];
+      if (ex) ex.qty += qty; else this.items.push({ key: key, id: p.id, qty: qty, color: color || null, text: text || null });
+      this.save();
+    },
+    lines: function () {
+      return this.items.map(function (i) { var p = Store.product(i.id); return p ? Object.assign({}, i, { p: p, total: p.price * i.qty }) : null; }).filter(Boolean);
+    },
+    subtotal: function () { return this.lines().reduce(function (n, l) { return n + l.total; }, 0); },
+    clear: function () { this.items = []; this.save(); }
+  };
+
+  function thumb(p, opts) {
+    if (p.photo) return '<img src="' + p.photo + '" alt="' + esc(p.name) + '">';
+    if ((p.art || p.id) === 'my-village' && window.BlazeArt) return '<div class="mapart">' + BlazeArt.draw('my-village', opts || { color: 'black' }) + '</div>';
+    return '<div class="ph"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="13" width="36" height="26" rx="6" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M17 13 l3-5 h8 l3 5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><circle cx="24" cy="26" r="7" fill="none" stroke="currentColor" stroke-width="2.5"/></svg><span>' + esc(p.name) + '</span><small>Photo coming soon</small></div>';
+  }
+  function fee(region) {
+    var s = Store.settings(), g = (REGIONS.filter(function (r) { return r[0] === region; })[0] || [0, 'other'])[1];
+    return g === 'beirut' ? +s.feeBeirut : g === 'mount' ? +s.feeMount : +s.feeOther;
+  }
+
+  // ---------- views ----------
+  var app = $('#app');
+
+  function card(p) {
+    var out = p.soldOut || p.available === false;
+    return '<a class="pcard" href="#p-' + p.id + '"><div class="art">' + thumb(p) +
+      (out ? '<span class="tag out">Sold out</span>' : p.tag ? '<span class="tag">' + esc(p.tag) + '</span>' : '') +
+      '</div><div class="info"><h3>' + esc(p.name) + '</h3><div class="muted" style="font-size:14px">' + esc(p.blurb || '') + '</div>' +
+      '<div class="row"><span class="price">' + money(p.price) + (p.was ? '<s>' + money(p.was) + '</s>' : '') + '</span><span class="add">' + (out ? 'View' : 'Order') + '</span></div></div></a>';
+  }
+
+  function viewHome(anchor) {
+    var s = Store.settings(), all = Store.products();
+    var leb = all.filter(function (p) { return p.col === 'lebanon'; }), xm = all.filter(function (p) { return p.col === 'xmas'; });
+    var cut = new Date(s.xmasCutoff + 'T23:59:00');
+    app.innerHTML =
+      '<section class="hero"><div class="wrap grid"><div>' +
+        '<div class="eyebrow">3D printed to order</div>' +
+        '<h1 style="margin-top:14px">Ideas you<br>can <span class="bl">hold</span>.</h1>' +
+        '<p class="lead">Thoughtful 3D printed gifts and pieces for the home, made to order on our own printers and delivered anywhere in Lebanon.</p>' +
+        '<div style="display:flex;gap:12px;flex-wrap:wrap"><a class="btn pri" href="#shop">Shop the Lebanon drop</a><a class="btn sec" href="#christmas">Christmas collection</a></div>' +
+        '<div class="chips"><span class="chip"><i></i>Cash on delivery</span><span class="chip"><i style="background:var(--blue)"></i>Whish accepted</span><span class="chip"><i style="background:#8C96A4"></i>Ready in 2–4 days</span></div>' +
+      '</div><div class="stage"><div class="art mapart" id="heroArt">' + BlazeArt.draw('my-village', { text: 'Your village', color: 'black' }) + '</div>' +
+        '<div class="try"><span>Try it:</span><input id="heroInput" maxlength="18" placeholder="Type your village…" aria-label="Type your village"><a class="btn pri" style="min-height:42px;padding:8px 16px;font-size:14px" id="heroGo" href="#p-my-village">Order</a></div>' +
+      '</div></div>' +
+      '<div class="wrap"><div class="count" id="countdown"></div></div></section>' +
+
+      '<section class="blk" id="sec-shop" style="padding-top:40px"><div class="wrap"><div class="sechead"><div><div class="eyebrow">The Lebanon drop</div><h2 style="margin-top:10px">For 22 November, and every day after.</h2><p>Our launch line. Made for the house, the car keys, and the cousins abroad.</p></div></div>' +
+        '<div class="products">' + leb.map(card).join('') + '</div></div></section>' +
+
+      '<section class="blk xmas" id="sec-christmas"><div class="snow"></div><div class="wrap" style="position:relative"><div class="sechead"><div><div class="eyebrow">Christmas 2026</div><h2 style="margin-top:10px">Printed for the tree.</h2><p>Ornaments with names, a cedar for the branches, a star for the top and a nativity for the shelf.</p></div>' +
+        '<div class="cut">Order by ' + cut.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }) + ' for delivery before Christmas</div></div>' +
+        '<div class="products">' + xm.map(card).join('') + '</div></div></section>' +
+
+      '<section class="blk"><div class="wrap"><div class="sechead"><div><div class="eyebrow">How it works</div><h2 style="margin-top:10px">From our printer to your door.</h2></div></div><div class="steps">' +
+        step(1, 'Pick', 'Choose a piece and a colour. Add a name or your village if you like.') +
+        step(2, 'We confirm', 'We send you a WhatsApp message to confirm the details.') +
+        step(3, 'We print', 'Printed and checked by hand in 2–4 days. Track it any time.') +
+        step(4, 'Delivered', 'Pay the driver in cash, or pay by Whish before delivery.') +
+      '</div></div></section>' +
+
+      '<section class="blk" style="padding-top:0"><div class="wrap"><div class="pay">' +
+        '<div class="paycard"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5v5M18 9.5v5"/></svg></div><h3>Cash on delivery</h3><p>Pay the driver when your order arrives. Delivery ' + money(s.feeBeirut) + ' in Beirut, ' + money(s.feeOther) + ' elsewhere' + (s.freeOver ? ', free over ' + money(s.freeOver) : '') + '.</p></div>' +
+        '<div class="paycard"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18h3"/><path d="M9.5 9.5l2 2 3.5-3.5"/></svg></div><h3>Whish Money</h3><p>Send the total to our Whish number with your order code. We print as soon as it lands.</p></div>' +
+      '</div></div></section>' +
+
+      '<section class="blk" id="sec-faq" style="padding-top:20px"><div class="wrap"><div class="sechead"><div><div class="eyebrow">FAQ</div><h2 style="margin-top:10px">Frequently asked questions</h2></div></div><div class="faq">' +
+        faq('How long does it take?', 'Most orders are printed in 2–4 days, then delivered within 1–2 days. Personalized pieces are printed one by one, so order early for 22 November and Christmas.') +
+        faq('Where do you deliver?', 'All over Lebanon through our delivery partner. Delivery is ' + money(s.feeBeirut) + ' in Beirut, ' + money(s.feeMount) + ' in Mount Lebanon and ' + money(s.feeOther) + ' everywhere else' + (s.freeOver ? '. Orders over ' + money(s.freeOver) + ' ship free' : '') + '.') +
+        faq('How do I pay?', 'Cash to the driver on delivery, or Whish Money. If you choose Whish, the payment details appear right after you order.') +
+        faq('What is it made of?', 'PLA, a plant-based plastic. It is strong and light, but keep it away from high heat like a car dashboard in summer.') +
+        faq('Can I order something custom?', 'Custom designs are coming soon. For now, send us a message on Instagram @' + esc(s.instagram) + ' and we will tell you what we can do.') +
+        faq('Where is my order?', 'Use <a href="#track" style="color:var(--accent2)">Track order</a> with the code you got when you ordered (it looks like 3DB-XXXXX).') +
+      '</div></div></section>';
+
+    countdown();
+    var hi = $('#heroInput');
+    hi.addEventListener('input', function () { $('#heroArt').innerHTML = BlazeArt.draw('my-village', { text: hi.value || 'Your village', color: 'black' }); });
+    $('#heroGo').addEventListener('click', function () { ls('prefillVillage', hi.value); });
+    if (anchor) { var el = $('#sec-' + anchor); if (el) setTimeout(function () { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 30); }
+    else window.scrollTo(0, 0);
+  }
+  function step(n, h, p) { return '<div class="step"><div class="n">' + n + '</div><h3>' + h + '</h3><p>' + p + '</p></div>'; }
+  function faq(q, a) { return '<details><summary>' + q + '</summary><p>' + a + '</p></details>'; }
+
+  var cdTimer;
+  function countdown() {
+    clearInterval(cdTimer);
+    var s = Store.settings();
+    var tick = function () {
+      var el = $('#countdown'); if (!el) return clearInterval(cdTimer);
+      var now = new Date(), indep = new Date('2026-11-22T00:00:00+02:00'), xmas = new Date('2026-12-25T00:00:00+02:00');
+      var target, title, sub;
+      if (now < indep) { target = indep; title = '<span class="flagbar"></span>Independence Day · 22 November'; sub = 'Order by 19 November to get it in time.'; }
+      else { target = xmas; title = 'Christmas · 25 December'; sub = 'Order by ' + new Date(s.xmasCutoff).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }) + ' for delivery before Christmas.'; }
+      var d = Math.max(0, target - now), D = Math.floor(d / 864e5), H = Math.floor(d / 36e5) % 24, M = Math.floor(d / 6e4) % 60, S = Math.floor(d / 1e3) % 60;
+      el.innerHTML = '<div><div style="font-family:var(--head);font-weight:700;font-size:18px">' + title + '</div><div class="muted" style="font-size:14px;margin-top:4px">' + sub + '</div></div>' +
+        '<div class="t">' + [[D, 'days'], [H, 'hours'], [M, 'min'], [S, 'sec']].map(function (u) { return '<div class="u"><b>' + (u[0] < 10 ? '0' : '') + u[0] + '</b><small>' + u[1] + '</small></div>'; }).join('') + '</div>';
+    };
+    tick(); cdTimer = setInterval(tick, 1000);
+  }
+
+  function viewProduct(id) {
+    var p = Store.product(id);
+    if (!p) { app.innerHTML = '<div class="wrap page empty"><h1>Not found</h1><a class="btn pri" href="#shop">Back to the shop</a></div>'; return; }
+    var out = p.soldOut || p.available === false;
+    var st = { color: p.colors ? p.colors[0] : null, text: '', qty: 1 };
+    if (p.id === 'my-village') st.text = ls('prefillVillage') || '';
+    app.innerHTML = '<div class="wrap"><a class="back" href="#' + (p.col === 'xmas' ? 'christmas' : 'shop') + '">← Back</a><div class="ppage">' +
+      '<div class="big" id="pArt"></div><div>' +
+      '<div class="eyebrow">' + (p.col === 'xmas' ? 'Christmas 2026' : 'The Lebanon drop') + '</div>' +
+      '<h1>' + esc(p.name) + '</h1><div class="price">' + money(p.price) + (p.was ? '<s>' + money(p.was) + '</s>' : '') + '</div>' +
+      '<p style="color:#3A4352;font-size:17px;margin:16px 0 0">' + esc(p.desc || p.blurb || '') + '</p>' +
+      (p.colors ? '<div class="opt"><span class="lab">Colour</span><div class="swatches">' + p.colors.map(function (c) { return '<button class="sw' + (c === st.color ? ' on' : '') + '" data-c="' + c + '"><i style="background:' + (COLOR_HEX[c] || c) + '"></i>' + c + '</button>'; }).join('') + '</div></div>' : '') +
+      (p.text ? '<div class="opt"><label class="field">' + esc(p.text.label) + '<input id="pText" maxlength="' + p.text.max + '" placeholder="' + esc(p.text.ph) + '" value="' + esc(st.text) + '"></label><div class="err" id="pErr"></div></div>' : '') +
+      '<div class="opt"><span class="lab">Quantity</span><div class="qty"><button data-q="-1" aria-label="Less">−</button><span id="pQty">1</span><button data-q="1" aria-label="More">+</button></div></div>' +
+      '<div class="buyrow"><button class="btn pri" id="pAdd"' + (out ? ' disabled' : '') + '>' + (out ? 'Sold out' : 'Add to cart') + '</button>' + (out ? '' : '<button class="btn sec" id="pBuy">Buy now</button>') + '</div>' +
+      '<div class="specs">' + (p.specs || []).map(function (s) { return '<div>' + esc(s) + '</div>'; }).join('') + '<div>Made to order in Lebanon · ready in 2–4 days</div><div>Cash on delivery or Whish</div></div>' +
+      '</div></div></div>';
+    var draw = function () { $('#pArt').innerHTML = thumb(p, { color: st.color, text: st.text || undefined }); };
+    draw();
+    $$('.sw').forEach(function (b) { b.onclick = function () { st.color = b.dataset.c; $$('.sw').forEach(function (x) { x.classList.toggle('on', x === b); }); draw(); }; });
+    var ti = $('#pText'); if (ti) ti.oninput = function () { st.text = ti.value.trim(); $('#pErr').textContent = ''; draw(); };
+    $$('[data-q]').forEach(function (b) { b.onclick = function () { st.qty = Math.max(1, Math.min(50, st.qty + +b.dataset.q)); $('#pQty').textContent = st.qty; }; });
+    var add = function () {
+      if (p.text && p.text.required && !st.text) { $('#pErr').textContent = 'Please write the ' + p.text.label.toLowerCase() + '.'; ti.focus(); return false; }
+      Cart.add(p, st.qty, st.color, st.text); return true;
+    };
+    if (!out) {
+      $('#pAdd').onclick = function () { if (add()) toast('Added to cart ✓'); };
+      $('#pBuy').onclick = function () { if (add()) location.hash = 'checkout'; };
+    }
+    window.scrollTo(0, 0);
+  }
+
+  function lineHTML(l, ctl) {
+    var opts = [l.color ? l.color : '', l.text ? '“' + l.text + '”' : ''].filter(Boolean).join(' · ');
+    return '<div class="line"><div class="th">' + thumb(l.p, { color: l.color, text: l.text }) + '</div><div><div class="nm">' + esc(l.p.name) + '</div><div class="meta">' + esc(opts) + (ctl ? '' : (opts ? ' · ' : '') + '× ' + l.qty) + '</div>' +
+      (ctl ? '<div class="ctl"><button data-k="' + esc(l.key) + '" data-d="-1">−</button><b>' + l.qty + '</b><button data-k="' + esc(l.key) + '" data-d="1">+</button><button class="rm" data-rm="' + esc(l.key) + '">Remove</button></div>' : '') +
+      '</div><div class="price" style="font-size:17px">' + money(l.total) + '</div></div>';
+  }
+
+  function viewCart() {
+    var lines = Cart.lines();
+    if (!lines.length) { app.innerHTML = '<div class="wrap page empty"><h1>Your cart is empty</h1><p class="muted">The Lebanon drop and the Christmas collection are waiting.</p><a class="btn pri" href="#shop">Start shopping</a></div>'; return; }
+    var s = Store.settings(), sub = Cart.subtotal();
+    app.innerHTML = '<div class="wrap page"><h1>Your cart</h1><div class="two"><div class="panel">' + lines.map(function (l) { return lineHTML(l, true); }).join('') + '</div>' +
+      '<div class="panel"><h3>Summary</h3><div class="sum"><div><span>Items</span><b>' + money(sub) + '</b></div><div><span class="muted">Delivery</span><span class="muted">from ' + money(Math.min(s.feeBeirut, s.feeMount)) + '</span></div>' +
+      (s.freeOver && sub < s.freeOver ? '<div class="muted" style="font-size:13px">Add ' + money(s.freeOver - sub) + ' more for free delivery</div>' : s.freeOver ? '<div style="color:var(--green);font-size:13px">Free delivery unlocked ✓</div>' : '') +
+      '</div><a class="btn pri full" style="margin-top:20px" href="#checkout">Checkout</a><a class="btn sec full" style="margin-top:10px" href="#shop">Keep shopping</a></div></div></div>';
+    $$('[data-d]').forEach(function (b) { b.onclick = function () { var i = Cart.items.filter(function (x) { return x.key === b.dataset.k; })[0]; i.qty = Math.max(1, i.qty + +b.dataset.d); Cart.save(); viewCart(); }; });
+    $$('[data-rm]').forEach(function (b) { b.onclick = function () { Cart.items = Cart.items.filter(function (x) { return x.key !== b.dataset.rm; }); Cart.save(); viewCart(); }; });
+    window.scrollTo(0, 0);
+  }
+
+  function viewCheckout() {
+    var lines = Cart.lines(), s = Store.settings();
+    if (!lines.length) { location.hash = 'cart'; return; }
+    if (s.open === false) { app.innerHTML = '<div class="wrap page empty"><h1>We’re taking a short break</h1><p class="muted">Orders are paused for now. Follow @' + esc(s.instagram) + ' to know when we reopen.</p></div>'; return; }
+    var saved = ls('customer') || {};
+    app.innerHTML = '<div class="wrap page"><h1>Checkout</h1><form class="two" id="co" novalidate><div style="display:grid;gap:18px">' +
+      '<div class="panel"><h3>Your details</h3><div class="grid2">' +
+        '<label class="field">Full name<input name="name" autocomplete="name" required value="' + esc(saved.name) + '"></label>' +
+        '<label class="field">Phone (WhatsApp)<input name="phone" type="tel" autocomplete="tel" placeholder="70 123 456" required value="' + esc(saved.phone) + '"></label>' +
+      '</div></div>' +
+      '<div class="panel"><h3>Delivery</h3><div class="paysel" style="margin-bottom:14px"><label class="on"><input type="radio" name="method" value="delivery" checked><span><b>Delivery</b><small>Anywhere in Lebanon</small></span></label>' +
+        (s.pickup ? '<label><input type="radio" name="method" value="pickup"><span><b>Pickup</b><small>Free · we send the location</small></span></label>' : '') + '</div>' +
+        '<div class="grid2" id="addr"><label class="field">Area<select name="region">' + REGIONS.map(function (r) { return '<option' + (saved.region === r[0] ? ' selected' : '') + '>' + esc(r[0]) + '</option>'; }).join('') + '</select></label>' +
+        '<label class="field">Town / village<input name="town" required value="' + esc(saved.town) + '"></label>' +
+        '<label class="field wide">Address details<input name="address" placeholder="Street, building, floor, landmark" required value="' + esc(saved.address) + '"></label></div>' +
+        '<label class="field" style="margin-top:14px">Notes (optional)<textarea name="notes" placeholder="Gift message, best time to call…"></textarea></label></div>' +
+      '<div class="panel"><h3>Payment</h3><div class="paysel"><label class="on"><input type="radio" name="payment" value="cash" checked><span><b>Cash on delivery</b><small>Pay the driver</small></span></label>' +
+        '<label><input type="radio" name="payment" value="whish"><span><b>Whish Money</b><small>Send to our Whish number</small></span></label></div>' +
+        '<div class="note hidden" id="whishNote">After you place the order you’ll see our Whish number and your order code. Send the total with the code as the note — we start printing once it arrives.</div></div>' +
+      '</div><div class="panel" style="position:sticky;top:90px"><h3>Order summary</h3>' + lines.map(function (l) { return lineHTML(l, false); }).join('') +
+        '<div class="sum" style="margin-top:14px" id="sumBox"></div><div class="err" id="coErr" style="margin-top:10px"></div>' +
+        '<button class="btn pri full" type="submit" id="coBtn" style="margin-top:8px">Place order</button><p class="muted" style="font-size:13px;margin:12px 0 0;text-align:center">We confirm every order on WhatsApp before printing.</p></div></form></div>';
+    var f = $('#co');
+    var calc = function () {
+      var sub = Cart.subtotal(), method = f.method.value, del = method === 'pickup' ? 0 : fee(f.region.value);
+      if (s.freeOver && sub >= s.freeOver) del = 0;
+      $('#sumBox').innerHTML = '<div><span>Items</span><b>' + money(sub) + '</b></div><div><span>Delivery</span><b>' + (del ? money(del) : 'Free') + '</b></div><div class="tot"><span>Total</span><span>' + money(sub + del) + '</span></div>';
+      $('#addr').style.display = method === 'pickup' ? 'none' : '';
+      $('#whishNote').classList.toggle('hidden', f.payment.value !== 'whish');
+      $$('.paysel label', f).forEach(function (l) { l.classList.toggle('on', l.querySelector('input').checked); });
+      return { sub: sub, del: del };
+    };
+    f.addEventListener('change', calc); calc();
+    f.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var method = f.method.value, err = '';
+      var phone = f.phone.value.replace(/[^\d+]/g, '');
+      if (!f.name.value.trim()) err = 'Please enter your name.';
+      else if (phone.replace(/\D/g, '').length < 7) err = 'Please enter a valid phone number.';
+      else if (method === 'delivery' && (!f.town.value.trim() || !f.address.value.trim())) err = 'Please add your town and address.';
+      if (err) { $('#coErr').textContent = err; return; }
+      var c = calc(), now = Date.now();
+      var cust = { name: f.name.value.trim(), phone: phone, region: method === 'pickup' ? '' : f.region.value, town: method === 'pickup' ? '' : f.town.value.trim(), address: method === 'pickup' ? '' : f.address.value.trim(), notes: f.notes.value.trim() };
+      ls('customer', cust);
+      var order = {
+        code: newCode(), createdAt: now, status: 'new', paid: false, payment: f.payment.value, method: method, customer: cust,
+        items: Cart.lines().map(function (l) { return { id: l.id, name: l.p.name, price: l.p.price, qty: l.qty, color: l.color, text: l.text }; }),
+        subtotal: c.sub, delivery: c.del, total: c.sub + c.del, history: [{ s: 'new', t: now }]
+      };
+      $('#coBtn').disabled = true; $('#coBtn').textContent = 'Placing order…';
+      Store.placeOrder(order).then(function () { Cart.clear(); ls('lastOrder', order); location.hash = 'order-' + order.code; })
+        .catch(function () { $('#coBtn').disabled = false; $('#coBtn').textContent = 'Place order'; $('#coErr').textContent = 'Something went wrong. Please try again or message us on Instagram.'; });
+    });
+    window.scrollTo(0, 0);
+  }
+
+  function orderText(o) {
+    return 'Hi 3DBlaze! I just ordered ⚡\nOrder: ' + o.code + '\n' + o.items.map(function (i) { return '• ' + i.name + (i.color ? ' (' + i.color + ')' : '') + (i.text ? ' “' + i.text + '”' : '') + ' × ' + i.qty; }).join('\n') +
+      '\nTotal: ' + money(o.total) + ' — ' + (o.payment === 'whish' ? 'Whish' : 'cash on delivery') + '\nName: ' + o.customer.name + (o.customer.town ? '\nTo: ' + o.customer.town + ', ' + o.customer.region : '\nPickup');
+  }
+
+  function viewDone(code) {
+    var o = ls('lastOrder'), s = Store.settings();
+    if (!o || o.code !== code) { location.hash = 'track'; setTimeout(function () { var i = $('#trCode'); if (i) { i.value = code; $('#trBtn').click(); } }, 50); return; }
+    var wa = s.whatsapp ? waLink(s.whatsapp, orderText(o)) : 'https://instagram.com/' + s.instagram;
+    app.innerHTML = '<div class="wrap page"><div class="done"><div class="ok"><svg width="40" height="40" viewBox="0 0 32 32"><path d="M18.5 4 L8.5 18 H15 L13 28 L24 13 H17.5 Z" fill="#1A8CFF"/></svg></div>' +
+      '<h1 style="margin-bottom:8px">Order received!</h1><p class="muted">Thank you, ' + esc(o.customer.name.split(' ')[0]) + '. Keep your order code:</p><div class="code">' + esc(o.code) + '</div>' +
+      (o.payment === 'whish' ? '<div class="panel"><h3>Pay with Whish</h3><div class="kv"><span>Send</span><b class="price" style="font-size:20px">' + money(o.total) + '</b><span>To</span><b>' + (s.whish ? esc(s.whish) + ' (' + esc(s.whishName) + ')' : 'we’ll send you the number on WhatsApp') + '</b><span>Note</span><b>' + esc(o.code) + '</b></div>' +
+        (s.whish ? '<button class="btn sec" id="cpW">Copy Whish number</button>' : '') + '</div>' :
+        '<div class="panel"><h3>Cash on delivery</h3><p class="muted" style="margin:0">Have ' + money(o.total) + ' ready for the driver' + (o.method === 'pickup' ? ' — or pay at pickup.' : '.') + '</p></div>') +
+      '<div class="panel"><h3>Next: confirm on ' + (s.whatsapp ? 'WhatsApp' : 'Instagram') + '</h3><p class="muted" style="margin:0 0 14px">Send us your order so we can confirm the details and start printing.</p>' +
+      '<a class="btn ' + (s.whatsapp ? 'wa' : 'blue') + ' full" href="' + wa + '" target="_blank" rel="noopener">' + (s.whatsapp ? 'Send on WhatsApp' : 'Message @' + esc(s.instagram)) + '</a>' +
+      '<button class="btn sec full" style="margin-top:10px" id="cpO">Copy order details</button></div>' +
+      '<div class="panel"><h3>Your order</h3>' + o.items.map(function (i) { return '<div class="line" style="grid-template-columns:1fr auto"><div><div class="nm">' + esc(i.name) + '</div><div class="meta">' + esc([i.color, i.text ? '“' + i.text + '”' : ''].filter(Boolean).join(' · ')) + ' × ' + i.qty + '</div></div><div class="price" style="font-size:16px">' + money(i.price * i.qty) + '</div></div>'; }).join('') +
+      '<div class="sum" style="margin-top:12px"><div><span>Delivery</span><b>' + (o.delivery ? money(o.delivery) : 'Free') + '</b></div><div class="tot"><span>Total</span><span>' + money(o.total) + '</span></div></div></div>' +
+      '<a class="btn sec" style="margin-top:20px" href="#track">Track this order</a></div></div>';
+    var w = $('#cpW'); if (w) w.onclick = function () { copy(s.whish, 'Whish number copied'); };
+    $('#cpO').onclick = function () { copy(orderText(o), 'Order copied'); };
+    window.scrollTo(0, 0);
+  }
+
+  function viewTrack() {
+    var last = ls('lastOrder');
+    app.innerHTML = '<div class="wrap page"><div class="done" style="text-align:left"><h1>Track your order</h1><div class="panel"><label class="field">Order code<input id="trCode" placeholder="3DB-XXXXX" value="' + esc(last ? last.code : '') + '" style="text-transform:uppercase"></label><button class="btn pri full" id="trBtn" style="margin-top:14px">Track</button><div id="trOut"></div></div></div></div>';
+    $('#trBtn').onclick = function () {
+      var code = $('#trCode').value.trim().toUpperCase().replace(/\s/g, ''); if (code && code.indexOf('3DB-') !== 0) code = '3DB-' + code.replace(/^3DB/, '');
+      $('#trOut').innerHTML = '<p class="muted">Looking…</p>';
+      Store.track(code).then(function (t) {
+        if (!t) { $('#trOut').innerHTML = '<p class="err" style="margin-top:14px">We couldn’t find ' + esc(code) + '. Check the code, or message us on Instagram.</p>'; return; }
+        if (t.status === 'cancelled') { $('#trOut').innerHTML = '<p style="margin-top:16px">This order was cancelled. Message us if that’s a surprise.</p>'; return; }
+        var idx = CUSTOMER_STEPS.map(function (s) { return s.k; }).indexOf(t.status);
+        $('#trOut').innerHTML = '<div style="display:flex;justify-content:space-between;margin:20px 0 14px"><b class="code" style="margin:0;font-size:18px">' + esc(code) + '</b><span class="price">' + money(t.total) + '</span></div>' +
+          '<div class="timeline">' + CUSTOMER_STEPS.map(function (s, i) { return '<div class="tl' + (i <= idx ? ' on' : '') + (i === idx ? ' cur' : '') + '"><i>' + (i <= idx ? '✓' : '') + '</i><div><b>' + s.l + '</b><small>' + s.d + '</small></div></div>'; }).join('') + '</div>' +
+          '<p class="muted" style="font-size:13px;margin:4px 0 0">Payment: ' + (t.payment === 'whish' ? 'Whish' : 'Cash on delivery') + ' · ' + (t.paid ? '<span class="paid">Paid</span>' : 'Not paid yet') + '</p>';
+      }).catch(function () { $('#trOut').innerHTML = '<p class="err">Could not check right now. Try again.</p>'; });
+    };
+    if (last) $('#trBtn').click();
+    window.scrollTo(0, 0);
+  }
+
+  // ---------- admin ----------
+  var adm = { tab: 'orders', filter: 'active', q: '' };
+  function statusBadge(k) { var s = STATUSES.filter(function (x) { return x.k === k; })[0] || STATUSES[0]; return '<span class="badge s-' + s.k + '">' + s.l + '</span>'; }
+
+  function viewAdmin() {
+    var u = Store.user();
+    if (!u) {
+      app.innerHTML = '<div class="wrap"><div class="login"><h1 style="font-size:28px">Staff login</h1><p class="muted">3DBlaze order manager</p><form class="panel" id="lg">' +
+        (Store.live ? '<label class="field">Email<input name="email" type="email" autocomplete="username"></label>' : '<div class="demo">Demo mode — passcode is <b>blaze2026</b>. Connect Firebase to go live.</div>') +
+        '<label class="field">' + (Store.live ? 'Password' : 'Passcode') + '<input name="pass" type="password" autocomplete="current-password"></label><div class="err" id="lgErr"></div><button class="btn pri full">Log in</button></form></div></div>';
+      $('#lg').onsubmit = function (e) { e.preventDefault(); var f = e.target; Store.login(f.email ? f.email.value : '', f.pass.value).then(function () { viewAdmin(); }).catch(function () { $('#lgErr').textContent = 'Wrong login.'; }); };
+      return;
+    }
+    if (!Store.live && !ls('demoSeeded')) { ls('demoSeeded', true); Store.seedDemo(); }
+    renderAdmin();
+  }
+
+  function renderAdmin() {
+    var orders = Store.orders();
+    var newCount = orders.filter(function (o) { return o.status === 'new'; }).length;
+    document.title = (newCount ? '(' + newCount + ') ' : '') + '3DBlaze — Orders';
+    var now = new Date(), monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime(), dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    var valid = orders.filter(function (o) { return o.status !== 'cancelled'; });
+    var revMonth = valid.filter(function (o) { return o.createdAt >= monthStart; }).reduce(function (n, o) { return n + (o.subtotal || 0); }, 0);
+    var toCollect = valid.filter(function (o) { return !o.paid && o.status !== 'delivered'; }).reduce(function (n, o) { return n + o.total; }, 0);
+    var inQueue = valid.filter(function (o) { return ['confirmed', 'printing'].indexOf(o.status) >= 0; }).length;
+    var today = orders.filter(function (o) { return o.createdAt >= dayStart; }).length;
+
+    app.innerHTML = '<div class="wrap admin">' + (Store.live ? '' : '<div class="demo">Demo mode: orders are saved in this browser only. <button class="upl" id="clrDemo">Clear sample orders</button></div>') +
+      '<div class="adm-top"><h1>Manager</h1><div class="tabs">' + [['orders', 'Orders' + (newCount ? ' (' + newCount + ')' : '')], ['queue', 'Print queue'], ['calc', 'Calculator'], ['products', 'Products'], ['settings', 'Settings']].map(function (t) { return '<button data-tab="' + t[0] + '" class="' + (adm.tab === t[0] ? 'on' : '') + '">' + t[1] + '</button>'; }).join('') +
+      '</div><button class="btn sec" id="logout" style="min-height:42px;padding:8px 14px;font-size:14px">Log out</button></div>' +
+      '<div class="kpis"><div class="kpi o"><small>New orders</small><b>' + newCount + '</b></div><div class="kpi"><small>Orders today</small><b>' + today + '</b></div><div class="kpi g"><small>Sales this month</small><b>' + money(revMonth) + '</b></div><div class="kpi"><small>To collect · in queue</small><b>' + money(toCollect) + ' · ' + inQueue + '</b></div></div>' +
+      '<div id="admBody"></div></div>';
+    $$('[data-tab]').forEach(function (b) { b.onclick = function () { adm.tab = b.dataset.tab; renderAdmin(); }; });
+    $('#logout').onclick = function () { Store.logout(); viewAdmin(); };
+    var cd = $('#clrDemo'); if (cd) cd.onclick = function () { Store.clearDemo(); toast('Sample orders removed'); };
+    ({ orders: admOrders, queue: admQueue, calc: admCalc, products: admProducts, settings: admSettings })[adm.tab]();
+  }
+
+  function admOrders() {
+    var orders = Store.orders();
+    var counts = { active: 0, all: orders.length };
+    STATUSES.forEach(function (s) { counts[s.k] = 0; });
+    orders.forEach(function (o) { counts[o.status] = (counts[o.status] || 0) + 1; if (['delivered', 'cancelled'].indexOf(o.status) < 0) counts.active++; });
+    var list = orders.filter(function (o) {
+      if (adm.filter === 'active' && ['delivered', 'cancelled'].indexOf(o.status) >= 0) return false;
+      if (adm.filter !== 'active' && adm.filter !== 'all' && o.status !== adm.filter) return false;
+      if (adm.q) { var h = (o.code + ' ' + o.customer.name + ' ' + o.customer.phone + ' ' + o.customer.town).toLowerCase(); if (h.indexOf(adm.q.toLowerCase()) < 0) return false; }
+      return true;
+    });
+    $('#admBody').innerHTML = '<div class="filters">' + [['active', 'Active'], ['new', 'New'], ['confirmed', 'Confirmed'], ['printing', 'Printing'], ['ready', 'Ready'], ['out', 'Out'], ['delivered', 'Delivered'], ['cancelled', 'Cancelled'], ['all', 'All']].map(function (f) {
+        return '<button class="fchip' + (adm.filter === f[0] ? ' on' : '') + '" data-f="' + f[0] + '">' + f[1] + '<em>' + (counts[f[0]] || 0) + '</em></button>'; }).join('') +
+      '<input class="search" id="oq" placeholder="Search name, phone, code, town" value="' + esc(adm.q) + '"><button class="btn pri" id="newO" style="min-height:42px;padding:8px 14px;font-size:14px">+ New order</button><button class="btn sec" id="csv" style="min-height:42px;padding:8px 14px;font-size:14px">Copy as CSV</button></div>' +
+      '<div class="olist">' + (list.length ? list.map(function (o) {
+        var n = o.items.reduce(function (a, i) { return a + i.qty; }, 0);
+        return '<div class="orow" data-o="' + esc(o.code) + '"><div><div class="c">' + esc(o.code) + '</div><small class="muted">' + fmtDate(o.createdAt) + '</small></div>' +
+          '<div class="n"><b>' + esc(o.customer.name) + '</b><small>' + esc(o.customer.town || 'Pickup') + '</small></div>' +
+          '<div class="it"><small>' + n + ' item' + (n > 1 ? 's' : '') + ' · ' + esc(o.items.map(function (i) { return i.name; }).join(', ')) + '</small></div>' +
+          '<div class="pm"><small class="' + (o.paid ? 'paid' : 'unpaid') + '">' + (o.payment === 'whish' ? 'Whish' : 'Cash') + (o.paid ? ' ✓' : '') + '</small></div>' +
+          '<div>' + statusBadge(o.status) + '</div><div class="tt">' + money(o.total) + '</div></div>';
+      }).join('') : '<div class="panel empty"><p class="muted">No orders here yet. Share the site on Instagram and they’ll show up live.</p></div>') + '</div>';
+    $$('[data-f]').forEach(function (b) { b.onclick = function () { adm.filter = b.dataset.f; admOrders(); }; });
+    var q = $('#oq'); q.oninput = function () { adm.q = q.value; var pos = q.selectionStart; admOrders(); var nq = $('#oq'); nq.focus(); nq.setSelectionRange(pos, pos); };
+    $$('[data-o]').forEach(function (r) { r.onclick = function () { orderModal(r.dataset.o); }; });
+    $('#newO').onclick = function () { adm.tab = 'calc'; renderAdmin(); toast('Price it, then press “Turn into order”'); };
+    $('#csv').onclick = function () {
+      var rows = [['code', 'date', 'status', 'name', 'phone', 'region', 'town', 'address', 'items', 'subtotal', 'delivery', 'total', 'payment', 'paid']].concat(orders.map(function (o) {
+        return [o.code, new Date(o.createdAt).toISOString().slice(0, 16).replace('T', ' '), o.status, o.customer.name, o.customer.phone, o.customer.region, o.customer.town, o.customer.address, o.items.map(function (i) { return i.qty + 'x ' + i.name + (i.color ? ' ' + i.color : '') + (i.text ? ' "' + i.text + '"' : ''); }).join('; '), o.subtotal, o.delivery, o.total, o.payment, o.paid ? 'yes' : 'no'];
+      }));
+      copy(rows.map(function (r) { return r.map(function (c) { c = String(c == null ? '' : c); return /[",\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(','); }).join('\n'), 'CSV copied — paste into Sheets or Excel');
+    };
+  }
+
+  var CUSTOMER_MSG = {
+    new: function (o) { return 'Hi ' + o.customer.name.split(' ')[0] + '! This is 3DBlaze ⚡ We got your order ' + o.code + ':\n' + o.items.map(function (i) { return '• ' + i.name + (i.color ? ' (' + i.color + ')' : '') + (i.text ? ' “' + i.text + '”' : '') + ' × ' + i.qty; }).join('\n') + '\nTotal ' + money(o.total) + '. Can you confirm the details are right?'; },
+    confirmed: function (o) { return 'Confirmed ✅ Your order ' + o.code + ' is in the print queue. We’ll message you when it’s ready.' + (o.payment === 'whish' && !o.paid ? '\nWhish: please send ' + money(o.total) + ' to ' + (Store.settings().whish || '[our Whish number]') + ' with the note ' + o.code + '.' : ''); },
+    printing: function (o) { return 'Your 3DBlaze order ' + o.code + ' is printing right now 🖨️'; },
+    ready: function (o) { return 'Your order ' + o.code + ' is ready! ' + (o.method === 'pickup' ? 'When can you pass by to pick it up?' : 'It goes out with the driver soon.'); },
+    out: function (o) { return 'Your order ' + o.code + ' is on its way 🚚' + (o.payment === 'cash' ? ' Please have ' + money(o.total) + ' ready for the driver.' : ''); },
+    delivered: function (o) { return 'Thanks for ordering from 3DBlaze! 🙌 If you like it, tag us @' + Store.settings().instagram + ' — we repost our favourites.'; },
+    cancelled: function (o) { return 'Hi ' + o.customer.name.split(' ')[0] + ', your order ' + o.code + ' has been cancelled. Message us if you have any question.'; }
+  };
+
+  function orderModal(code) {
+    var o = Store.orders().filter(function (x) { return x.code === code; })[0]; if (!o) return;
+    var c = o.customer;
+    modal('<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-right:44px"><h3 style="font-size:22px">' + esc(o.code) + '</h3>' + statusBadge(o.status) + (o.demo ? '<span class="badge s-cancelled">sample</span>' : '') + '</div>' +
+      '<p class="muted" style="margin:4px 0 16px;font-size:14px">' + fmtDate(o.createdAt) + '</p>' +
+      '<div class="lab muted" style="font-size:13px">Move to</div><div class="stepper">' + STATUSES.map(function (s) { return '<button data-s="' + s.k + '" class="' + (o.status === s.k ? 'on' : '') + '">' + s.l + '</button>'; }).join('') + '</div>' +
+      '<div class="panel" style="padding:16px 18px;background:var(--card2)">' + o.items.map(function (i) { var p = Store.product(i.id) || { id: i.id, name: i.name }; return '<div class="line" style="grid-template-columns:56px 1fr auto"><div class="th" style="width:56px;height:56px">' + thumb(p, { color: i.color, text: i.text }) + '</div><div><div class="nm">' + esc(i.name) + ' × ' + i.qty + '</div><div class="meta">' + esc([i.color, i.text ? '“' + i.text + '”' : ''].filter(Boolean).join(' · ')) + '</div></div><b>' + money(i.price * i.qty) + '</b></div>'; }).join('') +
+      '<div class="sum" style="margin-top:10px"><div><span>Delivery</span><b>' + (o.delivery ? money(o.delivery) : 'Free') + '</b></div><div class="tot" style="font-size:18px"><span>Total</span><span>' + money(o.total) + '</span></div></div></div>' +
+      '<div class="kv"><span>Customer</span><b>' + esc(c.name) + '</b><span>Phone</span><b>' + esc(c.phone) + '</b><span>' + (o.method === 'pickup' ? 'Method' : 'Address') + '</span><b>' + (o.method === 'pickup' ? 'Pickup' : esc(c.address + ', ' + c.town + ' — ' + c.region)) + '</b>' +
+      (c.notes ? '<span>Notes</span><b>' + esc(c.notes) + '</b>' : '') +
+      '<span>Payment</span><b>' + (o.payment === 'whish' ? 'Whish' : 'Cash on delivery') + ' · <label class="switch" style="display:inline-flex"><input type="checkbox" id="mPaid"' + (o.paid ? ' checked' : '') + '> paid</label></b>' +
+      '<span>Internal note</span><input id="mNote" class="search" style="min-width:0" placeholder="Only you see this" value="' + esc(o.note || '') + '"></div>' +
+      '<div class="actions"><a class="btn wa" id="mWa" target="_blank" rel="noopener">WhatsApp customer</a><button class="btn sec" id="mCpMsg">Copy message</button><button class="btn sec" id="mCpAddr">Copy for driver</button></div>' +
+      '<p class="muted" style="font-size:13px;margin:12px 0 0" id="mMsgPrev"></p>', function (box, close) {
+        var setWa = function () { var msg = CUSTOMER_MSG[o.status](o); box.querySelector('#mWa').href = waLink(c.phone, msg); box.querySelector('#mMsgPrev').textContent = 'Message for “' + (STATUSES.filter(function (s) { return s.k === o.status; })[0].l) + '”: ' + msg; return msg; };
+        setWa();
+        $$('[data-s]', box).forEach(function (b) {
+          b.onclick = function () {
+            var go = function () { Store.updateOrder(o.code, { status: b.dataset.s }).then(function () { o.status = b.dataset.s; $$('[data-s]', box).forEach(function (x) { x.classList.toggle('on', x === b); }); setWa(); renderAdmin(); toast('Moved to ' + b.textContent); }); };
+            if (b.dataset.s === 'cancelled') confirmBox('Cancel order ' + o.code + '?', 'Cancel order', go); else go();
+          };
+        });
+        box.querySelector('#mPaid').onchange = function (e) { Store.updateOrder(o.code, { paid: e.target.checked }).then(function () { o.paid = e.target.checked; renderAdmin(); toast(e.target.checked ? 'Marked paid' : 'Marked unpaid'); }); };
+        var nt; box.querySelector('#mNote').oninput = function (e) { clearTimeout(nt); nt = setTimeout(function () { Store.updateOrder(o.code, { note: e.target.value }); }, 600); };
+        box.querySelector('#mCpMsg').onclick = function () { copy(setWa(), 'Message copied'); };
+        box.querySelector('#mCpAddr').onclick = function () { copy(o.code + '\n' + c.name + ' — ' + c.phone + '\n' + (o.method === 'pickup' ? 'PICKUP' : c.address + ', ' + c.town + ' (' + c.region + ')') + '\nCollect: ' + (o.paid ? '$0 (paid)' : money(o.total)), 'Driver details copied'); };
+      });
+  }
+
+  function admQueue() {
+    var orders = Store.orders().filter(function (o) { return ['confirmed', 'printing'].indexOf(o.status) >= 0; });
+    var groups = {}, mins = 0;
+    orders.forEach(function (o) { o.items.forEach(function (i) {
+      if (i.id === 'design') return;
+      var k = i.id + '|' + (i.color || ''); var p = Store.product(i.id) || { id: i.id, name: i.name, printMin: i.printMin || 60 };
+      if (!groups[k]) groups[k] = { p: p, color: i.color, qty: 0, texts: [], orders: [] };
+      groups[k].qty += i.qty; if (i.text) groups[k].texts.push(i.text + (i.qty > 1 ? ' ×' + i.qty : '')); if (groups[k].orders.indexOf(o.code) < 0) groups[k].orders.push(o.code);
+      mins += (p.printMin != null ? p.printMin : 60) * i.qty;
+    }); });
+    var keys = Object.keys(groups);
+    $('#admBody').innerHTML = '<div class="panel" style="margin-bottom:14px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:center"><div><b style="font-family:var(--head)">Print queue</b><div class="muted" style="font-size:14px">Everything confirmed or printing, grouped so you can batch plates.</div></div><div class="price">≈ ' + Math.floor(mins / 60) + 'h ' + (mins % 60) + 'm of printing</div></div>' +
+      (keys.length ? keys.map(function (k) { var g = groups[k];
+        return '<div class="qcard"><div class="th">' + thumb(g.p, { color: g.color, text: g.texts[0] }) + '</div><div><b>' + g.qty + ' × ' + esc(g.p.name) + '</b>' + (g.color ? ' <span class="muted">· ' + esc(g.color) + '</span>' : '') +
+          (g.texts.length ? '<div class="names">Names: ' + esc(g.texts.join(', ')) + '</div>' : '') + '<div class="muted" style="font-size:13px;margin-top:2px">' + esc(g.orders.join(', ')) + '</div></div><div class="muted" style="font-size:13px;text-align:right">≈ ' + Math.round((g.p.printMin || 60) * g.qty / 6) / 10 + ' h</div></div>';
+      }).join('') : '<div class="panel empty"><p class="muted">Nothing to print. Confirm new orders to fill the queue.</p></div>');
+  }
+
+
+  // ---------- price calculator (owner only) ----------
+  var PRESETS = [
+    { n: 'Name keychain', g: 6, m: 24, p: 4 }, { n: 'Cedar keychain', g: 7, m: 30, p: 4 }, { n: 'Christmas ornament', g: 10, m: 36, p: 6 },
+    { n: 'Phone stand', g: 35, m: 78, p: 9 }, { n: 'Desk name plate', g: 45, m: 108, p: 12 }, { n: 'Centerpiece', g: 60, m: 150, p: 14 },
+    { n: 'Scout woggle', g: 5, m: 15, p: 2.5 }, { n: 'Troop keychain', g: 6, m: 18, p: 2 }, { n: 'Custom print', g: 20, m: 60, p: null }
+  ];
+  var calcIn = Object.assign({ preset: 'Custom print', name: 'Custom print', qty: 1, grams: 20, hours: 1, mins: 0, design: 0, delivery: 3, rush: false, pickup: false, bulk: true, fixed: null }, ls('calc') || {});
+  var calcOpen = false, lastQuote = null;
+
+  function calcRun() {
+    var S = Store.settings(), c = calcIn;
+    var qty = Math.max(1, parseInt(c.qty) || 1), g = +c.grams || 0, h = (+c.hours || 0) + (+c.mins || 0) / 60;
+    var design = +c.design || 0, delivery = c.pickup ? 0 : (+c.delivery || 0);
+    var mat = g * S.calcPla / 1000, mac = h * S.calcMachine, pack = +S.calcPack, base = mat + mac + pack, fail = base * S.calcFail / 100, unitCost = base + fail;
+    var unit = c.fixed != null ? c.fixed : Math.max(Math.ceil(unitCost * S.calcMarkup), +S.calcMin);
+    if (c.rush) unit *= 1.25;
+    var disc = 0;
+    if (c.bulk && c.fixed !== 2 && c.fixed !== 2.5) disc = qty >= 20 ? .35 : qty >= 10 ? .25 : qty >= 3 ? .15 : 0;
+    var unitFinal = Math.round(unit * (1 - disc) * 2) / 2, items = unitFinal * qty + design, total = items + delivery, cost = unitCost * qty, profit = items - cost;
+    return { qty: qty, unitFinal: unitFinal, disc: disc, design: design, delivery: delivery, items: items, total: total, cost: cost, profit: profit, margin: items > 0 ? profit / items * 100 : 0,
+      parts: [mat, mac, pack, fail], unitCost: unitCost, minutes: Math.round(h * 60) };
+  }
+
+  function admCalc() {
+    var S = Store.settings(), c = calcIn;
+    var num = function (id, label, val, step, extra) { return '<label class="field">' + label + '<input type="number" id="' + id + '" min="0" step="' + step + '" value="' + esc(val) + '"' + (extra || '') + '></label>'; };
+    $('#admBody').innerHTML = '<div class="calc"><div style="display:grid;gap:16px"><div class="panel">' +
+      '<h3>1 · Pick a product</h3><div class="presets">' + PRESETS.map(function (p) { return '<button class="preset' + (c.preset === p.n ? ' on' : '') + '" data-pr="' + esc(p.n) + '">' + esc(p.n) + '</button>'; }).join('') + '</div>' +
+      '<h3>2 · Print details</h3><div class="grid2">' +
+        '<label class="field">Product name<input id="c_name" value="' + esc(c.name) + '"></label>' + num('c_qty', 'Quantity', c.qty, 1, ' min="1"') +
+        num('c_grams', 'Weight per piece (g)', c.grams, 1) +
+        '<label class="field">Print time per piece<div class="grid2" style="gap:8px"><input type="number" id="c_hours" min="0" step="1" value="' + esc(c.hours) + '" aria-label="Hours" placeholder="h"><input type="number" id="c_mins" min="0" max="59" step="5" value="' + esc(c.mins) + '" aria-label="Minutes" placeholder="min"></div></label>' +
+        num('c_design', 'Design / personalization fee ($, whole order)', c.design, 1) + num('c_delivery', 'Delivery ($)', c.delivery, 0.5) +
+      '</div><div class="toggles"><label class="tog"><input type="checkbox" id="c_rush"' + (c.rush ? ' checked' : '') + '> Rush (24 h) +25%</label><label class="tog"><input type="checkbox" id="c_pickup"' + (c.pickup ? ' checked' : '') + '> Free pickup</label><label class="tog"><input type="checkbox" id="c_bulk"' + (c.bulk ? ' checked' : '') + '> Quantity discount</label></div>' +
+      '<p class="hint">Discount: 3+ pieces −15%, 10+ −25%, 20+ −35%. Weight and time come straight from Bambu Studio after slicing.</p></div>' +
+      '<div class="panel"><button class="upl" id="c_tog" style="font-size:15px">' + (calcOpen ? '▾' : '▸') + ' Cost settings</button><div id="c_set"' + (calcOpen ? '' : ' class="hidden"') + ' style="margin-top:14px"><div class="grid3">' +
+        num('s_calcPla', 'PLA price ($/kg)', S.calcPla, 0.5) + num('s_calcMachine', 'Machine cost ($/hour)', S.calcMachine, 0.05) + num('s_calcPack', 'Packaging ($/piece)', S.calcPack, 0.05) +
+        num('s_calcFail', 'Failure buffer (%)', S.calcFail, 1) + num('s_calcMarkup', 'Markup (× cost)', S.calcMarkup, 0.1) + num('s_calcMin', 'Minimum price / piece ($)', S.calcMin, 0.5) +
+      '</div><p class="hint">Machine cost = electricity (~$0.05/h on generator power) + wear and spares (~$0.30/h). Saved to your shop settings.</p></div></div></div>' +
+      '<div class="panel res"><div class="lbl">Customer pays</div><div class="big" id="r_total"></div><div class="muted" id="r_sub" style="font-size:15px"></div>' +
+      '<div class="stats"><div class="stat"><div class="k">Your cost</div><div class="v" id="r_cost"></div></div><div class="stat"><div class="k">Profit</div><div class="v good" id="r_profit"></div></div><div class="stat"><div class="k">Margin</div><div class="v good" id="r_margin"></div></div></div>' +
+      '<div class="lbl">Where your cost goes</div><div class="bar"><div id="b0" style="background:#1A8CFF"></div><div id="b1" style="background:#7ABEFF"></div><div id="b2" style="background:#0B1220"></div><div id="b3" style="background:#B4BDC9"></div></div>' +
+      '<div class="legend"><div><span style="background:#1A8CFF"></span>Filament<b id="l0"></b></div><div><span style="background:#7ABEFF"></span>Machine<b id="l1"></b></div><div><span style="background:#0B1220"></span>Packaging<b id="l2"></b></div><div><span style="background:#B4BDC9"></span>Failure buffer<b id="l3"></b></div></div>' +
+      '<div class="lbl">WhatsApp quote</div><div class="quote" id="r_quote"></div>' +
+      '<div class="actions"><button class="btn pri" id="c_copy" style="flex:1">Copy quote</button><button class="btn sec" id="c_order" style="flex:1">Turn into order</button></div></div></div>';
+
+    var save = function () { ls('calc', calcIn); };
+    var draw = function () {
+      var r = calcRun(), m = money;
+      $('#r_total').textContent = m(r.total);
+      $('#r_sub').innerHTML = '<b style="color:var(--text)">' + r.qty + ' × ' + m(r.unitFinal) + '</b>' + (r.disc ? ' (−' + Math.round(r.disc * 100) + '%)' : '') + (r.design ? ' + ' + m(r.design) + ' design' : '') + (r.delivery ? ' + ' + m(r.delivery) + ' delivery' : ' · pickup');
+      $('#r_cost').textContent = m(r.cost); $('#r_profit').textContent = m(r.profit); $('#r_margin').textContent = Math.round(r.margin) + '%';
+      var sum = r.unitCost || 1; r.parts.forEach(function (v, i) { $('#b' + i).style.width = (v / sum * 100) + '%'; $('#l' + i).textContent = m(v * r.qty); });
+      var name = calcIn.name || 'Custom print';
+      lastQuote = 'Hey! Here’s your 3DBlaze quote ⚡\n' + name + ' × ' + r.qty + ' — ' + m(r.unitFinal * r.qty) + '\n' + (r.design ? 'Design / personalization — ' + m(r.design) + '\n' : '') +
+        (r.delivery ? 'Delivery — ' + m(r.delivery) + '\n' : 'Free pickup\n') + 'Total: ' + m(r.total) + (r.delivery ? ' (cash on delivery or Whish)' : '') + '\nReady in ' + (calcIn.rush ? '24 hours' : '3 days') + '. Reply YES to confirm 🙌';
+      $('#r_quote').textContent = lastQuote;
+      return r;
+    };
+    var bind = function (id, key, kind) {
+      var el = $('#' + id);
+      el.addEventListener(kind === 'check' ? 'change' : 'input', function () {
+        calcIn[key] = kind === 'check' ? el.checked : kind === 'text' ? el.value : el.value;
+        if (['grams', 'hours', 'mins'].indexOf(key) >= 0) calcIn.fixed = null;
+        save(); draw();
+      });
+    };
+    bind('c_name', 'name', 'text'); ['qty', 'grams', 'hours', 'mins', 'design', 'delivery'].forEach(function (k) { bind('c_' + k, k); });
+    ['rush', 'pickup', 'bulk'].forEach(function (k) { bind('c_' + k, k, 'check'); });
+    $$('[data-pr]').forEach(function (b) { b.onclick = function () {
+      var p = PRESETS.filter(function (x) { return x.n === b.dataset.pr; })[0];
+      Object.assign(calcIn, { preset: p.n, name: p.n, grams: p.g, hours: Math.floor(p.m / 60), mins: p.m % 60, fixed: p.p }); save(); admCalc();
+    }; });
+    var st;
+    ['calcPla', 'calcMachine', 'calcPack', 'calcFail', 'calcMarkup', 'calcMin'].forEach(function (k) {
+      var el = $('#s_' + k);
+      el.addEventListener('input', function () { Store.settings()[k] = +el.value || 0; draw(); clearTimeout(st); st = setTimeout(function () { var o = {}; ['calcPla', 'calcMachine', 'calcPack', 'calcFail', 'calcMarkup', 'calcMin'].forEach(function (x) { o[x] = +$('#s_' + x).value || 0; }); Store.saveSettings(o); }, 700); });
+    });
+    $('#c_tog').onclick = function () { calcOpen = !calcOpen; $('#c_set').classList.toggle('hidden', !calcOpen); this.textContent = (calcOpen ? '▾' : '▸') + ' Cost settings'; };
+    $('#c_copy').onclick = function () { copy(lastQuote, 'Quote copied'); };
+    $('#c_order').onclick = function () {
+      var r = draw();
+      modal('<h3 style="font-size:20px;margin-bottom:6px">New order from quote</h3><p class="muted" style="margin:0 0 16px">' + esc(calcIn.name) + ' × ' + r.qty + ' · total ' + money(r.total) + '</p><form id="mo" style="display:grid;gap:12px"><div class="grid2"><label class="field">Customer name<input name="name"></label><label class="field">Phone<input name="phone" type="tel"></label></div>' +
+        '<div class="grid2"><label class="field">Area<select name="region">' + REGIONS.map(function (x) { return '<option>' + esc(x[0]) + '</option>'; }).join('') + '</select></label><label class="field">Town<input name="town"></label></div>' +
+        '<label class="field">Address / notes<input name="address"></label><div class="grid2"><label class="field">Payment<select name="payment"><option value="cash">Cash on delivery</option><option value="whish">Whish</option></select></label><label class="field">Personalization (optional)<input name="text"></label></div><div class="err" id="moErr"></div><button class="btn pri">Create order</button></form>', function (box, close) {
+        box.querySelector('#mo').onsubmit = function (e) {
+          e.preventDefault(); var f = e.target; if (!f.name.value.trim()) { box.querySelector('#moErr').textContent = 'Add the customer name.'; return; }
+          var now = Date.now(), sub = r.items;
+          var o = { code: newCode(), createdAt: now, status: 'confirmed', paid: false, payment: f.payment.value, method: calcIn.pickup ? 'pickup' : 'delivery', source: 'manual',
+            customer: { name: f.name.value.trim(), phone: f.phone.value.replace(/[^\d+]/g, ''), region: calcIn.pickup ? '' : f.region.value, town: f.town.value.trim(), address: f.address.value.trim(), notes: '' },
+            items: [{ id: 'custom', name: calcIn.name || 'Custom print', price: r.unitFinal, qty: r.qty, color: null, text: f.text.value.trim() || null, printMin: r.minutes }].concat(r.design ? [{ id: 'design', name: 'Design / personalization', price: r.design, qty: 1, color: null, text: null, printMin: 0 }] : []),
+            subtotal: sub, delivery: r.delivery, total: r.total, history: [{ s: 'confirmed', t: now }] };
+          Store.placeOrder(o).then(function () { close(); adm.tab = 'orders'; adm.filter = 'active'; renderAdmin(); toast('Order ' + o.code + ' created'); });
+        };
+      });
+    };
+    draw();
+  }
+
+  function admProducts() {
+    var list = Store.products();
+    $('#admBody').innerHTML = '<div class="panel" style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><b style="font-family:var(--head)">Products</b><div class="muted" style="font-size:14px">These are <b>example items</b> to show the layout. Edit, remove or replace them with what you actually sell, and upload real photos.</div></div><button class="btn pri" id="addP" style="min-height:44px;padding:10px 16px;font-size:14px">+ Add product</button></div>' +
+      list.map(function (p) {
+        return '<div class="prow" data-p="' + p.id + '"><div class="th">' + thumb(p) + '</div><div><b>' + esc(p.name) + '</b><div class="muted" style="font-size:13px">' + (p.col === 'xmas' ? 'Christmas' : 'Lebanon drop') + ' · <button class="upl" data-ed="' + p.id + '">Edit</button> · <button class="upl" data-up="' + p.id + '">' + (p.photo ? 'Change photo' : 'Upload photo') + '</button> · <button class="upl" data-del="' + p.id + '">Remove</button></div></div>' +
+          '<label class="field" style="font-size:12px">Price $<input type="number" min="0" step="0.5" value="' + p.price + '" data-price="' + p.id + '"></label>' +
+          '<label class="switch"><input type="checkbox" data-av="' + p.id + '"' + (p.available === false ? '' : ' checked') + '> On sale</label>' +
+          '<label class="switch"><input type="checkbox" data-so="' + p.id + '"' + (p.soldOut ? ' checked' : '') + '> Sold out</label></div>';
+      }).join('') + '<input type="file" accept="image/*" id="photoIn" class="hidden">';
+    var target = null;
+    $$('[data-price]').forEach(function (i) { i.onchange = function () { Store.saveProduct(i.dataset.price, { price: Math.max(0, +i.value || 0) }).then(function () { toast('Price saved'); }); }; });
+    $$('[data-av]').forEach(function (i) { i.onchange = function () { Store.saveProduct(i.dataset.av, { available: i.checked }).then(function () { toast(i.checked ? 'Back on sale' : 'Hidden as unavailable'); }); }; });
+    $$('[data-so]').forEach(function (i) { i.onchange = function () { Store.saveProduct(i.dataset.so, { soldOut: i.checked }).then(function () { toast(i.checked ? 'Marked sold out' : 'Back in stock'); }); }; });
+    $$('[data-up]').forEach(function (b) { b.onclick = function () { target = b.dataset.up; $('#photoIn').click(); }; });
+    $$('[data-del]').forEach(function (b) { b.onclick = function () { var p = Store.product(b.dataset.del); confirmBox('Remove “' + p.name + '” from the shop?', 'Remove', function () { Store.saveProduct(p.id, { removed: true }).then(function () { toast('Removed'); admProducts(); }); }); }; });
+    $$('[data-ed]').forEach(function (b) { b.onclick = function () { var p = Store.product(b.dataset.ed);
+      modal('<h3 style="font-size:20px;margin-bottom:16px">Edit product</h3><form id="ep" style="display:grid;gap:12px"><label class="field">Name<input name="name" value="' + esc(p.name) + '"></label><div class="grid2"><label class="field">Price $<input name="price" type="number" min="0" step="0.5" value="' + p.price + '"></label><label class="field">Collection<select name="col"><option value="lebanon"' + (p.col !== 'xmas' ? ' selected' : '') + '>Lebanon drop</option><option value="xmas"' + (p.col === 'xmas' ? ' selected' : '') + '>Christmas</option></select></label></div><label class="field">Label on the card (e.g. New, Bestseller)<input name="tag" value="' + esc(p.tag || '') + '"></label><label class="field">Short line<input name="blurb" value="' + esc(p.blurb || '') + '"></label><label class="field">Description<textarea name="desc">' + esc(p.desc || '') + '</textarea></label><label class="field">Details (one per line)<textarea name="specs">' + esc((p.specs || []).join('\n')) + '</textarea></label><label class="field">Colours to choose from (comma separated, empty = none)<input name="colors" value="' + esc((p.colors || []).join(', ')) + '"></label><label class="field">Personalization question (empty = none)<input name="tq" value="' + esc(p.text ? p.text.label : '') + '"></label><button class="btn pri">Save</button></form>', function (box, close) {
+        box.querySelector('#ep').onsubmit = function (e) { e.preventDefault(); var f = e.target;
+          var cols = f.colors.value.split(',').map(function (c) { return c.trim().toLowerCase(); }).filter(Boolean);
+          Store.saveProduct(p.id, { name: f.name.value.trim() || p.name, price: Math.max(0, +f.price.value || 0), col: f.col.value, tag: f.tag.value.trim(), blurb: f.blurb.value.trim(), desc: f.desc.value.trim(),
+            specs: f.specs.value.split('\n').map(function (x) { return x.trim(); }).filter(Boolean), colors: cols.length ? cols : null,
+            text: f.tq.value.trim() ? { label: f.tq.value.trim(), max: (p.text && p.text.max) || 20, ph: '', required: true } : null }).then(function () { close(); toast('Saved'); admProducts(); });
+        };
+      }); }; });
+    $('#photoIn').onchange = function (e) { var f = e.target.files[0]; if (!f || !target) return; resizeImage(f, 900, function (url) { Store.saveProduct(target, { photo: url }).then(function () { toast('Photo saved'); admProducts(); }); }); };
+    $('#addP').onclick = function () {
+      modal('<h3 style="font-size:20px;margin-bottom:16px">New product</h3><form id="np" style="display:grid;gap:12px"><label class="field">Name<input name="name" required></label><div class="grid2"><label class="field">Price $<input name="price" type="number" min="0" step="0.5" required></label><label class="field">Collection<select name="col"><option value="lebanon">Lebanon drop</option><option value="xmas">Christmas</option></select></label></div><label class="field">Short line<input name="blurb"></label><label class="field">Description<textarea name="desc"></textarea></label><label class="field">Photo<input name="photo" type="file" accept="image/*"></label><div class="err" id="npErr"></div><button class="btn pri">Add product</button></form>', function (box, close) {
+        box.querySelector('#np').onsubmit = function (e) {
+          e.preventDefault(); var f = e.target; if (!f.name.value.trim() || !(+f.price.value > 0)) { box.querySelector('#npErr').textContent = 'Name and price are needed.'; return; }
+          var save = function (photo) { Store.addProduct({ name: f.name.value.trim(), price: +f.price.value, col: f.col.value, blurb: f.blurb.value.trim(), desc: f.desc.value.trim(), photo: photo || null, printMin: 60, specs: [] }).then(function () { close(); toast('Product added'); admProducts(); }); };
+          if (f.photo.files[0]) resizeImage(f.photo.files[0], 900, save); else save(null);
+        };
+      });
+    };
+  }
+
+  function admSettings() {
+    var s = Store.settings();
+    var f = function (k, l, t, ph) { return '<label class="field">' + l + '<input name="' + k + '" type="' + (t || 'text') + '" value="' + esc(s[k]) + '" placeholder="' + esc(ph || '') + '"' + (t === 'number' ? ' min="0" step="0.5"' : '') + '></label>'; };
+    $('#admBody').innerHTML = '<form class="panel" id="st" style="display:grid;gap:18px;max-width:760px">' +
+      '<div><b style="font-family:var(--head)">Contact & payment</b><div class="grid2" style="margin-top:12px">' + f('whatsapp', 'WhatsApp number (orders go here)', 'tel', '70 123 456') + f('instagram', 'Instagram handle', 'text') + f('whish', 'Whish number', 'tel', '70 123 456') + f('whishName', 'Whish account name') + '</div></div>' +
+      '<div><b style="font-family:var(--head)">Delivery</b><div class="grid2" style="margin-top:12px">' + f('feeBeirut', 'Beirut fee $', 'number') + f('feeMount', 'Mount Lebanon fee $', 'number') + f('feeOther', 'Rest of Lebanon fee $', 'number') + f('freeOver', 'Free delivery over $ (0 = never)', 'number') + '</div>' +
+        '<label class="switch" style="margin-top:12px"><input type="checkbox" name="pickup"' + (s.pickup ? ' checked' : '') + '> Offer free pickup</label></div>' +
+      '<div><b style="font-family:var(--head)">Shop</b><div style="display:grid;gap:12px;margin-top:12px">' + f('banner', 'Top banner text') + f('xmasCutoff', 'Christmas order cut-off', 'date') +
+        '<label class="switch"><input type="checkbox" name="open"' + (s.open !== false ? ' checked' : '') + '> Shop open for orders</label></div></div>' +
+      '<button class="btn pri" style="justify-self:start">Save settings</button></form>';
+    $('#st').onsubmit = function (e) {
+      e.preventDefault(); var t = e.target, out = {};
+      ['whatsapp', 'instagram', 'whish', 'whishName', 'banner', 'xmasCutoff'].forEach(function (k) { out[k] = t[k].value.trim(); });
+      ['feeBeirut', 'feeMount', 'feeOther', 'freeOver'].forEach(function (k) { out[k] = Math.max(0, +t[k].value || 0); });
+      out.pickup = t.pickup.checked; out.open = t.open.checked; out.instagram = out.instagram.replace(/^@/, '');
+      Store.saveSettings(out).then(function () { toast('Settings saved'); renderAdmin(); });
+    };
+  }
+
+  // ---------- router ----------
+  function route() {
+    var h = (location.hash || '#home').slice(1);
+    var s = Store.settings(), an = $('#announce');
+    an.textContent = s.banner || ''; an.classList.toggle('hidden', !s.banner || h === 'admin');
+    if (h !== 'admin') document.title = '3DBlaze — 3D printed in Lebanon';
+    if (h === 'home' || h === '') return viewHome();
+    if (h === 'shop' || h === 'christmas' || h === 'faq') return viewHome(h);
+    if (h.indexOf('p-') === 0) return viewProduct(h.slice(2));
+    if (h === 'cart') return viewCart();
+    if (h === 'checkout') return viewCheckout();
+    if (h.indexOf('order-') === 0) return viewDone(h.slice(6));
+    if (h === 'track') return viewTrack();
+    if (h === 'admin') return viewAdmin();
+    viewHome();
+  }
+
+  window.addEventListener('hashchange', route);
+  Cart.save();
+  Store.init().then(function () {
+    route();
+    var firstEmit = true;
+    Store.on(function () {
+      var h = location.hash.slice(1);
+      if (h === 'admin' && Store.user()) { if (!document.querySelector('.modal')) renderAdmin(); }
+      else if (firstEmit && Store.live) { firstEmit = false; route(); }
+      $('#cartCount').textContent = Cart.count();
+    });
+  });
+})();
