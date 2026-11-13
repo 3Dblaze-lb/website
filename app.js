@@ -256,10 +256,10 @@
     items: ls('cart') || [],
     save: function () { ls('cart', this.items); var cc = $('#cartCount'); if (cc) cc.textContent = this.count(); },
     count: function () { return this.items.reduce(function (n, i) { return n + i.qty; }, 0); },
-    add: function (p, qty, color, text) {
+    add: function (p, qty, color, text, geo) {
       var key = p.id + '|' + (color || '') + '|' + (text || '');
       var ex = this.items.filter(function (i) { return i.key === key; })[0];
-      if (ex) ex.qty += qty; else this.items.push({ key: key, id: p.id, qty: qty, color: color || null, text: text || null });
+      if (ex) ex.qty += qty; else this.items.push({ key: key, id: p.id, qty: qty, color: color || null, text: text || null, geo: geo || null });
       this.save();
     },
     lines: function () {
@@ -295,6 +295,36 @@
     return known ? Math.round(c * 100) / 100 : null;
   }
 
+
+  // ---------- town lookup (OpenStreetMap) for the village pin ----------
+  var Geo = {
+    cache: ls('geo') || {}, t: null, seq: 0,
+    find: function (q, cb) {
+      q = (q || '').trim(); var key = q.toLowerCase();
+      clearTimeout(this.t);
+      if (q.length < 3) { cb(null, q.length ? 'typing' : ''); return; }
+      if (this.cache[key] !== undefined) { cb(this.cache[key], this.cache[key] ? 'found' : 'none'); return; }
+      cb(null, 'searching');
+      var self = this, my = ++this.seq;
+      this.t = setTimeout(function () {
+        fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=lb&limit=3&accept-language=en&q=' + encodeURIComponent(q))
+          .then(function (r) { return r.json(); })
+          .then(function (res) {
+            if (my !== self.seq) return;
+            var hit = null;
+            (res || []).some(function (x) { var la = +x.lat, lo = +x.lon; if (BlazeArt.inLebanon(la, lo)) { hit = { lat: la, lon: lo, label: (x.display_name || '').split(',').slice(0, 3).join(',') }; return true; } return false; });
+            self.cache[key] = hit; ls('geo', self.cache); cb(hit, hit ? 'found' : 'none');
+          }).catch(function () { if (my === self.seq) cb(null, 'offline'); });
+      }, 650);
+    },
+    status: function (hit, st) {
+      return st === 'searching' ? '<span class="muted">Finding it on the map…</span>' :
+        st === 'found' ? '<span style="color:var(--green)">📍 ' + esc(hit.label) + '</span>' :
+        st === 'none' ? '<span class="muted">We couldn’t find it on the map — no problem, we’ll place the pin by hand.</span>' :
+        st === 'offline' ? '<span class="muted">Map search is unavailable right now — we’ll place the pin by hand.</span>' : '';
+    }
+  };
+
   // ---------- views ----------
   var app = $('#app');
 
@@ -318,7 +348,7 @@
         '<div style="display:flex;gap:12px;flex-wrap:wrap"><a class="btn pri" href="#shop">Shop the Lebanon drop</a><a class="btn sec" href="#christmas">Christmas collection</a></div>' +
         '<div class="chips"><span class="chip"><i></i>Cash on delivery</span><span class="chip"><i style="background:var(--blue)"></i>Whish accepted</span><span class="chip"><i style="background:#8C96A4"></i>Ready in 2–4 days</span></div>' +
       '</div><div class="stage"><div class="art mapart" id="heroArt">' + BlazeArt.draw('my-village', { text: 'Your village', color: 'black' }) + '</div>' +
-        '<div class="try"><span>Try it:</span><input id="heroInput" maxlength="18" placeholder="Type your village…" aria-label="Type your village"><a class="btn pri" style="min-height:42px;padding:8px 16px;font-size:14px" id="heroGo" href="#p-my-village">Order</a></div>' +
+        '<div class="geo" id="heroGeo"></div><div class="try"><span>Try it:</span><input id="heroInput" maxlength="18" placeholder="Type your village…" aria-label="Type your village"><a class="btn pri" style="min-height:42px;padding:8px 16px;font-size:14px" id="heroGo" href="#p-my-village">Order</a></div>' +
       '</div></div>' +
       '<div class="wrap"><div class="count" id="countdown"></div></div></section>' +
 
@@ -352,7 +382,9 @@
 
     countdown();
     var hi = $('#heroInput');
-    hi.addEventListener('input', function () { $('#heroArt').innerHTML = BlazeArt.draw('my-village', { text: hi.value || 'Your village', color: 'black' }); });
+    var hpos = null;
+    var hdraw = function () { $('#heroArt').innerHTML = BlazeArt.draw('my-village', { text: hi.value || 'Your village', color: 'black', lat: hpos && hpos.lat, lon: hpos && hpos.lon }); };
+    hi.addEventListener('input', function () { hdraw(); Geo.find(hi.value, function (hit, st) { if (st !== 'searching') hpos = hit; hdraw(); $('#heroGeo').innerHTML = Geo.status(hit, st); }); });
     $('#heroGo').addEventListener('click', function () { ls('prefillVillage', hi.value); });
     if (anchor) { var el = $('#sec-' + anchor); if (el) setTimeout(function () { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 30); }
     else window.scrollTo(0, 0);
@@ -394,14 +426,17 @@
       '<div class="buyrow"><button class="btn pri" id="pAdd"' + (out ? ' disabled' : '') + '>' + (out ? 'Sold out' : 'Add to cart') + '</button>' + (out ? '' : '<button class="btn sec" id="pBuy">Buy now</button>') + '</div>' +
       '<div class="specs">' + (p.specs || []).map(function (s) { return '<div>' + esc(s) + '</div>'; }).join('') + '<div>Made to order in Lebanon · ready in 2–4 days</div><div>Cash on delivery or Whish</div></div>' +
       '</div></div></div>';
-    var draw = function () { $('#pArt').innerHTML = thumb(p, { color: st.color, text: st.text || undefined }); };
+    var draw = function () { $('#pArt').innerHTML = thumb(p, { color: st.color, text: st.text || undefined, lat: st.geo && st.geo.lat, lon: st.geo && st.geo.lon }); };
     draw();
     $$('.sw').forEach(function (b) { b.onclick = function () { st.color = b.dataset.c; $$('.sw').forEach(function (x) { x.classList.toggle('on', x === b); }); draw(); }; });
-    var ti = $('#pText'); if (ti) ti.oninput = function () { st.text = ti.value.trim(); $('#pErr').textContent = ''; draw(); };
+    var isMap = (p.art || p.id) === 'my-village';
+    var geoLook = function () { Geo.find(st.text, function (hit, gs) { if (gs !== 'searching') st.geo = hit; draw(); var g = $('#pGeo'); if (g) g.innerHTML = Geo.status(hit, gs); }); };
+    var ti = $('#pText'); if (ti) ti.oninput = function () { st.text = ti.value.trim(); $('#pErr').textContent = ''; if (isMap) geoLook(); else draw(); };
+    if (isMap && ti) { ti.insertAdjacentHTML('afterend', '<div class="geo" id="pGeo"></div>'); if (st.text) geoLook(); }
     $$('[data-q]').forEach(function (b) { b.onclick = function () { st.qty = Math.max(1, Math.min(50, st.qty + +b.dataset.q)); $('#pQty').textContent = st.qty; }; });
     var add = function () {
       if (p.text && p.text.required && !st.text) { $('#pErr').textContent = 'Please write the ' + p.text.label.toLowerCase() + '.'; ti.focus(); return false; }
-      Cart.add(p, st.qty, st.color, st.text); return true;
+      Cart.add(p, st.qty, st.color, st.text, isMap ? st.geo : null); return true;
     };
     if (!out) {
       $('#pAdd').onclick = function () { if (add()) toast('Added to cart ✓'); };
@@ -412,7 +447,7 @@
 
   function lineHTML(l, ctl) {
     var opts = [l.color ? l.color : '', l.text ? '“' + l.text + '”' : ''].filter(Boolean).join(' · ');
-    return '<div class="line"><div class="th">' + thumb(l.p, { color: l.color, text: l.text }) + '</div><div><div class="nm">' + esc(l.p.name) + '</div><div class="meta">' + esc(opts) + (ctl ? '' : (opts ? ' · ' : '') + '× ' + l.qty) + '</div>' +
+    return '<div class="line"><div class="th">' + thumb(l.p, { color: l.color, text: l.text, lat: l.geo && l.geo.lat, lon: l.geo && l.geo.lon }) + '</div><div><div class="nm">' + esc(l.p.name) + '</div><div class="meta">' + esc(opts) + (ctl ? '' : (opts ? ' · ' : '') + '× ' + l.qty) + '</div>' +
       (ctl ? '<div class="ctl"><button data-k="' + esc(l.key) + '" data-d="-1">−</button><b>' + l.qty + '</b><button data-k="' + esc(l.key) + '" data-d="1">+</button><button class="rm" data-rm="' + esc(l.key) + '">Remove</button></div>' : '') +
       '</div><div class="price" style="font-size:17px">' + money(l.total) + '</div></div>';
   }
@@ -476,7 +511,7 @@
       ls('customer', cust);
       var order = {
         code: newCode(), createdAt: now, status: 'new', paid: false, payment: f.payment.value, method: method, customer: cust,
-        items: Cart.lines().map(function (l) { var it = { id: l.id, name: l.p.name, price: l.p.price, qty: l.qty, color: l.color, text: l.text }; if (l.p.grams != null) { it.unitCost = pieceCost(l.p.grams, l.p.printMin); it.printMin = l.p.printMin; } return it; }),
+        items: Cart.lines().map(function (l) { var it = { id: l.id, name: l.p.name, price: l.p.price, qty: l.qty, color: l.color, text: l.text }; if (l.geo) it.geo = l.geo; if (l.p.grams != null) { it.unitCost = pieceCost(l.p.grams, l.p.printMin); it.printMin = l.p.printMin; } return it; }),
         subtotal: c.sub, delivery: c.del, total: c.sub + c.del, history: [{ s: 'new', t: now }]
       };
       $('#coBtn').disabled = true; $('#coBtn').textContent = 'Placing order…';
@@ -620,7 +655,7 @@
     modal('<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-right:44px"><h3 style="font-size:22px">' + esc(o.code) + '</h3>' + statusBadge(o.status) + (o.demo ? '<span class="badge s-cancelled">sample</span>' : '') + '</div>' +
       '<p class="muted" style="margin:4px 0 16px;font-size:14px">' + fmtDate(o.createdAt) + '</p>' +
       '<div class="lab muted" style="font-size:13px">Move to</div><div class="stepper">' + STATUSES.map(function (s) { return '<button data-s="' + s.k + '" class="' + (o.status === s.k ? 'on' : '') + '">' + s.l + '</button>'; }).join('') + '</div>' +
-      '<div class="panel" style="padding:16px 18px;background:var(--card2)">' + o.items.map(function (i) { var p = Store.product(i.id) || { id: i.id, name: i.name }; return '<div class="line" style="grid-template-columns:56px 1fr auto"><div class="th" style="width:56px;height:56px">' + thumb(p, { color: i.color, text: i.text }) + '</div><div><div class="nm">' + esc(i.name) + ' × ' + i.qty + '</div><div class="meta">' + esc([i.color, i.text ? '“' + i.text + '”' : ''].filter(Boolean).join(' · ')) + '</div></div><b>' + money(i.price * i.qty) + '</b></div>'; }).join('') +
+      '<div class="panel" style="padding:16px 18px;background:var(--card2)">' + o.items.map(function (i) { var p = Store.product(i.id) || { id: i.id, name: i.name }; return '<div class="line" style="grid-template-columns:56px 1fr auto"><div class="th" style="width:56px;height:56px">' + thumb(p, { color: i.color, text: i.text, lat: i.geo && i.geo.lat, lon: i.geo && i.geo.lon }) + '</div><div><div class="nm">' + esc(i.name) + ' × ' + i.qty + '</div><div class="meta">' + esc([i.color, i.text ? '“' + i.text + '”' : ''].filter(Boolean).join(' · ')) + '</div></div><b>' + money(i.price * i.qty) + '</b></div>'; }).join('') +
       '<div class="sum" style="margin-top:10px">' + (function () { var c = orderCost(o); return c == null ? '<div class="muted" style="font-size:13px"><span>Profit</span><span>add the Bambu file to each product to see it</span></div>' : '<div><span>Cost · profit</span><b style="color:var(--green)">' + money(c) + ' · ' + money((o.subtotal || 0) - c) + '</b></div>'; })() + '<div><span>Delivery</span><b>' + (o.delivery ? money(o.delivery) : 'Free') + '</b></div><div class="tot" style="font-size:18px"><span>Total</span><span>' + money(o.total) + '</span></div></div></div>' +
       '<div class="kv"><span>Customer</span><b>' + esc(c.name) + '</b><span>Phone</span><b>' + esc(c.phone) + '</b><span>' + (o.method === 'pickup' ? 'Method' : 'Address') + '</span><b>' + (o.method === 'pickup' ? 'Pickup' : esc(c.address + ', ' + c.town + ' — ' + c.region)) + '</b>' +
       (c.notes ? '<span>Notes</span><b>' + esc(c.notes) + '</b>' : '') +
@@ -640,7 +675,7 @@
         var nt; box.querySelector('#mNote').oninput = function (e) { clearTimeout(nt); nt = setTimeout(function () { Store.updateOrder(o.code, { note: e.target.value }); }, 600); };
         var rqb = box.querySelector('#mReq'); if (rqb) rqb.onclick = function () {
           var it = o.items.filter(function (i) { return i.id === 'my-village'; })[0] || o.items.filter(function (i) { return i.text; })[0];
-          var data = { type: it.id === 'my-village' ? 'map' : 'custom', title: it.id === 'my-village' ? (it.text || '') : it.name + (it.text ? ' with “' + it.text + '”' : ''), base: it.color === 'white' ? 'white' : 'black', mapc: it.color === 'white' ? 'green' : 'white', place: o.customer.region || '', notes: '', size: '', order: o.code, status: 'sent', createdAt: Date.now() };
+          var data = { type: it.id === 'my-village' ? 'map' : 'custom', geo: it.geo || null, title: it.id === 'my-village' ? (it.text || '') : it.name + (it.text ? ' with “' + it.text + '”' : ''), base: it.color === 'white' ? 'white' : 'black', mapc: it.color === 'white' ? 'green' : 'white', place: o.customer.region || '', notes: '', size: '', order: o.code, status: 'sent', createdAt: Date.now() };
           Store.saveRequest(null, data).then(function (id) { data.id = id; copy(requestText(data), 'Copied — paste it in your Claude chat'); close(); adm.tab = 'requests'; renderAdmin(); });
         };
         box.querySelector('#mCpMsg').onclick = function () { copy(setWa(), 'Message copied'); };
@@ -653,7 +688,7 @@
   var REQ_STATUS = [['new', 'New'], ['sent', 'Sent to Claude'], ['ready', 'File ready'], ['done', 'Printed']];
   function requestText(r) {
     var t = '3DBlaze design request ' + r.id + '\n';
-    if (r.type === 'map') t += 'Product: "My Village" map (.3mf for Bambu Studio)\nVillage / name on it: ' + r.title + (r.place ? '\nWhere: ' + r.place : '') + '\nColours: base ' + (r.base || 'black') + ', map ' + (r.mapc || 'white') + ', name ' + (r.mapc || 'white') + ', pin red';
+    if (r.type === 'map') t += 'Product: "My Village" map (.3mf for Bambu Studio)\nVillage / name on it: ' + r.title + (r.geo ? '\nPin (from the customer’s search): ' + r.geo.lat.toFixed(5) + ', ' + r.geo.lon.toFixed(5) + ' — ' + r.geo.label : '') + (r.place ? '\nWhere: ' + r.place : '') + '\nColours: base ' + (r.base || 'black') + ', map ' + (r.mapc || 'white') + ', name ' + (r.mapc || 'white') + ', pin red';
     else t += 'Product: custom design (.3mf for Bambu Studio)\nWhat: ' + r.title;
     if (r.size) t += '\nSize: ' + r.size;
     if (r.notes) t += '\nNotes: ' + r.notes;
