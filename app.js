@@ -802,7 +802,7 @@
   var REQ_STATUS = [['new', 'New'], ['sent', 'Sent to Claude'], ['ready', 'File ready'], ['done', 'Printed']];
   function requestText(r) {
     var t = '3DBlaze design request ' + r.id + '\n';
-    if (r.type === 'map') t += 'Product: "My Village" map (.3mf for Bambu Studio)\nVillage / name on it: ' + r.title + (r.geo ? '\nPin (from the customer’s search): ' + r.geo.lat.toFixed(5) + ', ' + r.geo.lon.toFixed(5) + ' — ' + r.geo.label : '') + (r.place ? '\nWhere: ' + r.place : '') + '\nColours: base ' + (r.base || 'black') + ', map ' + (r.mapc || 'white') + ', name ' + (r.mapc || 'white') + ', pin red';
+    if (r.type === 'map') t += 'Product: "My Village" map (.3mf for Bambu Studio)\nVillage / name on it: ' + r.title + (r.geo ? '\nPin (from the customer’s search): ' + r.geo.lat.toFixed(5) + ', ' + r.geo.lon.toFixed(5) + ' — ' + r.geo.label : '') + (r.place ? '\nWhere: ' + r.place : '') + '\nColours: black base, white map, white name, red pin (black only)';
     else t += 'Product: custom design (.3mf for Bambu Studio)\nWhat: ' + r.title;
     if (r.size) t += '\nSize: ' + r.size;
     if (r.notes) t += '\nNotes: ' + r.notes;
@@ -816,7 +816,7 @@
       '<div class="paysel"><label class="on"><input type="radio" name="type" value="map" checked><span><b>Village map</b><small>Lebanon + pin + name</small></span></label><label><input type="radio" name="type" value="custom"><span><b>Custom</b><small>Anything else</small></span></label></div>' +
       '<label class="field" id="rqT">Village / name on it<input name="title" placeholder="e.g. Hadchit" required></label>' +
       '<label class="field" id="rqP">Where is it? (district, optional)<input name="place" placeholder="e.g. Bsharri district"></label>' +
-      '<div class="grid2" id="rqC"><label class="field">Base colour<select name="base"><option>black</option><option>white</option><option>red</option><option>green</option></select></label><label class="field">Map & name colour<select name="mapc"><option>white</option><option>black</option><option>red</option><option>green</option></select></label></div>' +
+      '<div class="muted" id="rqC" style="font-size:14px">Colours: black base, white map, white name, red pin (black only).</div>' +
       '<label class="field">Size (optional)<input name="size" placeholder="Standard is 9 × 15 cm"></label>' +
       '<label class="field">Notes<textarea name="notes" placeholder="Anything special…"></textarea></label>' +
       '<label class="field">Order code (optional)<input name="order" placeholder="3DB-XXXXX"></label>' +
@@ -832,7 +832,7 @@
     f.addEventListener('change', sync); sync();
     f.onsubmit = function (e) {
       e.preventDefault(); if (!f.title.value.trim()) { $('#rqErr').textContent = 'Write the village or what you need.'; return; }
-      var data = { type: f.type.value, title: f.title.value.trim(), place: f.place.value.trim(), base: f.base.value, mapc: f.mapc.value, size: f.size.value.trim(), notes: f.notes.value.trim(), order: f.order.value.trim().toUpperCase(), status: 'sent', createdAt: Date.now() };
+      var data = { type: f.type.value, title: f.title.value.trim(), place: f.place.value.trim(), base: 'black', mapc: 'white', size: f.size.value.trim(), notes: f.notes.value.trim(), order: f.order.value.trim().toUpperCase(), status: 'sent', createdAt: Date.now() };
       Store.saveRequest(null, data).then(function (id) { data.id = id; copy(requestText(data), 'Copied — paste it in your Claude chat'); admRequests(); });
     };
     $$('[data-rc]').forEach(function (b) { b.onclick = function () { var r = list.filter(function (x) { return x.id === b.dataset.rc; })[0]; copy(requestText(r), 'Copied — paste it in your Claude chat'); if (r.status === 'new') Store.saveRequest(r.id, { status: 'sent' }); }; });
