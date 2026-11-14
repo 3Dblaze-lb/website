@@ -2,19 +2,42 @@
 (function () {
   'use strict';
 
-  // ---------- self-update: if the browser served an old cached page, reload once to the newest version ----------
+  // ---------- self-update: never leave a visitor on an old version ----------
+  // Checks the live page on load, when the tab comes back to the front, and every 5 min.
+  // If a newer version is live, reloads (or, during checkout, shows a "tap to update" bar so nothing typed is lost).
   (function () {
     try {
       var me = [].slice.call(document.scripts).filter(function (s) { return /\/app\.js/.test(s.src); })[0];
       var mine = me && (me.src.match(/[?&]v=([^&]+)/) || [])[1];
       if (!mine || !window.fetch || location.protocol === 'file:') return;
-      fetch(location.pathname + '?nc=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (html) {
-        var live = (html.match(/app\.js\?v=([^"&]+)/) || [])[1];
-        if (!live || live === mine) return;
-        var k = 'blz_upd_' + live, done = null;
-        try { done = sessionStorage.getItem(k); sessionStorage.setItem(k, '1'); } catch (e) {}
-        if (!done) location.reload();
-      }).catch(function () {});
+      var busy = false, last = 0;
+      var bar = function () {
+        if (document.getElementById('blzUpd')) return;
+        var b = document.createElement('button'); b.id = 'blzUpd'; b.type = 'button';
+        b.textContent = 'A new version of the site is ready — tap to update';
+        b.style.cssText = 'position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:9999;background:#0B1220;color:#fff;border:0;border-radius:999px;padding:12px 18px;font:600 14px/1.2 system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.25);cursor:pointer;max-width:92vw';
+        b.onclick = function () { location.reload(); };
+        document.body.appendChild(b);
+      };
+      var check = function () {
+        var now = Date.now(); if (busy || now - last < 30000) return; busy = true; last = now;
+        fetch(location.pathname + '?nc=' + now, { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (html) {
+          busy = false;
+          var live = (html.match(/app\.js\?v=([^"&]+)/) || [])[1];
+          if (!live || live === mine) return;
+          var k = 'blz_upd_' + live, done = null;
+          try { done = sessionStorage.getItem(k); } catch (e) {}
+          var typing = /^#(checkout|cart)/.test(location.hash) || (document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName));
+          if (done || typing) { bar(); return; }
+          try { sessionStorage.setItem(k, '1'); } catch (e) {}
+          location.reload();
+        }).catch(function () { busy = false; });
+      };
+      check();
+      document.addEventListener('visibilitychange', function () { if (!document.hidden) check(); });
+      window.addEventListener('pageshow', function (e) { if (e.persisted) check(); });
+      window.addEventListener('focus', check);
+      setInterval(function () { if (!document.hidden) check(); }, 300000);
     } catch (e) {}
   })();
 
