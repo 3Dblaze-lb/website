@@ -2,6 +2,22 @@
 (function () {
   'use strict';
 
+  // ---------- self-update: if the browser served an old cached page, reload once to the newest version ----------
+  (function () {
+    try {
+      var me = [].slice.call(document.scripts).filter(function (s) { return /\/app\.js/.test(s.src); })[0];
+      var mine = me && (me.src.match(/[?&]v=([^&]+)/) || [])[1];
+      if (!mine || !window.fetch || location.protocol === 'file:') return;
+      fetch(location.pathname + '?nc=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (html) {
+        var live = (html.match(/app\.js\?v=([^"&]+)/) || [])[1];
+        if (!live || live === mine) return;
+        var k = 'blz_upd_' + live, done = null;
+        try { done = sessionStorage.getItem(k); sessionStorage.setItem(k, '1'); } catch (e) {}
+        if (!done) location.reload();
+      }).catch(function () {});
+    } catch (e) {}
+  })();
+
   // ---------- catalog (defaults; admin can override price / availability / photos) ----------
   var CATALOG = [
     { id: 'flag-keychain', col: 'lebanon', name: 'Lebanese Flag Keychain', price: 4, tag: 'Bestseller', printMin: 24,
