@@ -770,7 +770,7 @@
     var today = orders.filter(function (o) { return o.createdAt >= dayStart; }).length;
 
     app.innerHTML = '<div class="wrap admin">' + (Store.live ? '' : '<div class="demo">Demo mode: orders are saved in this browser only. <button class="upl" id="clrDemo">Clear sample orders</button></div>') +
-      '<div class="adm-top"><h1>Manager</h1><div class="tabs">' + [['orders', 'Orders' + (newCount ? ' (' + newCount + ')' : '')], ['queue', 'Print queue'], ['requests', 'Design requests' + (function () { var n = Store.requests().filter(function (r) { return r.status !== 'done'; }).length; return n ? ' (' + n + ')' : ''; })()], ['calc', 'Calculator'], ['products', 'Products'], ['settings', 'Settings']].map(function (t) { return '<button data-tab="' + t[0] + '" class="' + (adm.tab === t[0] ? 'on' : '') + '">' + t[1] + '</button>'; }).join('') +
+      '<div class="adm-top"><h1>Manager</h1><div class="tabs">' + [['orders', 'Orders' + (newCount ? ' (' + newCount + ')' : '')], ['customers', 'Customers'], ['queue', 'Print queue'], ['requests', 'Design requests' + (function () { var n = Store.requests().filter(function (r) { return r.status !== 'done'; }).length; return n ? ' (' + n + ')' : ''; })()], ['calc', 'Calculator'], ['products', 'Products'], ['settings', 'Settings']].map(function (t) { return '<button data-tab="' + t[0] + '" class="' + (adm.tab === t[0] ? 'on' : '') + '">' + t[1] + '</button>'; }).join('') +
       '</div><button class="btn sec" id="logout" style="min-height:42px;padding:8px 14px;font-size:14px">Log out</button></div>' +
       '<div class="kpis"><div class="kpi live"><small><i class="dot"></i>On the site now</small><b id="liveNow">' + Presence.count() + '</b></div><div class="kpi o"><small>New orders</small><b>' + newCount + '</b></div><div class="kpi"><small>Orders today</small><b>' + today + '</b></div><div class="kpi g"><small>Sales · profit this month</small><b>' + money(revMonth) + ' · ' + money(profMonth) + '</b></div><div class="kpi"><small>To collect · in queue</small><b>' + money(toCollect) + ' · ' + inQueue + '</b></div></div>' +
       '<div id="admBody"></div></div>';
@@ -778,7 +778,7 @@
     $('#logout').onclick = function () { Store.logout(); viewAdmin(); };
     Presence.watch();
     var cd = $('#clrDemo'); if (cd) cd.onclick = function () { Store.clearDemo(); toast('Sample orders removed'); };
-    ({ orders: admOrders, queue: admQueue, requests: admRequests, calc: admCalc, products: admProducts, settings: admSettings })[adm.tab]();
+    ({ orders: admOrders, customers: admCustomers, queue: admQueue, requests: admRequests, calc: admCalc, products: admProducts, settings: admSettings })[adm.tab]();
   }
 
   function admOrders() {
@@ -798,7 +798,7 @@
       '<div class="olist">' + (list.length ? list.map(function (o) {
         var n = o.items.reduce(function (a, i) { return a + i.qty; }, 0);
         return '<div class="orow" data-o="' + esc(o.code) + '"><div><div class="c">' + esc(o.code) + '</div><small class="muted">' + fmtDate(o.createdAt) + '</small></div>' +
-          '<div class="n"><b>' + esc(o.customer.name) + '</b><small>' + esc(o.customer.town || 'Pickup') + '</small></div>' +
+          '<div class="n"><b>' + esc(o.customer.name) + '</b><small>' + esc(o.method === 'pickup' ? 'Pickup' : [o.customer.town, o.customer.region].filter(Boolean).join(' · ')) + '</small><small class="ph">' + esc(fmtPhone(o.customer.phone)) + '</small></div>' +
           '<div class="it"><small>' + n + ' item' + (n > 1 ? 's' : '') + ' · ' + esc(o.items.map(function (i) { return i.name; }).join(', ')) + '</small></div>' +
           '<div class="pm"><small class="' + (o.paid ? 'paid' : 'unpaid') + '">' + (o.payment === 'whish' ? 'Whish' : 'Cash') + (o.paid ? ' ✓' : '') + '</small></div>' +
           '<div>' + statusBadge(o.status) + '</div><div class="tt">' + money(o.total) + '</div></div>';
@@ -825,6 +825,71 @@
     cancelled: function (o) { return 'Hi ' + o.customer.name.split(' ')[0] + ', your order ' + o.code + ' has been cancelled. Message us if you have any question.'; }
   };
 
+  // ---------- customers & delivery helpers ----------
+  function phoneKey(p) { var d = String(p || '').replace(/\D/g, ''); if (d.indexOf('00961') === 0) d = d.slice(5); else if (d.indexOf('961') === 0 && d.length > 8) d = d.slice(3); return d.replace(/^0/, ''); }
+  function fmtPhone(p) { var d = phoneKey(p); if (!d) return ''; if (d.length === 7) d = '0' + d; return '+961 ' + d.replace(/^(\d{2})(\d{3})(\d{3})$/, '$1 $2 $3'); }
+  function telHref(p) { var d = phoneKey(p); return 'tel:+961' + (d.length === 7 ? '0' + d : d); }
+  function mapHref(c) { return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent([c.address, c.town, c.region, 'Lebanon'].filter(Boolean).join(', ')); }
+  function itemsText(o) { return o.items.map(function (i) { return i.qty + '× ' + i.name + (i.color ? ' (' + i.color + ')' : '') + (i.text ? ' “' + i.text + '”' : ''); }).join('\n'); }
+  function driverText(o) {
+    var c = o.customer, pickup = o.method === 'pickup';
+    return '3DBlaze ' + (pickup ? 'pickup' : 'delivery') + ' — ' + o.code + '\n' +
+      'Customer: ' + c.name + '\nPhone: ' + fmtPhone(c.phone) + '\n' +
+      (pickup ? 'PICKUP (no delivery)\n' : 'Area: ' + (c.region || '-') + '\nTown: ' + (c.town || '-') + '\nAddress: ' + (c.address || '-') + '\n') +
+      (c.notes ? 'Notes: ' + c.notes + '\n' : '') +
+      'Items:\n' + itemsText(o) + '\n' +
+      'Collect: ' + (o.paid ? '$0 — already paid' + (o.payment === 'whish' ? ' (Whish)' : '') : money(o.total) + (o.payment === 'whish' ? ' (Whish — check if paid)' : ' cash')) +
+      (pickup ? '' : '\nMap: ' + mapHref(c));
+  }
+  function customerList() {
+    var map = {};
+    Store.orders().forEach(function (o) {
+      var c = o.customer || {}, k = phoneKey(c.phone) || ('n:' + (c.name || '').toLowerCase());
+      var e = map[k] || (map[k] = { key: k, name: c.name, phone: c.phone, orders: [], spent: 0, addrs: [], last: 0, first: Infinity });
+      e.orders.push(o);
+      if (o.createdAt >= e.last) { e.last = o.createdAt; e.name = c.name || e.name; e.phone = c.phone || e.phone; }
+      e.first = Math.min(e.first, o.createdAt);
+      if (o.status !== 'cancelled') e.spent += o.total || 0;
+      if (o.method !== 'pickup' && (c.address || c.town)) {
+        var a = { region: c.region, town: c.town, address: c.address, t: o.createdAt }, sig = [a.region, a.town, a.address].join('|').toLowerCase();
+        var ex = e.addrs.filter(function (x) { return x.sig === sig; })[0];
+        if (ex) ex.t = Math.max(ex.t, a.t); else { a.sig = sig; e.addrs.push(a); }
+      }
+    });
+    return Object.keys(map).map(function (k) { var e = map[k]; e.addrs.sort(function (a, b) { return b.t - a.t; }); e.orders.sort(function (a, b) { return b.createdAt - a.createdAt; }); e.active = e.orders.filter(function (o) { return o.status !== 'cancelled'; }).length; return e; })
+      .sort(function (a, b) { return b.last - a.last; });
+  }
+  function admCustomers() {
+    var all = customerList(), q = (adm.cq || '').toLowerCase();
+    var list = all.filter(function (e) { if (!q) return true; return (e.name + ' ' + e.phone + ' ' + fmtPhone(e.phone) + ' ' + e.addrs.map(function (a) { return a.town + ' ' + a.region + ' ' + a.address; }).join(' ')).toLowerCase().indexOf(q) >= 0; });
+    $('#admBody').innerHTML = '<div class="filters"><input class="search" id="cq" placeholder="Search name, phone, town" value="' + esc(adm.cq || '') + '"><button class="btn sec" id="ccsv" style="min-height:42px;padding:8px 14px;font-size:14px">Copy as CSV</button></div>' +
+      '<p class="muted" style="font-size:13px;margin:0 0 10px">' + all.length + ' customer' + (all.length === 1 ? '' : 's') + ' · built from your orders (same phone = same customer)</p>' +
+      '<div class="olist">' + (list.length ? list.map(function (e) {
+        var a = e.addrs[0];
+        return '<div class="crow" data-c="' + esc(e.key) + '"><div class="n"><b>' + esc(e.name) + '</b><small>' + esc(fmtPhone(e.phone)) + '</small></div>' +
+          '<div class="ad"><small>' + (a ? esc([a.town, a.region].filter(Boolean).join(' · ')) + '<br>' + esc(a.address || '') : 'Pickup only') + '</small></div>' +
+          '<div class="st"><b>' + e.active + '</b><small> order' + (e.active === 1 ? '' : 's') + '</small></div>' +
+          '<div class="tt">' + money(e.spent) + '<small>last ' + fmtDate(e.last).split(' · ')[0] + '</small></div></div>';
+      }).join('') : '<div class="panel empty"><p class="muted">' + (all.length ? 'No customer matches your search.' : 'No customers yet — they appear here automatically with their first order.') + '</p></div>') + '</div>';
+    var inp = $('#cq'); inp.oninput = function () { adm.cq = inp.value; var pos = inp.selectionStart; admCustomers(); var n = $('#cq'); n.focus(); n.setSelectionRange(pos, pos); };
+    $$('[data-c]').forEach(function (r) { r.onclick = function () { customerModal(r.dataset.c); }; });
+    $('#ccsv').onclick = function () {
+      var rows = [['name', 'phone', 'orders', 'spent', 'last order', 'area', 'town', 'address']].concat(all.map(function (e) { var a = e.addrs[0] || {}; return [e.name, fmtPhone(e.phone), e.active, e.spent, new Date(e.last).toISOString().slice(0, 10), a.region || '', a.town || '', a.address || '']; }));
+      copy(rows.map(function (r) { return r.map(function (c) { c = String(c == null ? '' : c); return /[",\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(','); }).join('\n'), 'Customers copied — paste into Sheets or Excel');
+    };
+  }
+  function customerModal(key) {
+    var e = customerList().filter(function (x) { return x.key === key; })[0]; if (!e) return;
+    modal('<h3 style="font-size:22px;margin:0 44px 4px 0">' + esc(e.name) + '</h3><p class="muted" style="margin:0 0 14px;font-size:14px">Customer since ' + fmtDate(e.first).split(' · ')[0] + ' · ' + e.active + ' order' + (e.active === 1 ? '' : 's') + ' · ' + money(e.spent) + ' spent</p>' +
+      '<div class="kv"><span>Phone</span><b>' + esc(fmtPhone(e.phone)) + ' · <a href="' + telHref(e.phone) + '">Call</a> · <a href="' + waLink(e.phone, 'Hi ' + (e.name || '').split(' ')[0] + '! This is 3DBlaze ⚡') + '" target="_blank" rel="noopener">WhatsApp</a></b>' +
+      (e.addrs.length ? e.addrs.map(function (a, i) { return '<span>' + (i ? 'Older address' : 'Address') + '</span><b>' + esc([a.address, a.town, a.region].filter(Boolean).join(', ')) + ' · <a href="' + mapHref(a) + '" target="_blank" rel="noopener">Map</a></b>'; }).join('') : '<span>Address</span><b>Pickup only</b>') + '</div>' +
+      '<div class="lab muted" style="font-size:13px;margin-bottom:8px">Past orders</div><div class="olist">' + e.orders.map(function (o) {
+        return '<div class="orow mini" data-mo="' + esc(o.code) + '"><div><div class="c">' + esc(o.code) + '</div><small class="muted">' + fmtDate(o.createdAt) + '</small></div><div class="it"><small>' + esc(o.items.map(function (i) { return i.qty + '× ' + i.name; }).join(', ')) + '</small></div><div>' + statusBadge(o.status) + '</div><div class="tt">' + money(o.total) + '</div></div>';
+      }).join('') + '</div>', function (box, close) {
+        $$('[data-mo]', box).forEach(function (r) { r.onclick = function () { close(); orderModal(r.dataset.mo); }; });
+      });
+  }
+
   function orderModal(code) {
     var o = Store.orders().filter(function (x) { return x.code === code; })[0]; if (!o) return;
     var c = o.customer;
@@ -833,11 +898,18 @@
       '<div class="lab muted" style="font-size:13px">Move to</div><div class="stepper">' + STATUSES.map(function (s) { return '<button data-s="' + s.k + '" class="' + (o.status === s.k ? 'on' : '') + '">' + s.l + '</button>'; }).join('') + '</div>' +
       '<div class="panel" style="padding:16px 18px;background:var(--card2)">' + o.items.map(function (i) { var p = Store.product(i.id) || { id: i.id, name: i.name }; return '<div class="line" style="grid-template-columns:56px 1fr auto"><div class="th" style="width:56px;height:56px">' + thumb(p, { color: i.color, text: i.text, lat: i.geo && i.geo.lat, lon: i.geo && i.geo.lon }) + '</div><div><div class="nm">' + esc(i.name) + ' × ' + i.qty + '</div><div class="meta">' + esc([i.color, i.text ? '“' + i.text + '”' : ''].filter(Boolean).join(' · ')) + '</div></div><b>' + money(i.price * i.qty) + '</b></div>'; }).join('') +
       '<div class="sum" style="margin-top:10px">' + (function () { var c = orderCost(o); return c == null ? '<div class="muted" style="font-size:13px"><span>Profit</span><span>add the Bambu file to each product to see it</span></div>' : '<div><span>Cost · profit</span><b style="color:var(--green)">' + money(c) + ' · ' + money((o.subtotal || 0) - c) + '</b></div>'; })() + '<div><span>Delivery</span><b>' + (o.delivery ? money(o.delivery) : 'Free') + '</b></div><div class="tot" style="font-size:18px"><span>Total</span><span>' + money(o.total) + '</span></div></div></div>' +
-      '<div class="kv"><span>Customer</span><b>' + esc(c.name) + '</b><span>Phone</span><b>' + esc(c.phone) + '</b><span>' + (o.method === 'pickup' ? 'Method' : 'Address') + '</span><b>' + (o.method === 'pickup' ? 'Pickup' : esc(c.address + ', ' + c.town + ' — ' + c.region)) + '</b>' +
-      (c.notes ? '<span>Notes</span><b>' + esc(c.notes) + '</b>' : '') +
+      '<div class="dlv"><div class="dlv-h"><b>' + (o.method === 'pickup' ? 'Pickup' : 'Delivery') + ' details</b><span>' + (o.paid ? 'Paid' : 'Collect ' + money(o.total) + (o.payment === 'whish' ? ' (Whish)' : ' cash')) + '</span></div>' +
+        '<div class="kv"><span>Customer</span><b>' + esc(c.name) + '</b>' +
+        '<span>Phone</span><b>' + esc(fmtPhone(c.phone)) + ' · <a href="' + telHref(c.phone) + '">Call</a></b>' +
+        (o.method === 'pickup' ? '<span>Method</span><b>Pickup — no delivery</b>' :
+          '<span>Area</span><b>' + esc(c.region || '-') + '</b><span>Town</span><b>' + esc(c.town || '-') + '</b><span>Address</span><b>' + esc(c.address || '-') + ' · <a href="' + mapHref(c) + '" target="_blank" rel="noopener">Map</a></b>') +
+        (c.notes ? '<span>Notes</span><b>' + esc(c.notes) + '</b>' : '') +
+        '<span>Items</span><b style="white-space:pre-line">' + esc(itemsText(o)) + '</b></div>' +
+        '<div class="actions" style="margin-top:0"><button class="btn pri" id="mCpAddr">Copy for driver</button><a class="btn sec" id="mDrv" target="_blank" rel="noopener">Send to driver (WhatsApp)</a></div></div>' +
+      '<div class="kv">' +
       '<span>Payment</span><b>' + (o.payment === 'whish' ? 'Whish' : 'Cash on delivery') + ' · <label class="switch" style="display:inline-flex"><input type="checkbox" id="mPaid"' + (o.paid ? ' checked' : '') + '> paid</label></b>' +
       '<span>Internal note</span><input id="mNote" class="search" style="min-width:0" placeholder="Only you see this" value="' + esc(o.note || '') + '"></div>' +
-      '<div class="actions">' + (o.items.some(function (i) { return i.id === 'my-village' || (i.text && i.id !== 'design'); }) ? '<button class="btn pri" id="mReq">Request 3MF</button>' : '') + '<a class="btn wa" id="mWa" target="_blank" rel="noopener">WhatsApp customer</a><button class="btn sec" id="mCpMsg">Copy message</button><button class="btn sec" id="mCpAddr">Copy for driver</button></div>' +
+      '<div class="actions">' + (o.items.some(function (i) { return i.id === 'my-village' || (i.text && i.id !== 'design'); }) ? '<button class="btn pri" id="mReq">Request 3MF</button>' : '') + '<a class="btn wa" id="mWa" target="_blank" rel="noopener">WhatsApp customer</a><button class="btn sec" id="mCpMsg">Copy message</button></div>' +
       '<p class="muted" style="font-size:13px;margin:12px 0 0" id="mMsgPrev"></p>', function (box, close) {
         var setWa = function () { var msg = CUSTOMER_MSG[o.status](o); box.querySelector('#mWa').href = waLink(c.phone, msg); box.querySelector('#mMsgPrev').textContent = 'Message for “' + (STATUSES.filter(function (s) { return s.k === o.status; })[0].l) + '”: ' + msg; return msg; };
         setWa();
@@ -855,7 +927,10 @@
           Store.saveRequest(null, data).then(function (id) { data.id = id; copy(requestText(data), 'Copied — paste it in your Claude chat'); close(); adm.tab = 'requests'; renderAdmin(); });
         };
         box.querySelector('#mCpMsg').onclick = function () { copy(setWa(), 'Message copied'); };
-        box.querySelector('#mCpAddr').onclick = function () { copy(o.code + '\n' + c.name + ' — ' + c.phone + '\n' + (o.method === 'pickup' ? 'PICKUP' : c.address + ', ' + c.town + ' (' + c.region + ')') + '\nCollect: ' + (o.paid ? '$0 (paid)' : money(o.total)), 'Driver details copied'); };
+        var setDrv = function () { box.querySelector('#mDrv').href = 'https://wa.me/?text=' + encodeURIComponent(driverText(o)); };
+        setDrv();
+        box.querySelector('#mPaid').addEventListener('change', setDrv);
+        box.querySelector('#mCpAddr').onclick = function () { copy(driverText(o), 'Driver details copied'); };
       });
   }
 

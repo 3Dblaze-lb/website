@@ -279,6 +279,20 @@ footer a:hover{color:var(--text)}
 .orow .n small,.orow .it small{color:var(--muted)}
 .orow .tt{font-family:var(--head);font-weight:700;text-align:right}
 @media (max-width:900px){.orow{grid-template-columns:1fr auto;}.orow .it,.orow .pm{display:none}}
+.orow .n small{display:block}.orow .n .ph{font-size:12px}
+.orow.mini{grid-template-columns:110px 1fr 120px 70px;padding:10px 14px}
+@media (max-width:900px){.orow.mini{grid-template-columns:1fr auto auto}.orow.mini .it{display:none}}
+.crow{display:grid;grid-template-columns:1.2fr 2fr 90px 110px;gap:14px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;cursor:pointer;font-size:14px}
+.crow:hover{border-color:var(--line2);box-shadow:var(--shadow)}
+.crow .n b{display:block;font-size:15px}.crow small{color:var(--muted)}
+.crow .st b{font-family:var(--head)}
+.crow .tt{font-family:var(--head);font-weight:700;text-align:right}.crow .tt small{display:block;font-family:inherit;font-weight:400;font-size:12px}
+@media (max-width:760px){.crow{grid-template-columns:1fr auto}.crow .ad,.crow .st{display:none}}
+.dlv{border:1px solid var(--line2);border-radius:14px;padding:14px 16px;margin:14px 0 6px;background:#fff}
+.dlv-h{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:4px;flex-wrap:wrap}
+.dlv-h span{font-size:13px;font-weight:700;background:var(--soft);border-radius:99px;padding:4px 10px}
+.dlv .kv{margin:8px 0 12px}
+.dlv .kv a,.kv a{color:var(--blue,#1A8CFF);font-weight:600}
 .badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:99px;white-space:nowrap}
 .badge:before{content:"";width:6px;height:6px;border-radius:9px;background:currentColor}
 .s-new{background:#E6F1FF;color:#0A5BC0}
@@ -357,8 +371,8 @@ footer a:hover{color:var(--text)}
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>window.BLAZE_ADMIN = true;</script>
-<script src="firebase-config.js?v=94643151"></script>
-<script src="art.js?v=94643151"></script>
-<script src="app.js?v=94643151"></script>
+<script src="firebase-config.js?v=94643550"></script>
+<script src="art.js?v=94643550"></script>
+<script src="app.js?v=94643550"></script>
 </body>
 </html>
