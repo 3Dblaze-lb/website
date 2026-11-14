@@ -165,8 +165,9 @@
   var Store = (function () {
     var cfg = window.BLAZE_FIREBASE, live = !!(cfg && cfg.apiKey);
     var state = { overrides: {}, extra: {}, settings: Object.assign({}, DEFAULT_SETTINGS), orders: {}, requests: {}, user: null };
-    var subs = [];
+    var subs = [], rev = 0, got = { products: false, extra: false, settings: false };
     function emit() { subs.forEach(function (f) { f(); }); }
+    function shopData(k) { got[k] = true; rev++; }
     var fb = null;
 
     function loadScript(src) { return new Promise(function (res, rej) { var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); }); }
@@ -186,9 +187,9 @@
         .then(function () { return Promise.all([loadScript(base + 'firebase-database-compat.js'), loadScript(base + 'firebase-auth-compat.js')]); })
         .then(function () {
           firebase.initializeApp(cfg); fb = firebase.database();
-          fb.ref('products').on('value', function (s) { state.overrides = s.val() || {}; emit(); });
-          fb.ref('extraProducts').on('value', function (s) { state.extra = s.val() || {}; emit(); });
-          fb.ref('settings').on('value', function (s) { state.settings = Object.assign({}, DEFAULT_SETTINGS, s.val() || {}); emit(); });
+          fb.ref('products').on('value', function (s) { state.overrides = s.val() || {}; shopData('products'); emit(); });
+          fb.ref('extraProducts').on('value', function (s) { state.extra = s.val() || {}; shopData('extra'); emit(); });
+          fb.ref('settings').on('value', function (s) { state.settings = Object.assign({}, DEFAULT_SETTINGS, s.val() || {}); shopData('settings'); emit(); });
           var ordersRef = null;
           firebase.auth().onAuthStateChanged(function (u) {
             state.user = u ? { email: u.email, uid: u.uid } : null;
@@ -209,6 +210,8 @@
 
     return {
       get live() { return live; },
+      ready: function () { return !live || (got.products && got.extra && got.settings); },
+      rev: function () { return rev; },
       init: init, on: function (f) { subs.push(f); },
       products: products,
       product: function (id) { return products().filter(function (p) { return p.id === id; })[0]; },
@@ -1246,12 +1249,25 @@
   Store.init().then(function () {
     Presence.start();
     route();
-    var firstEmit = true;
+    // Re-draw the shop whenever products / settings arrive or change, so photos, prices and stock are always current.
+    // Pages where the customer is typing (checkout, product page after first draw) are not redrawn under them.
+    var drawnRev = Store.live ? -1 : Store.rev(), firstFull = !Store.live || Store.ready(), redrawT = null;
     Store.on(function () {
-      var h = location.hash.slice(1);
-      if (window.BLAZE_ADMIN && Store.user()) { if (!document.querySelector('.modal')) renderAdmin(); }
-      else if (firstEmit && Store.live) { firstEmit = false; route(); }
       var cc = $('#cartCount'); if (cc) cc.textContent = Cart.count();
+      if (window.BLAZE_ADMIN) { if (Store.user() && !document.querySelector('.modal')) renderAdmin(); return; }
+      if (!Store.ready() || Store.rev() === drawnRev) return;
+      clearTimeout(redrawT);
+      redrawT = setTimeout(function () {
+        if (Store.rev() === drawnRev) return;
+        var h = (location.hash || '#home').slice(1), first = !firstFull;
+        drawnRev = Store.rev(); firstFull = true;
+        var calm = h === '' || h === 'home' || h === 'shop' || h === 'christmas' || h === 'faq' || h === 'cart' || h === 'track' || h.indexOf('order-') === 0;
+        if (!first && !calm) return;
+        var y = window.scrollY, typing = document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
+        if (!first && typing) return;
+        route();
+        if (!first) { try { window.scrollTo({ top: y, behavior: 'instant' }); } catch (e) { window.scrollTo(0, y); } }
+      }, 120);
     });
   });
 })();
