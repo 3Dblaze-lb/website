@@ -492,7 +492,7 @@
       '</div></div></section>' +
 
       '<section class="blk" style="padding-top:0"><div class="wrap"><div class="pay">' +
-        '<div class="paycard"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5v5M18 9.5v5"/></svg></div><h3>Cash on delivery</h3><p>Pay the driver when your order arrives. Delivery ' + money(s.feeBeirut) + ' in Beirut, ' + money(s.feeOther) + ' elsewhere' + (s.freeOver ? ', free over ' + money(s.freeOver) : '') + '.</p></div>' +
+        '<div class="paycard"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5v5M18 9.5v5"/></svg></div><h3>Cash on delivery</h3><p>Pay the driver when your order arrives. Delivery ' + (s.feeMount === s.feeBeirut ? money(s.feeBeirut) + ' in Beirut and Mount Lebanon' : money(s.feeBeirut) + ' in Beirut, ' + money(s.feeMount) + ' in Mount Lebanon') + ', ' + money(s.feeOther) + ' elsewhere' + (s.freeOver ? ', free over ' + money(s.freeOver) : '') + '.</p></div>' +
         '<div class="paycard"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18h3"/><path d="M9.5 9.5l2 2 3.5-3.5"/></svg></div><h3>Whish Money</h3><p>Send the total to our Whish number with your order code. We print as soon as it lands.</p></div>' +
       '</div></div></section>' +
 
