@@ -54,8 +54,8 @@
     { id: 'my-village', col: 'lebanon', name: '“My Village” Desk Map', price: 15, tag: 'Personalized', printMin: 150,
       colors: ['black'], text: { label: 'Your village or town', max: 18, ph: 'e.g. Hadchit', required: true },
       blurb: 'Lebanon in 3D, with your village on it.',
-      desc: 'A raised map of Lebanon standing on a base with your village name printed in. We place a red pin where your village is. A desk piece that starts conversations.',
-      specs: ['About 14 cm tall', 'Your village name on the base (up to 18 letters)', 'Red pin placed on your village', 'Black base, white map'] },
+      desc: 'A raised map of Lebanon standing on a base with your village name printed in. We place a green pin where your village is. A desk piece that starts conversations.',
+      specs: ['About 15 cm tall', 'Your village name in English and Arabic, with its elevation, on the base', 'Green pin placed on your village', 'Black base, white map'] },
 
     { id: 'name-ornament', col: 'xmas', name: 'Personalized Name Ornament', price: 7, tag: 'Personalized', printMin: 40,
       colors: ['red', 'green', 'white'], text: { label: 'Name on the ornament', max: 10, ph: 'e.g. Maria', required: true },
@@ -376,7 +376,7 @@
 
   // ---------- town lookup (OpenStreetMap) for the village pin ----------
   var Geo = {
-    cache: ls('geo') || {}, t: null, seq: 0,
+    cache: ls('geo2') || {}, t: null, seq: 0, eleC: ls('ele') || {},
     find: function (q, cb) {
       q = (q || '').trim(); var key = q.toLowerCase();
       clearTimeout(this.t);
@@ -385,19 +385,30 @@
       cb(null, 'searching');
       var self = this, my = ++this.seq;
       this.t = setTimeout(function () {
-        fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=lb&limit=3&accept-language=en&q=' + encodeURIComponent(q))
+        fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=lb&limit=3&accept-language=en&namedetails=1&q=' + encodeURIComponent(q))
           .then(function (r) { return r.json(); })
           .then(function (res) {
             if (my !== self.seq) return;
             var hit = null;
-            (res || []).some(function (x) { var la = +x.lat, lo = +x.lon; if (BlazeArt.inLebanon(la, lo)) { hit = { lat: la, lon: lo, label: (x.display_name || '').split(',').slice(0, 3).join(',') }; return true; } return false; });
-            self.cache[key] = hit; ls('geo', self.cache); cb(hit, hit ? 'found' : 'none');
+            (res || []).some(function (x) { var la = +x.lat, lo = +x.lon; if (BlazeArt.inLebanon(la, lo)) { var nd = x.namedetails || {}, ar = nd['name:ar'] || (/[\u0600-\u06FF]/.test(nd.name || '') ? nd.name : ''); hit = { lat: la, lon: lo, label: (x.display_name || '').split(',').slice(0, 3).join(','), ar: ar || null }; return true; } return false; });
+            self.cache[key] = hit; ls('geo2', self.cache); cb(hit, hit ? 'found' : 'none');
+            if (hit && hit.ele == null) self.elev(hit.lat, hit.lon, function (e) { if (e == null) return; hit.ele = e; ls('geo2', self.cache); if (my === self.seq) cb(hit, 'found'); });
           }).catch(function () { if (my === self.seq) cb(null, 'offline'); });
       }, 650);
     },
+    // elevation at the pin (Open-Meteo, Copernicus 90 m DEM), rounded: under 100 m to 5 m, else to 10 m
+    elev: function (lat, lon, cb) {
+      var k = lat.toFixed(4) + ',' + lon.toFixed(4), self = this;
+      if (this.eleC[k] != null) { cb(this.eleC[k]); return; }
+      fetch('https://api.open-meteo.com/v1/elevation?latitude=' + lat.toFixed(5) + '&longitude=' + lon.toFixed(5)).then(function (r) { return r.json(); }).then(function (j) {
+        var e = j && j.elevation && j.elevation[0]; if (e == null || !isFinite(e)) { cb(null); return; }
+        e = Math.max(0, e < 100 ? Math.round(e / 5) * 5 : Math.round(e / 10) * 10);
+        self.eleC[k] = e; ls('ele', self.eleC); cb(e);
+      }).catch(function () { cb(null); });
+    },
     status: function (hit, st) {
       return st === 'searching' ? '<span class="muted">Finding it on the map…</span>' :
-        st === 'found' ? '<span style="color:var(--green)">📍 ' + esc(hit.label) + '</span>' :
+        st === 'found' ? '<span style="color:var(--green)">📍 ' + esc(hit.label) + (hit.ele != null ? ' · ' + hit.ele + ' m' : '') + '</span>' :
         st === 'none' ? '<span class="muted">We couldn’t find it on the map — no problem, we’ll place the pin by hand.</span>' :
         st === 'offline' ? '<span class="muted">Map search is unavailable right now — we’ll place the pin by hand.</span>' : '';
     }
@@ -511,10 +522,11 @@
     ht.onsubmit = function (e) { e.preventDefault(); var c = ht.code.value.trim().toUpperCase().replace(/\s/g, ''); location.hash = c ? 'track-' + c : 'track'; };
     var hi = $('#heroInput');
     var hpos = null, live = BlazeArt.village($('#heroArt'), { text: 'Your village' });
-    var hdraw = function () { live.set({ text: hi.value || 'Your village', lat: hpos && hpos.lat, lon: hpos && hpos.lon }); };
+    var hdraw = function () { live.set({ text: hi.value || 'Your village', lat: hpos && hpos.lat, lon: hpos && hpos.lon, ar: hpos && hpos.ar, ele: hpos && hpos.ele }); };
     // while nobody is typing, the preview tours a few villages so the pin keeps moving
-    var DEMO = [['Hadchit', 34.2519, 35.9853], ['Jbeil', 34.1230, 35.6519], ['Zahle', 33.8463, 35.9020], ['Tyre', 33.2705, 35.2038], ['Batroun', 34.2553, 35.6581], ['Saida', 33.5630, 35.3688], ['Bcharre', 34.2508, 36.0106]];
-    var di = 0, demoT = null, demo = function () { if (hi.value || !document.body.contains(hi)) return; var d = DEMO[di++ % DEMO.length]; live.set({ text: d[0], lat: d[1], lon: d[2] }); demoT = setTimeout(demo, 2600); };
+    var DEMO = [['Hadchit', 34.2519, 35.9853, 'حدشيت'], ['Jbeil', 34.1230, 35.6519, 'جبيل'], ['Zahle', 33.8463, 35.9020, 'زحلة'], ['Tyre', 33.2705, 35.2038, 'صور'], ['Batroun', 34.2553, 35.6581, 'البترون'], ['Saida', 33.5630, 35.3688, 'صيدا'], ['Bcharre', 34.2508, 36.0106, 'بشري']];
+    var demoEle = {}; DEMO.forEach(function (d) { Geo.elev(d[1], d[2], function (e) { demoEle[d[0]] = e; }); });
+    var di = 0, demoT = null, demo = function () { if (hi.value || !document.body.contains(hi)) return; var d = DEMO[di++ % DEMO.length]; live.set({ text: d[0], lat: d[1], lon: d[2], ar: d[3], ele: demoEle[d[0]] }); demoT = setTimeout(demo, 2600); };
     setTimeout(demo, 700);
     hi.addEventListener('input', function () { clearTimeout(demoT); if (!hi.value) { hpos = null; hdraw(); $('#heroGeo').innerHTML = '<span class="muted">Type your village — the pin moves to it.</span>'; demoT = setTimeout(demo, 2500); return; } hdraw(); Geo.find(hi.value, function (hit, st) { if (!document.body.contains(hi)) return; if (st !== 'searching') hpos = hit; hdraw(); $('#heroGeo').innerHTML = Geo.status(hit, st); }); });
     $('#heroGo').addEventListener('click', function () { ls('prefillVillage', hi.value); });
@@ -570,7 +582,7 @@
     }
     var draw = function () {
       if (!document.getElementById('pArt')) return;   // customer already left this page (late map search)
-      if (mlive) { if ($('#pLive').classList.contains('hidden') && st.text) $('[data-v=live]').click(); mlive.set({ text: st.text || 'Your village', lat: st.geo && st.geo.lat, lon: st.geo && st.geo.lon }); return; }
+      if (mlive) { if ($('#pLive').classList.contains('hidden') && st.text) $('[data-v=live]').click(); mlive.set({ text: st.text || 'Your village', ar: st.geo && st.geo.ar, ele: st.geo && st.geo.ele, lat: st.geo && st.geo.lat, lon: st.geo && st.geo.lon }); return; }
       $('#pArt').innerHTML = thumb(p, { color: st.color, text: st.text || undefined, lat: st.geo && st.geo.lat, lon: st.geo && st.geo.lon });
     };
     draw();
@@ -594,7 +606,7 @@
 
   function lineHTML(l, ctl) {
     var opts = [l.color ? l.color : '', l.text ? '“' + l.text + '”' : ''].filter(Boolean).join(' · ');
-    return '<div class="line"><div class="th">' + thumb(l.p, { color: l.color, text: l.text, lat: l.geo && l.geo.lat, lon: l.geo && l.geo.lon }) + '</div><div><div class="nm">' + esc(l.p.name) + '</div><div class="meta">' + esc(opts) + (ctl ? '' : (opts ? ' · ' : '') + '× ' + l.qty) + '</div>' +
+    return '<div class="line"><div class="th">' + thumb(l.p, { color: l.color, text: l.text, lat: l.geo && l.geo.lat, lon: l.geo && l.geo.lon, ar: l.geo && l.geo.ar, ele: l.geo && l.geo.ele }) + '</div><div><div class="nm">' + esc(l.p.name) + '</div><div class="meta">' + esc(opts) + (ctl ? '' : (opts ? ' · ' : '') + '× ' + l.qty) + '</div>' +
       (ctl ? '<div class="ctl"><button data-k="' + esc(l.key) + '" data-d="-1">−</button><b>' + l.qty + '</b><button data-k="' + esc(l.key) + '" data-d="1">+</button><button class="rm" data-rm="' + esc(l.key) + '">Remove</button></div>' : '') +
       '</div><div class="price" style="font-size:17px">' + money(l.total) + '</div></div>';
   }
@@ -917,7 +929,7 @@
     modal('<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-right:44px"><h3 style="font-size:22px">' + esc(o.code) + '</h3>' + statusBadge(o.status) + (o.demo ? '<span class="badge s-cancelled">sample</span>' : '') + '</div>' +
       '<p class="muted" style="margin:4px 0 16px;font-size:14px">' + fmtDate(o.createdAt) + '</p>' +
       '<div class="lab muted" style="font-size:13px">Move to</div><div class="stepper">' + STATUSES.map(function (s) { return '<button data-s="' + s.k + '" class="' + (o.status === s.k ? 'on' : '') + '">' + s.l + '</button>'; }).join('') + '</div>' +
-      '<div class="panel" style="padding:16px 18px;background:var(--card2)">' + o.items.map(function (i) { var p = Store.product(i.id) || { id: i.id, name: i.name }; return '<div class="line" style="grid-template-columns:56px 1fr auto"><div class="th" style="width:56px;height:56px">' + thumb(p, { color: i.color, text: i.text, lat: i.geo && i.geo.lat, lon: i.geo && i.geo.lon }) + '</div><div><div class="nm">' + esc(i.name) + ' × ' + i.qty + '</div><div class="meta">' + esc([i.color, i.text ? '“' + i.text + '”' : ''].filter(Boolean).join(' · ')) + '</div></div><b>' + money(i.price * i.qty) + '</b></div>'; }).join('') +
+      '<div class="panel" style="padding:16px 18px;background:var(--card2)">' + o.items.map(function (i) { var p = Store.product(i.id) || { id: i.id, name: i.name }; return '<div class="line" style="grid-template-columns:56px 1fr auto"><div class="th" style="width:56px;height:56px">' + thumb(p, { color: i.color, text: i.text, lat: i.geo && i.geo.lat, lon: i.geo && i.geo.lon, ar: i.geo && i.geo.ar, ele: i.geo && i.geo.ele }) + '</div><div><div class="nm">' + esc(i.name) + ' × ' + i.qty + '</div><div class="meta">' + esc([i.color, i.text ? '“' + i.text + '”' : ''].filter(Boolean).join(' · ')) + '</div></div><b>' + money(i.price * i.qty) + '</b></div>'; }).join('') +
       '<div class="sum" style="margin-top:10px">' + (function () { var c = orderCost(o); return c == null ? '<div class="muted" style="font-size:13px"><span>Profit</span><span>add the Bambu file to each product to see it</span></div>' : '<div><span>Cost · profit</span><b style="color:var(--green)">' + money(c) + ' · ' + money((o.subtotal || 0) - c) + '</b></div>'; })() + '<div><span>Delivery</span><b>' + (o.delivery ? money(o.delivery) : 'Free') + '</b></div><div class="tot" style="font-size:18px"><span>Total</span><span>' + money(o.total) + '</span></div></div></div>' +
       '<div class="dlv"><div class="dlv-h"><b>' + (o.method === 'pickup' ? 'Pickup' : 'Delivery') + ' details</b><span>' + (o.paid ? 'Paid' : 'Collect ' + money(o.total) + (o.payment === 'whish' ? ' (Whish)' : ' cash')) + '</span></div>' +
         '<div class="kv"><span>Customer</span><b>' + esc(c.name) + '</b>' +
@@ -960,7 +972,7 @@
   var REQ_STATUS = [['new', 'New'], ['sent', 'Sent to Claude'], ['ready', 'File ready'], ['done', 'Printed']];
   function requestText(r) {
     var t = '3DBlaze design request ' + r.id + '\n';
-    if (r.type === 'map') t += 'Product: "My Village" map (.3mf for Bambu Studio)\nVillage / name on it: ' + r.title + (r.geo ? '\nPin (from the customer’s search): ' + r.geo.lat.toFixed(5) + ', ' + r.geo.lon.toFixed(5) + ' — ' + r.geo.label : '') + (r.place ? '\nWhere: ' + r.place : '') + '\nColours: black base, white map, white name, red pin (black only)';
+    if (r.type === 'map') t += 'Product: "My Village" map (.3mf for Bambu Studio)\nVillage / name on it: ' + r.title + (r.geo ? '\nPin (from the customer’s search): ' + r.geo.lat.toFixed(5) + ', ' + r.geo.lon.toFixed(5) + ' — ' + r.geo.label + (r.geo.ar ? '\nArabic name (OpenStreetMap): ' + r.geo.ar : '') + (r.geo.ele != null ? '\nElevation at pin (Open-Meteo DEM, shown to customer): ' + r.geo.ele + ' m — verify before printing' : '') : '') + (r.place ? '\nWhere: ' + r.place : '') + '\nColours: black base, white map, white name, green pin (black only)';
     else t += 'Product: custom design (.3mf for Bambu Studio)\nWhat: ' + r.title;
     if (r.size) t += '\nSize: ' + r.size;
     if (r.notes) t += '\nNotes: ' + r.notes;
@@ -974,7 +986,7 @@
       '<div class="paysel"><label class="on"><input type="radio" name="type" value="map" checked><span><b>Village map</b><small>Lebanon + pin + name</small></span></label><label><input type="radio" name="type" value="custom"><span><b>Custom</b><small>Anything else</small></span></label></div>' +
       '<label class="field" id="rqT">Village / name on it<input name="title" placeholder="e.g. Hadchit" required></label>' +
       '<label class="field" id="rqP">Where is it? (district, optional)<input name="place" placeholder="e.g. Bsharri district"></label>' +
-      '<div class="muted" id="rqC" style="font-size:14px">Colours: black base, white map, white name, red pin (black only).</div>' +
+      '<div class="muted" id="rqC" style="font-size:14px">Colours: black base, white map, white name, green pin (black only).</div>' +
       '<label class="field">Size (optional)<input name="size" placeholder="Standard is 9 × 15 cm"></label>' +
       '<label class="field">Notes<textarea name="notes" placeholder="Anything special…"></textarea></label>' +
       '<label class="field">Order code (optional)<input name="order" placeholder="3DB-XXXXX"></label>' +

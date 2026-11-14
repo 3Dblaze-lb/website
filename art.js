@@ -153,29 +153,41 @@
   }
   function vpin(lat, lon) { return mpx(vpinmm(lat, lon)); }
   var PINPATH = 'M' + MPIN.map(function (q) { return (q[0] * MS).toFixed(1) + ' ' + (-q[1] * MS).toFixed(1); }).join(' L') + ' Z';
-  function vfont(t) { return Math.max(10, Math.min(19, 250 / Math.max(1, t.length * 0.66))); }
+  // base text like the print: "ENGLISH NAME  ### m  الاسم بالعربي" on the base's top face
+  function vlabel(o) {
+    var en = String(o.text || 'Your village').toUpperCase().slice(0, 18);
+    var ele = o.ele != null && isFinite(o.ele) ? ' ' + o.ele + ' m' : '';
+    var ar = o.ar ? ' ' + String(o.ar).slice(0, 24) : '';
+    return en + ele + ar;
+  }
+  function vfont(t) { var n = 0; for (var i = 0; i < t.length; i++) n += /[\u0600-\u06FF]/.test(t[i]) ? 0.8 : 1; return Math.max(8, Math.min(17, 262 / Math.max(1, n * 0.62))); }
+  var TXY = 361;
   function villageSVG(o) {
     var id = 'v' + (++uid), on = o.lat != null && o.lon != null;
     var pin = on ? vpin(o.lat, o.lon) : vpin(34.05, 35.86);
-    var name = String(o.text || 'Your village').toUpperCase().slice(0, 18), fs = vfont(name);
+    var label = vlabel(o), fs = vfont(label);
     var svg =
-      '<svg class="vmap' + (on ? ' has-pin' : '') + '" viewBox="0 0 400 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="My Village desk map preview: ' + esc(name) + '">' +
+      '<svg class="vmap' + (on ? ' has-pin' : '') + '" viewBox="0 0 400 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="My Village desk map preview: ' + esc(label) + '">' +
       '<defs><linearGradient id="' + id + 'f" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F7F7F5"/><stop offset="1" stop-color="#E4E4E2"/></linearGradient>' +
-      '<linearGradient id="' + id + 'b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#24262A"/><stop offset="1" stop-color="#101113"/></linearGradient></defs>' +
-      '<ellipse cx="200" cy="398" rx="160" ry="10" fill="#0B1220" opacity=".14"/>' +
-      '<path d="M66 334 H334 L344 350 H56 Z" fill="#2E3136"/><rect x="88" y="339.5" width="224" height="4" rx="2" fill="#0C0D0F"/>' +
+      '<linearGradient id="' + id + 't" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#26292E"/><stop offset="1" stop-color="#1A1C20"/></linearGradient>' +
+      '<linearGradient id="' + id + 'b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#16181B"/><stop offset="1" stop-color="#0C0D0F"/></linearGradient></defs>' +
+      '<ellipse cx="200" cy="402" rx="166" ry="10" fill="#0B1220" opacity=".14"/>' +
+      // base: top face (seen from slightly above) with the slot at the back, then the front face
+      '<path d="M70 334 H330 L352 374 H48 Z" fill="url(#' + id + 't)"/>' +
+      '<rect x="90" y="339.5" width="220" height="4" rx="2" fill="#09090B"/>' +
       '<clipPath id="' + id + 'c"><rect x="0" y="0" width="400" height="341.5"/></clipPath>' +
       '<g clip-path="url(#' + id + 'c)"><path d="' + mpath(MPLATE, 1.6, -1.2) + '" fill="#0C0D0F"/>' +
       '<path d="' + mpath(MPLATE) + '" fill="#1B1C1F"/></g>' +
       '<path d="' + mpath(MWHITE) + '" fill="url(#' + id + 'f)"/>' +
       '<g class="vpin" style="transform:translate(' + pin[0].toFixed(1) + 'px,' + pin[1].toFixed(1) + 'px)">' +
-        '<circle class="vping" r="5" fill="#E2262B"/>' +
+        '<circle class="vping" r="5" fill="#1FA14E"/>' +
         '<g class="vdrop"><ellipse cx="1.5" cy="0.5" rx="7" ry="2.2" fill="#0B1220" opacity=".2"/>' +
-        '<path d="' + PINPATH + '" transform="translate(1.6 1.2)" fill="#8E1216"/>' +
-        '<path d="' + PINPATH + '" fill="#E2262B"/>' +
-        '<ellipse cx="-3.5" cy="-20" rx="2.8" ry="4" fill="#fff" opacity=".3"/></g></g>' +
-      '<rect x="56" y="350" width="288" height="40" rx="6" fill="url(#' + id + 'b)"/><rect x="56" y="350" width="288" height="1.5" fill="#3A3D43"/>' +
-      '<text class="vname" x="200" y="' + (376 - (19 - fs) * 0.25).toFixed(1) + '" text-anchor="middle" font-family="DejaVu Sans, Verdana, Arial, sans-serif" font-weight="700" letter-spacing=".6" font-size="' + fs.toFixed(1) + '" fill="#F4F4F2">' + esc(name) + '</text>' +
+        '<path d="' + PINPATH + '" transform="translate(1.6 1.2)" fill="#0E5A2A"/>' +
+        '<path d="' + PINPATH + '" fill="#1FA14E"/>' +
+        '<ellipse cx="-3.5" cy="-20" rx="2.8" ry="4" fill="#fff" opacity=".28"/></g></g>' +
+      // raised white text lying on the top face (squashed for the viewing angle), like the print
+      '<g transform="translate(200 ' + TXY + ') scale(1 .66)"><text class="vname" x="0" y="0" text-anchor="middle" direction="ltr" font-family="DejaVu Sans, Tahoma, Arial, sans-serif" font-weight="700" letter-spacing=".4" font-size="' + fs.toFixed(1) + '" fill="#F2F2F0" dominant-baseline="middle">' + esc(label) + '</text></g>' +
+      '<path d="M48 374 H352 V390 Q352 394 348 394 H52 Q48 394 48 390 Z" fill="url(#' + id + 'b)"/><rect x="48" y="374" width="304" height="1.2" fill="#34373D"/>' +
       '</svg>';
     return { svg: svg };
   }
@@ -185,8 +197,9 @@
     var svg = el.querySelector('svg'), pinG = el.querySelector('.vpin'), nameT = el.querySelector('.vname'), last = null;
     function set(v) {
       v = v || {};
-      var name = String(v.text || 'Your village').toUpperCase().slice(0, 18), fs = vfont(name);
-      nameT.textContent = name; nameT.setAttribute('font-size', fs.toFixed(1)); nameT.setAttribute('y', (376 - (19 - fs) * 0.25).toFixed(1));
+      var name = vlabel(v), fs = vfont(name);
+      nameT.textContent = name; nameT.setAttribute('font-size', fs.toFixed(1));
+      try { var w = nameT.getComputedTextLength(); if (w > 264) nameT.setAttribute('font-size', (fs * 264 / w).toFixed(1)); } catch (e) {}
       svg.setAttribute('aria-label', 'My Village desk map preview: ' + name);
       var on = v.lat != null && v.lon != null;
       var pos = on ? vpin(v.lat, v.lon) : vpin(34.05, 35.86), key = on ? pos[0].toFixed(0) + ',' + pos[1].toFixed(0) : null;
