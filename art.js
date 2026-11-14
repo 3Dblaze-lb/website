@@ -154,12 +154,16 @@
   function vpin(lat, lon) { return mpx(vpinmm(lat, lon)); }
   var PINPATH = 'M' + MPIN.map(function (q) { return (q[0] * MS).toFixed(1) + ' ' + (-q[1] * MS).toFixed(1); }).join(' L') + ' Z';
   // base text like the print: "ENGLISH NAME  ### m  الاسم بالعربي" on the base's top face
-  function vlabel(o) {
+  function vparts(o) {
     var en = String(o.text || 'Your village').toUpperCase().slice(0, 18);
     var ele = o.ele != null && isFinite(o.ele) ? ' ' + o.ele + ' m' : '';
-    var ar = o.ar ? ' ' + String(o.ar).slice(0, 24) : '';
-    return en + ele + ar;
+    return { lat: en + ele, ar: o.ar ? String(o.ar).replace(/\s+/g, ' ').trim().slice(0, 24) : '' };
   }
+  function vlabel(o) { var q = vparts(o); return q.lat + (q.ar ? ' ' + q.ar : ''); }
+  // estimated widths (static drawings); the live preview measures the real text instead
+  function vest(q, fs) { return { a: q.lat.length * fs * 0.8, b: q.ar ? q.ar.length * fs * 0.6 : 0 }; }
+  function vfit(q) { var w = vest(q, 1), tot = w.a + w.b + (q.ar ? 0.5 : 0); return Math.max(8, Math.min(17, 262 / Math.max(1, tot))); }
+  function vplace(wa, wb, gap) { var tot = wa + (wb ? gap + wb : 0), x0 = -tot / 2; return { latX: x0, arX: x0 + tot }; }
   function vfont(t) { var n = 0; for (var i = 0; i < t.length; i++) n += /[\u0600-\u06FF]/.test(t[i]) ? 0.8 : 1; return Math.max(8, Math.min(17, 262 / Math.max(1, n * 0.62))); }
   var TXY = 361;
   function villageSVG(o) {
@@ -186,20 +190,34 @@
         '<path d="' + PINPATH + '" fill="#1FA14E"/>' +
         '<ellipse cx="-3.5" cy="-20" rx="2.8" ry="4" fill="#fff" opacity=".28"/></g></g>' +
       // raised white text lying on the top face (squashed for the viewing angle), like the print
-      '<g transform="translate(200 ' + TXY + ') scale(1 .66)"><text class="vname" x="0" y="0" text-anchor="middle" direction="ltr" font-family="DejaVu Sans, Tahoma, Arial, sans-serif" font-weight="700" letter-spacing=".4" font-size="' + fs.toFixed(1) + '" fill="#F2F2F0" dominant-baseline="middle">' + esc(label) + '</text></g>' +
+      (function () {
+        var q = vparts(o), f = vfit(q), w = vest(q, f), pl = vplace(w.a, w.b, f * 0.5);
+        if (!o.__live) return '<g class="vlab" transform="translate(200 ' + TXY + ') scale(1 .66)"><text x="0" y="0" text-anchor="middle" font-family="DejaVu Sans, Verdana, Arial, sans-serif" font-weight="700" font-size="' + f.toFixed(1) + '" fill="#F2F2F0" dominant-baseline="middle"><tspan letter-spacing=".4">' + esc(q.lat) + '</tspan>' + (q.ar ? '<tspan letter-spacing="0" font-family="Geeza Pro, SF Arabic, Noto Sans Arabic, DejaVu Sans, Tahoma, Arial, sans-serif"> ' + esc(q.ar) + '</tspan>' : '') + '</text></g>';
+        return '<g class="vlab" transform="translate(200 ' + TXY + ') scale(1 .66)">' +
+          '<text class="vname" x="' + pl.latX.toFixed(1) + '" y="0" text-anchor="start" direction="ltr" font-family="DejaVu Sans, Verdana, Arial, sans-serif" font-weight="700" letter-spacing=".4" font-size="' + f.toFixed(1) + '" fill="#F2F2F0" dominant-baseline="middle">' + esc(q.lat) + '</text>' +
+          // Arabic on its own: no letter-spacing (Safari breaks joined letters with it), right-to-left, right edge aligned
+          '<text class="var" x="' + pl.arX.toFixed(1) + '" y="0" text-anchor="end" xml:lang="ar" font-family="Geeza Pro, SF Arabic, Noto Sans Arabic, DejaVu Sans, Tahoma, Arial, sans-serif" font-weight="700" font-size="' + (f * 1.08).toFixed(1) + '" fill="#F2F2F0" dominant-baseline="middle">' + esc(q.ar) + '</text></g>';
+      })() +
       '<path d="M48 374 H352 V390 Q352 394 348 394 H52 Q48 394 48 390 Z" fill="url(#' + id + 'b)"/><rect x="48" y="374" width="304" height="1.2" fill="#34373D"/>' +
       '</svg>';
     return { svg: svg };
   }
   // live preview: drawn once, then the pin glides/drops and the name updates without redrawing
   function villageLive(el, o) {
-    el.innerHTML = villageSVG(o || {}).svg;
+    el.innerHTML = villageSVG(Object.assign({ __live: true }, o || {})).svg;
     var svg = el.querySelector('svg'), pinG = el.querySelector('.vpin'), nameT = el.querySelector('.vname'), last = null;
     function set(v) {
       v = v || {};
-      var name = vlabel(v), fs = vfont(name);
-      nameT.textContent = name; nameT.setAttribute('font-size', fs.toFixed(1));
-      try { var w = nameT.getComputedTextLength(); if (w > 264) nameT.setAttribute('font-size', (fs * 264 / w).toFixed(1)); } catch (e) {}
+      var q = vparts(v), name = vlabel(v), arT = el.querySelector('.var'), fs = vfit(q);
+      nameT.textContent = q.lat; arT.textContent = q.ar;
+      var lay = function (f) {
+        nameT.setAttribute('font-size', f.toFixed(1)); arT.setAttribute('font-size', (f * 1.08).toFixed(1));
+        var wa, wb; try { wa = nameT.getComputedTextLength(); wb = q.ar ? arT.getComputedTextLength() : 0; } catch (e) { var g = vest(q, f); wa = g.a; wb = g.b; }
+        return { wa: wa, wb: wb, tot: wa + (wb ? f * 0.5 + wb : 0) };
+      };
+      var m = lay(fs); if (m.tot > 264 && m.tot > 0) { fs = fs * 264 / m.tot; m = lay(fs); }
+      var pl = vplace(m.wa, m.wb, fs * 0.5);
+      nameT.setAttribute('x', pl.latX.toFixed(1)); arT.setAttribute('x', pl.arX.toFixed(1));
       svg.setAttribute('aria-label', 'My Village desk map preview: ' + name);
       var on = v.lat != null && v.lon != null;
       var pos = on ? vpin(v.lat, v.lon) : vpin(34.05, 35.86), key = on ? pos[0].toFixed(0) + ',' + pos[1].toFixed(0) : null;
