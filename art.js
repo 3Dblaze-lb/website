@@ -76,21 +76,7 @@
         lines(id, 95, 130, 230, 150) +
         '<circle cx="122" cy="157" r="11" fill="#0E0F12"/>' + ring(100, 136, 34) + '</g>', C.red);
     },
-    'my-village': function (o) {
-      o = o || {};
-      var base = o.color === 'white' ? C.white : C.black;
-      var mapC = o.color === 'white' ? C.green : '#F7F8FA';
-      var plate = '<rect x="80" y="246" width="240" height="50" rx="10" fill="currentColor"/>';
-      var map = '<path d="' + lebanonPath(130, 40, 190) + '" fill="currentColor" stroke="#AEB8C5" stroke-width="1.6" stroke-linejoin="round"/>';
-      var pin = lebanonPoint(130, 40, 190, o.lon || 35.86, o.lat || 34.05);
-      var pinOn = o.lat != null;
-      var name = esc((o.text || 'Your village').slice(0, 18));
-      return svg(
-        solid(plate, base, 12) +
-        solid(map, mapC, 10) +
-        '<g transform="translate(' + pin[0].toFixed(1) + ' ' + pin[1].toFixed(1) + ')"' + (pinOn ? '' : ' opacity=".9"') + '><circle r="4" fill="' + C.red + '" opacity=".35"/><path d="M0 0 C-11 -14 -11 -27 0 -27 C11 -27 11 -14 0 0Z" fill="' + C.red + '"/><circle cx="0" cy="-18" r="4" fill="#fff"/></g>' +
-        '<text x="200" y="279" text-anchor="middle" font-family="Unbounded, sans-serif" font-weight="700" font-size="' + (name.length > 12 ? 17 : 21) + '" fill="' + (o.color === 'white' ? '#30343B' : '#F2F3F5') + '">' + name + '</text>', C.blue);
-    },
+    'my-village': function (o) { return villageSVG(o || {}).svg; },
     'cedar-ornament': function (o) {
       o = o || {}; var col = C[o.color] || C.green;
       var tree = '<path d="' + cedarPath(200, 110, 190, 190) + '" fill="currentColor"/>';
@@ -143,7 +129,84 @@
     }
   };
 
+
+  // ---------- "My Village" desk map: drawn from the real Bambu Studio model ----------
+  // Outlines (mm) come from the "3DBlaze My Village" .3mf: black plate (with the tab that sits in the base),
+  // white map inset, and the pin. Pin placement = the file workflow: Hadchit pin at 34.2519N 35.9853E,
+  // 0.755 mm per km, east = +x, north = +y; nudged inland (east) until the whole pin sits on the white map.
+  var MPLATE=[[63.51, -4.35], [86.56, 0.0], [97.44, -7.83], [91.78, -17.4], [109.62, -42.63], [96.14, -55.68], [85.26, -67.86], [63.51, -90.48], [69.17, -97.44], [52.63, -122.67], [37.41, -123.54], [32.62, -138.33], [32.62, -139.2], [104.4, -139.2], [104.4, -149.0], [0.0, -149.0], [0.0, -139.2], [10.88, -112.23], [20.01, -93.09], [27.41, -70.47], [30.45, -58.29], [39.15, -36.54], [52.2, -22.62]];
+  var MWHITE=[[15.51, -136.79], [31.16, -136.37], [35.93, -121.62], [51.51, -120.73], [66.69, -97.57], [60.84, -90.37], [83.79, -66.5], [94.69, -54.29], [107.0, -42.38], [89.4, -17.5], [94.79, -8.39], [86.09, -2.12], [64.75, -6.15], [53.8, -23.84], [40.87, -37.63], [32.36, -58.91], [29.33, -71.02], [21.87, -93.83], [12.71, -113.04], [3.0, -137.12]];
+  var MPIN=[[-3.94, 6.36], [-3.82, 6.12], [0.0, 0.0], [3.82, 6.12], [4.18, 6.83], [4.41, 7.59], [4.5, 8.38], [4.48, 8.65], [4.45, 9.18], [4.26, 9.95], [3.94, 10.68], [3.49, 11.34], [2.93, 11.91], [2.28, 12.38], [1.56, 12.72], [1.31, 12.79], [0.79, 12.93], [0.0, 13.0], [-0.79, 12.93], [-1.56, 12.72], [-2.28, 12.38], [-2.93, 11.91], [-3.49, 11.34], [-3.93, 10.68], [-4.26, 9.95], [-4.45, 9.18], [-4.5, 8.38], [-4.41, 7.59], [-4.18, 6.83]];
+  var MS = 2.2, MX = 200 - 52.2 * MS, MY = 30;          // mm -> px; plate tab centred on the base
+  function mpx(q) { return [MX + q[0] * MS, MY - q[1] * MS]; }
+  function mpath(poly, dx, dy) { return 'M' + poly.map(function (q) { var r = mpx([q[0] + (dx || 0), q[1] + (dy || 0)]); return r[0].toFixed(1) + ' ' + r[1].toFixed(1); }).join(' L') + ' Z'; }
+  function pinside(poly, x, y) { var inside = false; for (var i = 0, j = poly.length - 1; i < poly.length; j = i++) { var a = poly[i], b = poly[j]; if ((a[1] > y) !== (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]) inside = !inside; } return inside; }
+  function pedge(poly, x, y) { var m = 1e9; for (var i = 0, j = poly.length - 1; i < poly.length; j = i++) { var a = poly[i], b = poly[j], dx = b[0] - a[0], dy = b[1] - a[1], t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (y - a[1]) * dy) / (dx * dx + dy * dy || 1))); m = Math.min(m, Math.hypot(x - a[0] - t * dx, y - a[1] - t * dy)); } return m; }
+  function pinFits(tx, ty) { return MPIN.every(function (q) { var x = tx + q[0], y = ty + q[1]; return pinside(MWHITE, x, y) && pedge(MWHITE, x, y) > 0.6; }); }
+  // returns the pin TIP position in mm (plate frame)
+  function vpinmm(lat, lon) {
+    var kx = 111.32 * Math.cos(34.07 * Math.PI / 180) * 0.755, ky = 110.95 * 0.755;
+    var cx = 63.93 + (lon - 35.9853) * kx, cy = -31.61 + (lat - 34.2519) * ky, tx = cx, ty = cy - 6.5, n = 0;
+    while (!pinFits(tx, ty) && n++ < 400) tx += 0.2;                       // nudge inland (east), like the files
+    if (!pinFits(tx, ty)) { tx = cx; ty = cy - 6.5; n = 0; while (!pinFits(tx, ty) && n++ < 400) { tx += (55 - tx) * 0.02; ty += (-75 - ty) * 0.02; } }
+    return [tx, ty];
+  }
+  function vpin(lat, lon) { return mpx(vpinmm(lat, lon)); }
+  var PINPATH = 'M' + MPIN.map(function (q) { return (q[0] * MS).toFixed(1) + ' ' + (-q[1] * MS).toFixed(1); }).join(' L') + ' Z';
+  function vfont(t) { return Math.max(10, Math.min(19, 250 / Math.max(1, t.length * 0.66))); }
+  function villageSVG(o) {
+    var id = 'v' + (++uid), on = o.lat != null && o.lon != null;
+    var pin = on ? vpin(o.lat, o.lon) : vpin(34.05, 35.86);
+    var name = String(o.text || 'Your village').toUpperCase().slice(0, 18), fs = vfont(name);
+    var svg =
+      '<svg class="vmap' + (on ? ' has-pin' : '') + '" viewBox="0 0 400 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="My Village desk map preview: ' + esc(name) + '">' +
+      '<defs><linearGradient id="' + id + 'f" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F7F7F5"/><stop offset="1" stop-color="#E4E4E2"/></linearGradient>' +
+      '<linearGradient id="' + id + 'b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#24262A"/><stop offset="1" stop-color="#101113"/></linearGradient></defs>' +
+      '<ellipse cx="200" cy="398" rx="160" ry="10" fill="#0B1220" opacity=".14"/>' +
+      '<path d="M66 334 H334 L344 350 H56 Z" fill="#2E3136"/><rect x="88" y="339.5" width="224" height="4" rx="2" fill="#0C0D0F"/>' +
+      '<clipPath id="' + id + 'c"><rect x="0" y="0" width="400" height="341.5"/></clipPath>' +
+      '<g clip-path="url(#' + id + 'c)"><path d="' + mpath(MPLATE, 1.6, -1.2) + '" fill="#0C0D0F"/>' +
+      '<path d="' + mpath(MPLATE) + '" fill="#1B1C1F"/></g>' +
+      '<path d="' + mpath(MWHITE) + '" fill="url(#' + id + 'f)"/>' +
+      '<g class="vpin" style="transform:translate(' + pin[0].toFixed(1) + 'px,' + pin[1].toFixed(1) + 'px)">' +
+        '<circle class="vping" r="5" fill="#E2262B"/>' +
+        '<g class="vdrop"><ellipse cx="1.5" cy="0.5" rx="7" ry="2.2" fill="#0B1220" opacity=".2"/>' +
+        '<path d="' + PINPATH + '" transform="translate(1.6 1.2)" fill="#8E1216"/>' +
+        '<path d="' + PINPATH + '" fill="#E2262B"/>' +
+        '<ellipse cx="-3.5" cy="-20" rx="2.8" ry="4" fill="#fff" opacity=".3"/></g></g>' +
+      '<rect x="56" y="350" width="288" height="40" rx="6" fill="url(#' + id + 'b)"/><rect x="56" y="350" width="288" height="1.5" fill="#3A3D43"/>' +
+      '<text class="vname" x="200" y="' + (376 - (19 - fs) * 0.25).toFixed(1) + '" text-anchor="middle" font-family="DejaVu Sans, Verdana, Arial, sans-serif" font-weight="700" letter-spacing=".6" font-size="' + fs.toFixed(1) + '" fill="#F4F4F2">' + esc(name) + '</text>' +
+      '</svg>';
+    return { svg: svg };
+  }
+  // live preview: drawn once, then the pin glides/drops and the name updates without redrawing
+  function villageLive(el, o) {
+    el.innerHTML = villageSVG(o || {}).svg;
+    var svg = el.querySelector('svg'), pinG = el.querySelector('.vpin'), nameT = el.querySelector('.vname'), last = null;
+    function set(v) {
+      v = v || {};
+      var name = String(v.text || 'Your village').toUpperCase().slice(0, 18), fs = vfont(name);
+      nameT.textContent = name; nameT.setAttribute('font-size', fs.toFixed(1)); nameT.setAttribute('y', (376 - (19 - fs) * 0.25).toFixed(1));
+      svg.setAttribute('aria-label', 'My Village desk map preview: ' + name);
+      var on = v.lat != null && v.lon != null;
+      var pos = on ? vpin(v.lat, v.lon) : vpin(34.05, 35.86), key = on ? pos[0].toFixed(0) + ',' + pos[1].toFixed(0) : null;
+      pinG.style.transform = 'translate(' + pos[0].toFixed(1) + 'px,' + pos[1].toFixed(1) + 'px)';
+      svg.classList.toggle('has-pin', on);
+      if (on && key !== last) { svg.classList.remove('dropping'); void svg.getBoundingClientRect(); svg.classList.add('dropping'); }
+      last = key;
+    }
+    // gentle 3D tilt that follows the pointer (desktop); phones get a slow idle sway from CSS
+    el.addEventListener('pointermove', function (e) {
+      if (e.pointerType !== 'mouse') return;
+      var r = el.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
+      svg.style.transform = 'perspective(900px) rotateY(' + (x * 12).toFixed(2) + 'deg) rotateX(' + (-y * 8).toFixed(2) + 'deg)';
+    });
+    el.addEventListener('pointerleave', function () { svg.style.transform = ''; });
+    set(o);
+    return { set: set };
+  }
   g.BlazeArt = {
+    village: villageLive, villagePin: vpinmm,
     inLebanon: function (lat, lon) { var x = lon, y = lat, inside = false; for (var i = 0, j = LB.length - 1; i < LB.length; j = i++) { var a = LB[i], b = LB[j]; if ((a[1] > y) !== (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]) inside = !inside; } return inside; },
     draw: function (id, opts) { return (ART[id] || ART.placeholder)(opts || {}); },
     has: function (id) { return !!ART[id]; },

@@ -348,7 +348,8 @@
     if (p.photo) return '<img src="' + p.photo + '" alt="' + esc(p.name) + '">';
     var fo = (p.art || p.id) === 'my-village' ? null : optList(p).filter(function (o) { return o.photo; })[0];
     if (fo) return '<img src="' + fo.photo + '" alt="' + esc(p.name) + '">';
-    if ((p.art || p.id) === 'my-village' && window.BlazeArt) return '<div class="mapart">' + BlazeArt.draw('my-village', opts || { color: 'black' }) + '</div>';
+    if ((p.art || p.id) === 'my-village' && (!opts || !opts.text)) return '<img src="img/my-village.jpg" alt="' + esc(p.name) + ' — real printed piece">';
+    if ((p.art || p.id) === 'my-village' && window.BlazeArt) return '<div class="mapart">' + BlazeArt.draw('my-village', opts) + '</div>';
     return '<div class="ph"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="13" width="36" height="26" rx="6" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M17 13 l3-5 h8 l3 5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><circle cx="24" cy="26" r="7" fill="none" stroke="currentColor" stroke-width="2.5"/></svg><span>' + esc(p.name) + '</span><small>Photo coming soon</small></div>';
   }
   function fee(region) {
@@ -472,8 +473,8 @@
         '<p class="lead">Thoughtful 3D printed gifts and pieces for the home, made to order on our own printers and delivered anywhere in Lebanon.</p>' +
         '<div style="display:flex;gap:12px;flex-wrap:wrap"><a class="btn pri" href="#shop">Shop the Lebanon drop</a><a class="btn sec" href="#christmas">Christmas collection</a></div>' +
         '<div class="chips"><span class="chip"><i></i>Cash on delivery</span><span class="chip"><i style="background:var(--blue)"></i>Whish accepted</span><span class="chip"><i style="background:#8C96A4"></i>Ready in 2–4 days</span></div>' +
-      '</div><div class="stage"><div class="art mapart" id="heroArt">' + BlazeArt.draw('my-village', { text: 'Your village', color: 'black' }) + '</div>' +
-        '<div class="geo" id="heroGeo"></div><div class="try"><span>Try it:</span><input id="heroInput" maxlength="18" placeholder="Type your village…" aria-label="Type your village"><a class="btn pri" style="min-height:42px;padding:8px 16px;font-size:14px" id="heroGo" href="#p-my-village">Order</a></div>' +
+      '</div><div class="stage"><div class="stage-top"><b>“My Village” Desk Map</b><span>' + money((Store.product('my-village') || {}).price || 15) + '</span></div><div class="art mapart live" id="heroArt"></div>' +
+        '<div class="geo" id="heroGeo"><span class="muted">Type your village — the pin moves to it.</span></div><div class="try"><input id="heroInput" maxlength="18" placeholder="Type your village…" aria-label="Type your village"><a class="btn pri" style="min-height:44px;padding:8px 18px;font-size:14px" id="heroGo" href="#p-my-village">Order</a></div>' +
       '</div></div>' +
       '<div class="wrap"><div class="count" id="countdown"></div></div></section>' +
 
@@ -489,7 +490,7 @@
         step(2, 'We confirm', 'We send you a WhatsApp message to confirm the details.') +
         step(3, 'We print', 'Printed and checked by hand in 2–4 days. Track it any time.') +
         step(4, 'Delivered', 'Pay the driver in cash, or pay by Whish before delivery.') +
-      '</div></div></section>' +
+      '</div><form class="trackbox" id="homeTrack"><div><h3>Track your order</h3><p class="muted">Type the code you got when you ordered (it looks like 3DB-XXXXX).</p></div><div class="trackin"><input name="code" placeholder="3DB-XXXXX" aria-label="Order code" autocomplete="off"><button class="btn pri" type="submit">Track</button></div></form></div></section>' +
 
       '<section class="blk" style="padding-top:0"><div class="wrap"><div class="pay">' +
         '<div class="paycard"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5v5M18 9.5v5"/></svg></div><h3>Cash on delivery</h3><p>Pay the driver when your order arrives. Delivery ' + (s.feeMount === s.feeBeirut ? money(s.feeBeirut) + ' in Beirut and Mount Lebanon' : money(s.feeBeirut) + ' in Beirut, ' + money(s.feeMount) + ' in Mount Lebanon') + ', ' + money(s.feeOther) + ' elsewhere' + (s.freeOver ? ', free over ' + money(s.freeOver) : '') + '.</p></div>' +
@@ -506,10 +507,16 @@
       '</div></div></section>';
 
     countdown();
+    var ht = $('#homeTrack'), lastO = ls('lastOrder'); if (lastO) ht.code.value = lastO.code;
+    ht.onsubmit = function (e) { e.preventDefault(); var c = ht.code.value.trim().toUpperCase().replace(/\s/g, ''); location.hash = c ? 'track-' + c : 'track'; };
     var hi = $('#heroInput');
-    var hpos = null;
-    var hdraw = function () { $('#heroArt').innerHTML = BlazeArt.draw('my-village', { text: hi.value || 'Your village', color: 'black', lat: hpos && hpos.lat, lon: hpos && hpos.lon }); };
-    hi.addEventListener('input', function () { hdraw(); Geo.find(hi.value, function (hit, st) { if (st !== 'searching') hpos = hit; hdraw(); $('#heroGeo').innerHTML = Geo.status(hit, st); }); });
+    var hpos = null, live = BlazeArt.village($('#heroArt'), { text: 'Your village' });
+    var hdraw = function () { live.set({ text: hi.value || 'Your village', lat: hpos && hpos.lat, lon: hpos && hpos.lon }); };
+    // while nobody is typing, the preview tours a few villages so the pin keeps moving
+    var DEMO = [['Hadchit', 34.2519, 35.9853], ['Jbeil', 34.1230, 35.6519], ['Zahle', 33.8463, 35.9020], ['Tyre', 33.2705, 35.2038], ['Batroun', 34.2553, 35.6581], ['Saida', 33.5630, 35.3688], ['Bcharre', 34.2508, 36.0106]];
+    var di = 0, demoT = null, demo = function () { if (hi.value || !document.body.contains(hi)) return; var d = DEMO[di++ % DEMO.length]; live.set({ text: d[0], lat: d[1], lon: d[2] }); demoT = setTimeout(demo, 2600); };
+    setTimeout(demo, 700);
+    hi.addEventListener('input', function () { clearTimeout(demoT); if (!hi.value) { hpos = null; hdraw(); $('#heroGeo').innerHTML = '<span class="muted">Type your village — the pin moves to it.</span>'; demoT = setTimeout(demo, 2500); return; } hdraw(); Geo.find(hi.value, function (hit, st) { if (!document.body.contains(hi)) return; if (st !== 'searching') hpos = hit; hdraw(); $('#heroGeo').innerHTML = Geo.status(hit, st); }); });
     $('#heroGo').addEventListener('click', function () { ls('prefillVillage', hi.value); });
     if (anchor) { var el = $('#sec-' + anchor); if (el) setTimeout(function () { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 30); }
     else window.scrollTo(0, 0);
@@ -554,7 +561,18 @@
       '<div class="buyrow"><button class="btn pri" id="pAdd"' + (out ? ' disabled' : '') + '>' + (soon ? 'Coming soon' : out ? 'Sold out' : 'Add to cart') + '</button>' + (out ? '' : '<button class="btn sec" id="pBuy">Buy now</button>') + '</div>' +
       '<div class="specs">' + (p.specs || []).map(function (s) { return '<div>' + esc(s) + '</div>'; }).join('') + '<div>Made to order · ready in 2–4 days</div><div>Cash on delivery or Whish</div></div>' +
       '</div></div></div>';
-    var draw = function () { $('#pArt').innerHTML = thumb(p, { color: st.color, text: st.text || undefined, lat: st.geo && st.geo.lat, lon: st.geo && st.geo.lon }); };
+    var isMapP = (p.art || p.id) === 'my-village', mlive = null;
+    if (isMapP) {
+      $('#pArt').classList.add('mapbig');
+      $('#pArt').innerHTML = '<div class="mapart live" id="pLive"></div><img class="realph hidden" src="img/my-village.jpg" alt="Real printed My Village map"><div class="viewsw" role="group" aria-label="View"><button type="button" class="on" data-v="live">Your preview</button><button type="button" data-v="photo">Real photo</button></div>';
+      mlive = BlazeArt.village($('#pLive'), { text: st.text || 'Your village' });
+      $$('[data-v]').forEach(function (b) { b.onclick = function () { var ph = b.dataset.v === 'photo'; $$('[data-v]').forEach(function (x) { x.classList.toggle('on', x === b); }); $('#pLive').classList.toggle('hidden', ph); $('.realph').classList.toggle('hidden', !ph); }; });
+    }
+    var draw = function () {
+      if (!document.getElementById('pArt')) return;   // customer already left this page (late map search)
+      if (mlive) { if ($('#pLive').classList.contains('hidden') && st.text) $('[data-v=live]').click(); mlive.set({ text: st.text || 'Your village', lat: st.geo && st.geo.lat, lon: st.geo && st.geo.lon }); return; }
+      $('#pArt').innerHTML = thumb(p, { color: st.color, text: st.text || undefined, lat: st.geo && st.geo.lat, lon: st.geo && st.geo.lon });
+    };
     draw();
     $$('.sw').forEach(function (b) { b.onclick = function () { st.color = b.dataset.c; $$('.sw').forEach(function (x) { x.classList.toggle('on', x === b); }); draw(); }; });
     var isMap = (p.art || p.id) === 'my-village';
@@ -644,7 +662,7 @@
         subtotal: c.sub, delivery: c.del, total: c.sub + c.del, history: [{ s: 'new', t: now }]
       };
       $('#coBtn').disabled = true; $('#coBtn').textContent = 'Placing order…';
-      Store.placeOrder(order).then(function () { Cart.clear(); ls('lastOrder', order); location.hash = 'order-' + order.code; })
+      Store.placeOrder(order).then(function () { Cart.clear(); ls('lastOrder', order); var mine = (ls('myOrders') || []).filter(function (c) { return c !== order.code; }); mine.unshift(order.code); ls('myOrders', mine.slice(0, 10)); location.hash = 'order-' + order.code; })
         .catch(function () { $('#coBtn').disabled = false; $('#coBtn').textContent = 'Place order'; $('#coErr').innerHTML = 'We couldn’t reach our server, so your order was <b>not</b> placed. Check your connection and try again, or <a href="' + waLink(Store.settings().whatsapp, orderText(order)) + '" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">send it to us on WhatsApp</a>.'; });
     });
     window.scrollTo(0, 0);
@@ -669,15 +687,15 @@
       '<button class="btn sec full" style="margin-top:10px" id="cpO">Copy order details</button></div>' +
       '<div class="panel"><h3>Your order</h3>' + o.items.map(function (i) { return '<div class="line" style="grid-template-columns:1fr auto"><div><div class="nm">' + esc(i.name) + '</div><div class="meta">' + esc([i.color, i.text ? '“' + i.text + '”' : ''].filter(Boolean).join(' · ')) + ' × ' + i.qty + '</div></div><div class="price" style="font-size:16px">' + money(i.price * i.qty) + '</div></div>'; }).join('') +
       '<div class="sum" style="margin-top:12px"><div><span>Delivery</span><b>' + (o.delivery ? money(o.delivery) : 'Free') + '</b></div><div class="tot"><span>Total</span><span>' + money(o.total) + '</span></div></div></div>' +
-      '<a class="btn sec" style="margin-top:20px" href="#track">Track this order</a></div></div>';
+      '<a class="btn sec" style="margin-top:20px" href="#track-' + esc(o.code) + '">Track this order</a></div></div>';
     var w = $('#cpW'); if (w) w.onclick = function () { copy(s.whish, 'Whish number copied'); };
     $('#cpO').onclick = function () { copy(orderText(o), 'Order copied'); };
     window.scrollTo(0, 0);
   }
 
-  function viewTrack() {
-    var last = ls('lastOrder');
-    app.innerHTML = '<div class="wrap page"><div class="done" style="text-align:left"><h1>Track your order</h1><div class="panel"><label class="field">Order code<input id="trCode" placeholder="3DB-XXXXX" value="' + esc(last ? last.code : '') + '" style="text-transform:uppercase"></label><button class="btn pri full" id="trBtn" style="margin-top:14px">Track</button><div id="trOut"></div></div></div></div>';
+  function viewTrack(code0) {
+    var last = ls('lastOrder'), mine = ls('myOrders') || (last ? [last.code] : []);
+    app.innerHTML = '<div class="wrap page"><div class="done" style="text-align:left"><h1>Track your order</h1><div class="panel"><label class="field">Order code<input id="trCode" placeholder="3DB-XXXXX" value="' + esc(code0 || (last ? last.code : '')) + '" autocomplete="off" style="text-transform:uppercase"></label>' + (mine.length ? '<div class="mychips"><span class="muted">Your orders on this phone:</span>' + mine.map(function (c) { return '<button type="button" class="chip" data-tc="' + esc(c) + '">' + esc(c) + '</button>'; }).join('') + '</div>' : '') + '<button class="btn pri full" id="trBtn" style="margin-top:14px">Track</button><div id="trOut"></div></div></div></div>';
     $('#trBtn').onclick = function () {
       var code = $('#trCode').value.trim().toUpperCase().replace(/\s/g, ''); if (code && code.indexOf('3DB-') !== 0) code = '3DB-' + code.replace(/^3DB/, '');
       $('#trOut').innerHTML = '<p class="muted">Looking…</p>';
@@ -691,6 +709,9 @@
       }).catch(function () { $('#trOut').innerHTML = '<p class="err">Could not check right now. Try again.</p>'; });
     };
     if (last) $('#trBtn').click();
+    $('#trCode').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('#trBtn').click(); });
+    $$('[data-tc]').forEach(function (b) { b.onclick = function () { $('#trCode').value = b.dataset.tc; $('#trBtn').click(); }; });
+    if (code0 || last) $('#trBtn').click();
     window.scrollTo(0, 0);
   }
 
@@ -817,7 +838,7 @@
 
   var CUSTOMER_MSG = {
     new: function (o) { return 'Hi ' + o.customer.name.split(' ')[0] + '! This is 3DBlaze ⚡ We got your order ' + o.code + ':\n' + o.items.map(function (i) { return '• ' + i.name + (i.color ? ' (' + i.color + ')' : '') + (i.text ? ' “' + i.text + '”' : '') + ' × ' + i.qty; }).join('\n') + '\nTotal ' + money(o.total) + '. Can you confirm the details are right?'; },
-    confirmed: function (o) { return 'Confirmed ✅ Your order ' + o.code + ' is in the print queue. We’ll message you when it’s ready.' + (o.payment === 'whish' && !o.paid ? '\nWhish: please send ' + money(o.total) + ' to ' + (Store.settings().whish || '[our Whish number]') + ' with the note ' + o.code + '.' : ''); },
+    confirmed: function (o) { return 'Confirmed ✅ Your order ' + o.code + ' is in the print queue. We’ll message you when it’s ready.\nTrack it any time: https://3dblazelb.com/#track-' + o.code + (o.payment === 'whish' && !o.paid ? '\nWhish: please send ' + money(o.total) + ' to ' + (Store.settings().whish || '[our Whish number]') + ' with the note ' + o.code + '.' : ''); },
     printing: function (o) { return 'Your 3DBlaze order ' + o.code + ' is printing right now 🖨️'; },
     ready: function (o) { return 'Your order ' + o.code + ' is ready! ' + (o.method === 'pickup' ? 'When can you pass by to pick it up?' : 'It goes out with the driver soon.'); },
     out: function (o) { return 'Your order ' + o.code + ' is on its way 🚚' + (o.payment === 'cash' ? ' Please have ' + money(o.total) + ' ready for the driver.' : ''); },
@@ -1334,6 +1355,7 @@
     if (h === 'checkout') return viewCheckout();
     if (h.indexOf('order-') === 0) return viewDone(h.slice(6));
     if (h === 'track') return viewTrack();
+    if (h.indexOf('track-') === 0) return viewTrack(decodeURIComponent(h.slice(6)));
     if (h === 'admin') return viewHome();
     viewHome();
   }
