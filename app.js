@@ -476,41 +476,34 @@
   function viewHome(anchor) {
     var s = Store.settings(), all = Store.products();
     var leb = all.filter(function (p) { return p.col === 'lebanon'; }), xm = all.filter(function (p) { return p.col === 'xmas'; });
-    var cut = new Date(s.xmasCutoff + 'T23:59:00');
+    var vp = leb.filter(function (p) { return (p.art || p.id) === 'my-village'; })[0], others = leb.filter(function (p) { return p !== vp; });
+    var fee = (s.feeMount === s.feeBeirut ? money(s.feeBeirut) + ' in Beirut &amp; Mount Lebanon' : money(s.feeBeirut) + ' in Beirut, ' + money(s.feeMount) + ' in Mount Lebanon') + ', ' + money(s.feeOther) + ' elsewhere' + (s.freeOver ? ', free over ' + money(s.freeOver) : '');
     app.innerHTML =
-      '<section class="hero"><div class="wrap grid"><div>' +
-        '<div class="eyebrow">3D printed to order</div>' +
-        '<h1 style="margin-top:14px">Ideas you<br>can <span class="bl">hold</span>.</h1>' +
-        '<p class="lead">Thoughtful 3D printed gifts and pieces for the home, made to order on our own printers and delivered anywhere in Lebanon.</p>' +
-        '<div style="display:flex;gap:12px;flex-wrap:wrap"><a class="btn pri" href="#shop">Shop the Lebanon drop</a><a class="btn sec" href="#christmas">Christmas collection</a></div>' +
-        '<div class="chips"><span class="chip"><i></i>Cash on delivery</span><span class="chip"><i style="background:var(--blue)"></i>Whish accepted</span><span class="chip"><i style="background:#8C96A4"></i>Ready in 2–4 days</span></div>' +
-      '</div><div class="stage"><div class="stage-top"><b>“My Village” Desk Map</b><span>' + money((Store.product('my-village') || {}).price || 15) + '</span></div><div class="art mapart live" id="heroArt"></div>' +
-        '<div class="geo" id="heroGeo"><span class="muted">Type your village — the pin moves to it.</span></div><div class="try"><input id="heroInput" maxlength="18" placeholder="Type your village…" aria-label="Type your village"><a class="btn pri" style="min-height:44px;padding:8px 18px;font-size:14px" id="heroGo" href="#p-my-village">Order</a></div>' +
-      '</div></div>' +
-      '<div class="wrap"><div class="count" id="countdown"></div></div></section>' +
+      '<section class="hero2"><div class="wrap">' +
+        '<h1>Ideas you can <span class="bl">hold</span>.</h1>' +
+        '<p class="lead">3D printed gifts, made to order on our own printers and delivered anywhere in Lebanon.</p>' +
+        '<div class="hcta"><a class="btn pri" href="#shop">Shop now</a>' + (vp ? '<a class="btn sec" href="#make">Make my village</a>' : '') + '</div>' +
+        '<div class="trust"><span>✓ Cash on delivery</span><span>✓ Whish accepted</span><span>✓ Ready in 2–4 days</span><span class="dk">✓ Delivery all over Lebanon</span></div>' +
+      '</div></section>' +
 
-      '<section class="blk" id="sec-shop" style="padding-top:40px"><div class="wrap"><div class="sechead"><div><div class="eyebrow">The Lebanon drop</div><h2 style="margin-top:10px">For 22 November, and every day after.</h2><p>Our launch line. Made for the house, the car keys, and the cousins abroad.</p></div></div>' +
-        '<div class="products">' + leb.map(card).join('') + '</div></div></section>' +
+      '<section class="blk2" id="sec-shop"><div class="wrap">' +
+        '<div class="shead"><h2>Lebanon drop</h2><span class="muted">' + leb.length + ' piece' + (leb.length === 1 ? '' : 's') + '</span></div>' +
+        '<div class="pgrid">' + (vp ? villageFeature(vp) : '') + others.map(card2).join('') + (vp ? villageCompact(vp) : '') + '</div>' +
+        '<div class="cdline" id="countdown"></div>' +
+      '</div></section>' +
 
-      '<section class="blk xmas soon" id="sec-christmas"><div class="snow"></div><div class="wrap" style="position:relative"><div class="soon-badge">Coming soon</div><div class="soon-blur" aria-hidden="true"><div class="sechead"><div><div class="eyebrow">Christmas 2026</div><h2 style="margin-top:10px">Printed for the tree.</h2><p>Ornaments with names, a cedar for the branches, a star for the top and a nativity for the shelf.</p></div>' +
-        '<div class="cut">Order by ' + cut.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }) + ' for delivery before Christmas</div></div>' +
-        '<div class="products">' + xm.map(card).join('') + '</div></div></div></section>' +
+      (xm.length ? '<section class="blk2" id="sec-christmas"><div class="wrap"><div class="shead"><h2>Christmas collection</h2><span class="soonlbl">Coming soon</span></div>' +
+        '<div class="xrow" role="list">' + xm.map(function (p) { return '<a class="xc" role="listitem" href="#p-' + p.id + '"><div class="xc-img">' + thumb(p) + '</div><b>' + esc(p.name) + '</b><span>' + money(p.price) + '</span></a>'; }).join('') + '</div></div></section>' : '') +
 
-      '<section class="blk" id="sec-how"><div class="wrap"><div class="sechead"><div><div class="eyebrow">How it works</div><h2 style="margin-top:10px">From our printer to your door.</h2></div></div><div class="steps">' +
-        step(1, 'Pick', 'Choose a piece and a colour. Add a name or your village if you like.') +
-        step(2, 'We confirm', 'We send you a WhatsApp message to confirm the details.') +
-        step(3, 'We print', 'Printed and checked by hand in 2–4 days. Track it any time.') +
-        step(4, 'Delivered', 'Pay the driver in cash, or pay by Whish before delivery.') +
-      '</div><form class="trackbox" id="homeTrack"><div><h3>Track your order</h3><p class="muted">Type the code you got when you ordered (it looks like 3DB-XXXXX).</p></div><div class="trackin"><input name="code" placeholder="3DB-XXXXX" aria-label="Order code" autocomplete="off"><button class="btn pri" type="submit">Track</button></div></form></div></section>' +
+      '<section class="blk2" id="sec-how"><div class="wrap"><div class="shead"><h2>How it works</h2></div><div class="steps2">' +
+        step2(1, 'Pick', 'A piece and a colour') + step2(2, 'Confirm', 'We WhatsApp you') + step2(3, 'Print', 'Ready in 2–4 days') + step2(4, 'Deliver', 'Cash or Whish') +
+        '</div><p class="feeline">Delivery ' + fee + '.' + (s.pickup ? ' Pickup available.' : '') + ' Pay the driver in cash, or by Whish with your order code.</p>' +
+        '<form class="trackbox" id="homeTrack"><div><h3>Track your order</h3><p class="muted">Type the code you got when you ordered (3DB-XXXXX).</p></div><div class="trackin"><input name="code" placeholder="3DB-XXXXX" aria-label="Order code" autocomplete="off"><button class="btn pri" type="submit">Track</button></div></form>' +
+      '</div></section>' +
 
-      '<section class="blk" style="padding-top:0"><div class="wrap"><div class="pay">' +
-        '<div class="paycard"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5v5M18 9.5v5"/></svg></div><h3>Cash on delivery</h3><p>Pay the driver when your order arrives. Delivery ' + (s.feeMount === s.feeBeirut ? money(s.feeBeirut) + ' in Beirut and Mount Lebanon' : money(s.feeBeirut) + ' in Beirut, ' + money(s.feeMount) + ' in Mount Lebanon') + ', ' + money(s.feeOther) + ' elsewhere' + (s.freeOver ? ', free over ' + money(s.freeOver) : '') + '.</p></div>' +
-        '<div class="paycard"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18h3"/><path d="M9.5 9.5l2 2 3.5-3.5"/></svg></div><h3>Whish Money</h3><p>Send the total to our Whish number with your order code. We print as soon as it lands.</p></div>' +
-      '</div></div></section>' +
-
-      '<section class="blk" id="sec-faq" style="padding-top:20px"><div class="wrap"><div class="sechead"><div><div class="eyebrow">FAQ</div><h2 style="margin-top:10px">Frequently asked questions</h2></div></div><div class="faq">' +
+      '<section class="blk2" id="sec-faq"><div class="wrap"><div class="shead"><h2>Questions</h2></div><div class="faq faq2">' +
         faq('How long does it take?', 'Most orders are printed in 2–4 days, then delivered within 1–2 days. Personalized pieces are printed one by one, so order early for 22 November and Christmas.') +
-        faq('Where do you deliver?', 'All over Lebanon through our delivery partner. Delivery is ' + money(s.feeBeirut) + ' in Beirut, ' + money(s.feeMount) + ' in Mount Lebanon and ' + money(s.feeOther) + ' everywhere else' + (s.freeOver ? '. Orders over ' + money(s.freeOver) + ' ship free' : '') + '.') +
+        faq('Where do you deliver?', 'All over Lebanon through our delivery partner. Delivery is ' + fee + '.') +
         faq('How do I pay?', 'Cash to the driver on delivery, or Whish Money. If you choose Whish, the payment details appear right after you order.') +
         faq('What is it made of?', 'PLA, a plant-based plastic. It is strong and light, but keep it away from high heat like a car dashboard in summer.') +
         faq('Can I order something custom?', 'Custom designs are coming soon. For now, send us a message on Instagram @' + esc(s.instagram) + ' and we will tell you what we can do.') +
@@ -518,21 +511,56 @@
       '</div></div></section>';
 
     countdown();
+    $$('[data-q]').forEach(function (b) { b.onclick = function (e) { e.preventDefault(); quickAdd(b.dataset.q, b); }; });
     var ht = $('#homeTrack'), lastO = ls('lastOrder'); if (lastO) ht.code.value = lastO.code;
     ht.onsubmit = function (e) { e.preventDefault(); var c = ht.code.value.trim().toUpperCase().replace(/\s/g, ''); location.hash = c ? 'track-' + c : 'track'; };
     var hi = $('#heroInput');
-    var hpos = null, live = BlazeArt.village($('#heroArt'), { text: 'Your village' });
-    var hdraw = function () { live.set({ text: hi.value || 'Your village', lat: hpos && hpos.lat, lon: hpos && hpos.lon, ar: hpos && hpos.ar, ele: hpos && hpos.ele }); };
-    // while nobody is typing, the preview tours a few villages so the pin keeps moving
-    var DEMO = [['Hadchit', 34.2519, 35.9853, 'حدشيت'], ['Jbeil', 34.1230, 35.6519, 'جبيل'], ['Zahle', 33.8463, 35.9020, 'زحلة'], ['Tyre', 33.2705, 35.2038, 'صور'], ['Batroun', 34.2553, 35.6581, 'البترون'], ['Saida', 33.5630, 35.3688, 'صيدا'], ['Bcharre', 34.2508, 36.0106, 'بشري']];
-    var demoEle = {}; DEMO.forEach(function (d) { Geo.elev(d[1], d[2], function (e) { demoEle[d[0]] = e; }); });
-    var di = 0, demoT = null, demo = function () { if (hi.value || !document.body.contains(hi)) return; var d = DEMO[di++ % DEMO.length]; live.set({ text: d[0], lat: d[1], lon: d[2], ar: d[3], ele: demoEle[d[0]] }); demoT = setTimeout(demo, 2600); };
-    setTimeout(demo, 700);
-    hi.addEventListener('input', function () { clearTimeout(demoT); if (!hi.value) { hpos = null; hdraw(); $('#heroGeo').innerHTML = '<span class="muted">Type your village — the pin moves to it.</span>'; demoT = setTimeout(demo, 2500); return; } hdraw(); Geo.find(hi.value, function (hit, st) { if (!document.body.contains(hi)) return; if (st !== 'searching') hpos = hit; hdraw(); $('#heroGeo').innerHTML = Geo.status(hit, st); }); });
-    $('#heroGo').addEventListener('click', function () { ls('prefillVillage', hi.value); });
+    if (hi) {
+      var hpos = null, live = BlazeArt.village($('#heroArt'), { text: 'Your village' });
+      var hdraw = function () { live.set({ text: hi.value || 'Your village', lat: hpos && hpos.lat, lon: hpos && hpos.lon, ar: hpos && hpos.ar, ele: hpos && hpos.ele }); };
+      // while nobody is typing, the preview tours a few villages so the pin keeps moving
+      var DEMO = [['Hadchit', 34.2519, 35.9853, 'حدشيت'], ['Jbeil', 34.1230, 35.6519, 'جبيل'], ['Zahle', 33.8463, 35.9020, 'زحلة'], ['Tyre', 33.2705, 35.2038, 'صور'], ['Batroun', 34.2553, 35.6581, 'البترون'], ['Saida', 33.5630, 35.3688, 'صيدا'], ['Bcharre', 34.2508, 36.0106, 'بشري']];
+      var demoEle = {}; DEMO.forEach(function (d) { Geo.elev(d[1], d[2], function (e) { demoEle[d[0]] = e; }); });
+      var di = 0, demoT = null, demo = function () { if (hi.value || !document.body.contains(hi)) return; var d = DEMO[di++ % DEMO.length]; live.set({ text: d[0], lat: d[1], lon: d[2], ar: d[3], ele: demoEle[d[0]] }); demoT = setTimeout(demo, 2600); };
+      setTimeout(demo, 700);
+      hi.addEventListener('input', function () { clearTimeout(demoT); if (!hi.value) { hpos = null; hdraw(); $('#heroGeo').innerHTML = '<span class="muted">Type your village — the pin moves there.</span>'; demoT = setTimeout(demo, 2500); return; } hdraw(); Geo.find(hi.value, function (hit, st) { if (!document.body.contains(hi)) return; if (st !== 'searching') hpos = hit; hdraw(); $('#heroGeo').innerHTML = Geo.status(hit, st); }); });
+      $('#heroGo').addEventListener('click', function () { ls('prefillVillage', hi.value); });
+    }
     if (anchor) { var el = $('#sec-' + anchor); if (el) setTimeout(function () { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 30); }
     else window.scrollTo(0, 0);
   }
+  function villageFeature(p) {
+    return '<div class="vfeat" id="sec-make"><div class="vprev"><div class="art mapart live" id="heroArt"></div></div><div class="vinfo">' +
+      '<span class="ptag">Personalized</span><h3>' + esc(p.name) + '</h3>' +
+      '<p>Type your village — the pin moves there. Its name in English and Arabic with the elevation, printed on the base.</p>' +
+      '<div class="try"><input id="heroInput" maxlength="18" placeholder="Your village…" aria-label="Type your village"><a class="btn pri" id="heroGo" href="#p-' + p.id + '">Order · ' + money(p.price) + '</a></div>' +
+      '<div class="geo" id="heroGeo"><span class="muted">Type your village — the pin moves there.</span></div>' +
+      '<a class="vreal" href="#p-' + p.id + '">See the real piece →</a></div></div>';
+  }
+  function villageCompact(p) {
+    return '<a class="vcomp" href="#p-' + p.id + '"><div class="vc-img">' + thumb(p) + '</div><div class="vc-txt"><span class="ptag">Personalized</span><b>' + esc(p.name) + '</b><span class="muted">Your village pinned, its name in English &amp; Arabic + elevation.</span><div class="vc-row"><b>' + money(p.price) + '</b><span>Personalize →</span></div></div></a>';
+  }
+  function pdots(p) {
+    var ol = optList(p), list = ol.length ? ol.map(function (o) { return o.name; }) : (p.colors && p.colors.length > 1 ? p.colors : []);
+    return list.length ? '<span class="dots" aria-label="' + esc(list.join(', ')) + '">' + list.slice(0, 5).map(function (c) { return '<i style="background:' + (COLOR_HEX[String(c).toLowerCase()] || '#D9DDE3') + '"></i>'; }).join('') + '</span>' : '';
+  }
+  function card2(p) {
+    var out = p.soldOut || p.available === false || allOptsOut(p);
+    return '<div class="pc"><div class="pc-media"><a class="pc-img" href="#p-' + p.id + '">' + thumb(p) +
+      (out ? '<span class="tag out">Sold out</span>' : p.tag ? '<span class="tag">' + esc(p.tag) + '</span>' : '') + '</a>' +
+      (out ? '' : '<button type="button" class="qadd" data-q="' + p.id + '" aria-label="Add ' + esc(p.name) + ' to cart">+</button>') + '</div>' +
+      '<a class="pc-info" href="#p-' + p.id + '"><h3>' + esc(p.name) + '</h3><div class="pc-row"><span class="price">' + money(p.price) + (p.was ? '<s>' + money(p.was) + '</s>' : '') + '</span>' + pdots(p) + '</div></a></div>';
+  }
+  function quickAdd(id, btn) {
+    var p = Store.product(id); if (!p) return;
+    if (p.text && p.text.required) { location.hash = 'p-' + id; return; }
+    var ol = optList(p).filter(function (o) { return !o.out; }), color = ol.length ? ol[0].name : (p.colors ? p.colors[0] : null);
+    Cart.add(p, 1, color);
+    toast('Added: ' + p.name + (color ? ' (' + color + ')' : '') + ' — tap the photo to pick another colour');
+    if (btn) { btn.classList.add('ok'); btn.textContent = '✓'; setTimeout(function () { btn.classList.remove('ok'); btn.textContent = '+'; }, 1400); }
+    var cb = $('.cartbtn'); if (cb) { cb.classList.remove('bump'); void cb.offsetWidth; cb.classList.add('bump'); }
+  }
+  function step2(n, h, p) { return '<div class="st2"><b class="n">' + n + '</b><b>' + h + '</b><span>' + p + '</span></div>'; }
   function step(n, h, p) { return '<div class="step"><div class="n">' + n + '</div><h3>' + h + '</h3><p>' + p + '</p></div>'; }
   function faq(q, a) { return '<details><summary>' + q + '</summary><p>' + a + '</p></details>'; }
 
@@ -547,8 +575,7 @@
       if (now < indep) { target = indep; title = '<span class="flagbar"></span>Independence Day · 22 November'; sub = 'Order by 19 November to get it in time.'; }
       else { target = xmas; title = 'Christmas · 25 December'; sub = 'Order by ' + new Date(s.xmasCutoff).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }) + ' for delivery before Christmas.'; }
       var d = Math.max(0, target - now), D = Math.floor(d / 864e5), H = Math.floor(d / 36e5) % 24, M = Math.floor(d / 6e4) % 60, S = Math.floor(d / 1e3) % 60;
-      el.innerHTML = '<div><div style="font-family:var(--head);font-weight:700;font-size:18px">' + title + '</div><div class="muted" style="font-size:14px;margin-top:4px">' + sub + '</div></div>' +
-        '<div class="t">' + [[D, 'days'], [H, 'hours'], [M, 'min'], [S, 'sec']].map(function (u) { return '<div class="u"><b>' + (u[0] < 10 ? '0' : '') + u[0] + '</b><small>' + u[1] + '</small></div>'; }).join('') + '</div>';
+      el.innerHTML = '<span class="cd-t">' + title + '</span><span class="cd-s muted">' + sub + '</span><span class="cd-n">' + D + 'd ' + H + 'h ' + (M < 10 ? '0' : '') + M + 'm ' + (S < 10 ? '0' : '') + S + 's</span>';
     };
     tick(); cdTimer = setInterval(tick, 1000);
   }
@@ -1361,7 +1388,7 @@
     if (window.BLAZE_ADMIN) return viewAdmin();
     if (h !== 'admin') document.title = '3DBlaze — Personalized 3D printed gifts';
     if (h === 'home' || h === '') return viewHome();
-    if (h === 'shop' || h === 'christmas' || h === 'faq') return viewHome(h);
+    if (h === 'shop' || h === 'christmas' || h === 'faq' || h === 'make' || h === 'how') return viewHome(h);
     if (h.indexOf('p-') === 0) return viewProduct(h.slice(2));
     if (h === 'cart') return viewCart();
     if (h === 'checkout') return viewCheckout();
