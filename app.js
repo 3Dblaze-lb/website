@@ -165,9 +165,21 @@
   var Store = (function () {
     var cfg = window.BLAZE_FIREBASE, live = !!(cfg && cfg.apiKey);
     var state = { overrides: {}, extra: {}, settings: Object.assign({}, DEFAULT_SETTINGS), orders: {}, requests: {}, user: null };
-    var subs = [], rev = 0, got = { products: false, extra: false, settings: false };
+    var subs = [], rev = 0, got = { products: false, extra: false, settings: false }, offline = false, cacheT = null;
     function emit() { subs.forEach(function (f) { f(); }); }
-    function shopData(k) { got[k] = true; rev++; }
+    // Shop data (products / extra products / settings) is cached on the device so returning visitors see the
+    // real shop instantly; live data then only redraws the page if something actually changed.
+    function setShop(field, key, val) {
+      var same = got[key] && JSON.stringify(state[field]) === JSON.stringify(val);
+      state[field] = val; got[key] = true; if (!same) rev++;
+      clearTimeout(cacheT); cacheT = setTimeout(function () { if (got.products && got.extra && got.settings) ls('shopCache', { overrides: state.overrides, extra: state.extra, settings: state.settings }); }, 400);
+      emit();
+    }
+    function useCache() {
+      var c = ls('shopCache'); if (!c || !c.settings) return false;
+      state.overrides = c.overrides || {}; state.extra = c.extra || {}; state.settings = Object.assign({}, DEFAULT_SETTINGS, c.settings);
+      got.products = got.extra = got.settings = true; rev++; return true;
+    }
     var fb = null;
 
     function loadScript(src) { return new Promise(function (res, rej) { var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); }); }
@@ -182,14 +194,15 @@
         window.addEventListener('storage', function () { state.orders = ls('orders') || {}; emit(); });
         return Promise.resolve();
       }
+      if (!window.BLAZE_ADMIN) useCache();
       var v = '10.12.2', base = 'https://www.gstatic.com/firebasejs/' + v + '/';
       return loadScript(base + 'firebase-app-compat.js')
         .then(function () { return Promise.all([loadScript(base + 'firebase-database-compat.js'), loadScript(base + 'firebase-auth-compat.js')]); })
         .then(function () {
           firebase.initializeApp(cfg); fb = firebase.database();
-          fb.ref('products').on('value', function (s) { state.overrides = s.val() || {}; shopData('products'); emit(); });
-          fb.ref('extraProducts').on('value', function (s) { state.extra = s.val() || {}; shopData('extra'); emit(); });
-          fb.ref('settings').on('value', function (s) { state.settings = Object.assign({}, DEFAULT_SETTINGS, s.val() || {}); shopData('settings'); emit(); });
+          fb.ref('products').on('value', function (s) { setShop('overrides', 'products', s.val() || {}); });
+          fb.ref('extraProducts').on('value', function (s) { setShop('extra', 'extra', s.val() || {}); });
+          fb.ref('settings').on('value', function (s) { setShop('settings', 'settings', Object.assign({}, DEFAULT_SETTINGS, s.val() || {})); });
           var ordersRef = null;
           firebase.auth().onAuthStateChanged(function (u) {
             state.user = u ? { email: u.email, uid: u.uid } : null;
@@ -199,7 +212,12 @@
             emit();
           });
         })
-        .catch(function () { live = false; toast('Could not reach the server — showing demo mode'); return init(); });
+        .catch(function () {
+          if (window.BLAZE_ADMIN) { live = false; toast('Could not reach the server — showing demo mode'); return init(); }
+          // Customers: never fall back to demo mode (orders would only be saved on their phone). Show the shop
+          // from the device cache / defaults; placing an order then shows a WhatsApp fallback.
+          offline = true; got.products = got.extra = got.settings = true; rev++;
+        });
     }
 
     function products() {
@@ -211,6 +229,7 @@
     return {
       get live() { return live; },
       ready: function () { return !live || (got.products && got.extra && got.settings); },
+      get offline() { return offline; },
       rev: function () { return rev; },
       init: init, on: function (f) { subs.push(f); },
       products: products,
@@ -235,6 +254,7 @@
           state.orders[o.code] = o; ls('orders', state.orders);
           var tr = ls('tracking') || {}; tr[o.code] = track; ls('tracking', tr); emit(); return Promise.resolve(o);
         }
+        if (offline || !fb) return Promise.reject(new Error('offline'));
         return fb.ref('orders/' + o.code).set(o).then(function () { return fb.ref('tracking/' + o.code).set(track); }).then(function () { return o; });
       },
       track: function (code) {
@@ -625,7 +645,7 @@
       };
       $('#coBtn').disabled = true; $('#coBtn').textContent = 'Placing order…';
       Store.placeOrder(order).then(function () { Cart.clear(); ls('lastOrder', order); location.hash = 'order-' + order.code; })
-        .catch(function () { $('#coBtn').disabled = false; $('#coBtn').textContent = 'Place order'; $('#coErr').textContent = 'Something went wrong. Please try again or message us on Instagram.'; });
+        .catch(function () { $('#coBtn').disabled = false; $('#coBtn').textContent = 'Place order'; $('#coErr').innerHTML = 'We couldn’t reach our server, so your order was <b>not</b> placed. Check your connection and try again, or <a href="' + waLink(Store.settings().whatsapp, orderText(order)) + '" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">send it to us on WhatsApp</a>.'; });
     });
     window.scrollTo(0, 0);
   }
@@ -1248,10 +1268,14 @@
   Presence.on(function (n) { var el = document.getElementById('liveNow'); if (el) el.textContent = n; });
   Store.init().then(function () {
     Presence.start();
-    route();
+    if (Store.ready() || window.BLAZE_ADMIN) route();
+    else {
+      app.innerHTML = '<div class="wrap page" style="min-height:60vh;display:flex;align-items:center;justify-content:center"><div class="muted" style="font-size:15px">Loading the shop…</div></div>';
+      setTimeout(function () { if (!Store.ready()) route(); }, 4000);
+    }
     // Re-draw the shop whenever products / settings arrive or change, so photos, prices and stock are always current.
     // Pages where the customer is typing (checkout, product page after first draw) are not redrawn under them.
-    var drawnRev = Store.live ? -1 : Store.rev(), firstFull = !Store.live || Store.ready(), redrawT = null;
+    var drawnRev = Store.ready() ? Store.rev() : -1, firstFull = Store.ready(), redrawT = null;
     Store.on(function () {
       var cc = $('#cartCount'); if (cc) cc.textContent = Cart.count();
       if (window.BLAZE_ADMIN) { if (Store.user() && !document.querySelector('.modal')) renderAdmin(); return; }

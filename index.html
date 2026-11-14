@@ -89,8 +89,9 @@ header.top{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.9);back
 
 /* hero */
 .hero{padding:64px 0 36px;position:relative;overflow:hidden;background:linear-gradient(180deg,#F4F8FE 0%,#fff 100%)}
-.hero .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:center}
-@media (max-width:900px){.hero .grid{grid-template-columns:1fr;gap:28px}.hero{padding-top:40px}}
+.hero .grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:48px;align-items:center}
+.hero .grid>*{min-width:0}
+@media (max-width:900px){.hero .grid{grid-template-columns:minmax(0,1fr);gap:28px}.hero{padding-top:40px}}
 .hero h1{font-size:clamp(40px,5.6vw,68px);font-weight:700;letter-spacing:-.035em}
 .hero h1 .o{color:var(--blue)} .hero h1 .bl{color:var(--blue)}
 .hero p.lead{font-size:19px;color:#3A4352;max-width:520px;margin:20px 0 30px}
@@ -107,6 +108,7 @@ header.top{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.9);back
 .count{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;margin:28px 0 0;box-shadow:var(--shadow)}
 .count .t{display:flex;gap:8px}
 .count .u{background:var(--soft);border-radius:12px;padding:10px 12px;min-width:66px;text-align:center}
+@media (max-width:400px){.count .t{width:100%}.count .u{min-width:0;flex:1;padding:8px 4px}}
 .count .u b{display:block;font-family:var(--head);font-size:24px;font-weight:700}
 .count .u small{font-size:11px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
 .flagbar{display:inline-block;width:32px;height:21px;border-radius:3px;background:linear-gradient(var(--red) 0 25%,#fff 25% 75%,var(--red) 75%);vertical-align:middle;margin-right:10px;position:relative;box-shadow:0 0 0 1px var(--line)}
@@ -393,8 +395,8 @@ footer a:hover{color:var(--text)}
   </div>
 </footer>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-<script src="firebase-config.js?v=94642039"></script>
-<script src="art.js?v=94642039"></script>
-<script src="app.js?v=94642039"></script>
+<script src="firebase-config.js?v=94643151"></script>
+<script src="art.js?v=94643151"></script>
+<script src="app.js?v=94643151"></script>
 </body>
 </html>
