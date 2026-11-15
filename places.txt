@@ -1,0 +1,1716 @@
+Tripoli|طرابلس|Trablos;Trablous;Tarablus;Trablus|34.4374|35.8349|c
+Jounieh|جونيه||33.9742|35.6201|c
+Al Daoura|الدورة|Dora;Daoura|33.8928|35.5507|s
+Jdeideh|جديدة المتن|Jdeidet El Matn;Jdaideh;Jdaidet El Matn|33.8922|35.5704|t
+Sibline|سبلين||33.6240|35.4354|v
+Jurdeih|جرديح|Jourdeih|33.1002|35.2169|h
+Kfar Hazir|كفر حزير||34.3121|35.7732|v
+Hadath El Jebbeh|حدث الجبة||34.2472|35.9305|v
+Kfar Saroun|كفر صارون الكورة||34.2961|35.8295|v
+Rechdibbine|رشدبين||34.2916|35.8618|v
+Kfar Hata Koura|كفر حاتا - الكورة||34.2833|35.7486|v
+Btaaboura|بتعبورة||34.2744|35.7636|v
+Bednayel Koura|بدنايل - الكورة||34.2905|35.7340|v
+Kefraiya Koura|كفريا - الكورة||34.2949|35.7230|v
+Beirut|بيروت|Beyrouth|33.8959|35.4784|c
+Adma|أدما و الدفنه|Adma wa Dafneh|34.0266|35.6540|v
+Bait Ash Shaar|بيت الشعار|Bait Ash-Sha'ar;Bayt Ech Chaar|33.9276|35.6233|v
+Rmeileh|رميلة|Rmaile;Rmayleh|33.6107|35.4023|v
+Mina al-Husn|ميناء الحصن|Minet El Hosn|33.8997|35.4977|s
+Saifi|صيفي||33.8930|35.5085|s
+Dahr Ej Jammal|ضهر الجمل||33.8837|35.5340|h
+Jisr al Wati|جسر الواطي||33.8798|35.5328|h
+Amatouri|عمّاطور|Aammatour|33.8753|35.5335|h
+Bikfaya|بكفيا|Bickfaya;Bikfayia;Bikfaiya;Bekfaya;Beckfayya|33.9222|35.6844|v
+Chnanir|شننعير|Chnanaair;Chnaniir|34.0063|35.6668|v
+Dik El Mehdi|ديك المحدي|Deek El Mehdeh|33.9328|35.6201|v
+Duwar|دوار|Douar|33.9069|35.6970|v
+Beit El Kekko|بيت الككو|Beit El Koukko;Beit El Kiko;Beit el Kekko|33.9244|35.6380|v
+Faraya|فاريا|Fārayā|34.0128|35.8205|v
+Burj El Brajneh|برج البراجنة|Burj al-Barajneh;Borj El Barajneh;Bourj El Barajneh|33.8411|35.4990|t
+Niha|نيحا||33.5963|35.6264|v
+Delghani|دلغاني||33.5989|35.6110|v
+Kfar Taala|كفر تعلا||33.5712|35.5956|v
+Aariye|عاريه||33.5678|35.5999|v
+Ain Qani|عين قني|Ain Qeni;Ein Kanieh|33.6510|35.6141|v
+Hlaliyeh Saida|الهلالية|Hilaliyeh Saida|33.5657|35.3926|v
+Aathrine|عثرين|Aatrine|33.6646|35.5683|v
+Choualiq Deir el Qamar|شواليق - دير القمر||33.6922|35.5477|v
+Sahl Ej Jiyeh|سهل الجية||33.6815|35.4224|v
+Maqsabeh|مقصبة|Maqsabe|33.6882|35.4226|v
+Jlall Aairam|جلال عيرم||33.5533|35.3670|h
+New Sector|المنطقة المستحدثة|Nouveau Secteur|33.9052|35.5053|h
+Baalbek|بعلبك||34.0097|36.2117|c
+As Sultaniyah|السلطانية|Soultaniyeh|33.2055|35.4077|v
+Mazraat Buyut as Sayad|مزرعة بيوت السياد|Byout El Saiyad;Mazraat Biout es Siyad|33.1677|35.1941|v
+Rmadiyeh|رمادية||33.1989|35.2767|v
+Charnip|شارنية||33.2661|35.2483|v
+Wadi Jilo|وادي جيلو|Ouadi Jilou;Ouadi Jilo|33.2436|35.3045|v
+Rabb Et Talatine|رب الثلاثين|Rab El Thalathine|33.2490|35.5190|v
+Mhaibib|محيبيب||33.1540|35.5049|v
+Beit Yahoun|بيت ياحون||33.1592|35.4267|v
+Chaqra|شقرا||33.1925|35.4629|v
+Bani Haiyane|بني حيان|Bani Haiyyan;Beni Hayan|33.2439|35.4909|v
+Dhayra|ظهيرة|Ed Dhaira;Dhaira;Al Dahira;Al-Dahira;Dhahirah|33.1011|35.2271|v
+Al Butayshiyya|بطيشية|Btaichiye;Btaychiyeh|33.1056|35.2093|h
+Ramiya|رامية|Ramyeh;Ramieh;Ramaya;Ramiyeh|33.1111|35.3100|v
+Hanine|حانين|Hanin|33.1090|35.3821|v
+Oumaya|أمية||33.1186|35.3723|v
+Qatmoun|قطمون||33.0660|35.3605|v
+Jbab El Aarab|جباب العرب||33.0685|35.3720|v
+Nabi Youcheaa|نبي يوشع|Nabi Youcha|33.1307|35.4991|v
+Abi Shash|أبو شاش|Abou Chach;Abou Chech;Abu Shash;Abū Shāsh;Abou Chêch|33.1283|35.2115|v
+Al Hara|الحارة|El Hara|33.1973|35.4109|v
+En Naouaouis|النواويس|ANawaweess|33.5189|35.3914|s
+Es Saadiyat|السعديات|As Sa`diyat;As Sa`dīyāt;Es Saadîyât|33.6950|35.4261|v
+Sabbah|صباح|Şabbāḩ|33.5681|35.5653|v
+Harat Al Kawasba|حارة الكواسبة|Haret El Kaouasbé|33.4983|35.8447|v
+Mazraat El Mathane|مزرعة المطحنة|Mazra`at al Mathanah;Mazra`at al Maţḩanah;Mazraat el Mathané|33.5787|35.5193|v
+El Kherbe|الخربة|Al Khirbah;Khirbat Bisri;Khirbat Bisrī;El Kherbé|33.5819|35.5264|v
+Bisri|بسري|Besri Ferme;Bisrī|33.5783|35.5403|v
+El Ghabbatiye|الغباطية|Al Ghabbatiyah;Al Ghabbāţīyah;El Ghabbatîyé;Ghbatiye|33.5778|35.5844|v
+Jall Nachi|جل ناشي|Jall Nashi;Jall Nāshī|33.5781|35.5742|v
+Soultane Yaaqoub|سلطان يعقوب|As Sultan Ya`qub;As Sulţān Ya`qūb;Es Soultane Yaaqoub;Es Soultâne Yaaqoûb;Es-Sultan Ya`qoub el-Fauqa;Soultâne Yaaqoûb|33.6443|35.8594|v
+Zaaitriye|زعيترية|Ez Zaaïtriyé|33.8807|35.5612|v
+Hai er Roum|حي الروم|Haï er Roum|33.9051|35.5888|h
+El Aazzouniye|العزونية|Al `Azuniyah;Al `Azzuniyah;Al `Azzūnīyah;Al `Azūnīyah;Azounie;Azounié;El Aazouniye;El Aazouniyé;El Azouniye;El Aazzoûnîyé;Aazzouniyeh;Azzouniyeh;Azzounieh|33.7740|35.7066|v
+El Masloukh|المسلوخ|Al Maslukh;El Masloûkh|34.2056|35.6445|v
+Jdaidet Barqacha|جديدة برقشا|Judaydat Barqasha;Judaydat Barqāshā;Jdaïdet Barqâcha|34.3908|35.8442|v
+Al Zaaroura|الزعرورة|Az Zu`rurah;Az Zu`rūrah;Ez Zaaroûra;Ez Zaaroura|33.8125|35.8708|h
+Qoussaya|قوسايا|Hosaya;Qusaya;Koussaya;Qousaya|33.8120|36.0247|v
+Zahle|زحلة|Zahlah;Zahleh;Zahlé;Zakhla;Zaḩlah|33.8477|35.9025|c
+Qaa Er Rim|قاع الريم|Qa`ar Rim;Qā`ar Rīm;Qâa er Rîm|33.8833|35.8748|v
+Temnine El Tehta|تمنين التحتى|Timnin at Tahta;Timnīn at Taḩtā;Temnîne et Tehta;Tammine Et Tahta;Temnine Et Tehta|33.8834|35.9916|v
+Rajem Issa|رجم عيسى|Rajm Issa|34.6197|36.3839|v
+Bani Sakher|بني صخر||34.6636|36.3095|v
+Maarubu|معربو|Ma`arbu;Ma`arbū;Maarabo;Maarbo;Marbu;Marbū;Ma`rubū|34.6333|36.1166|v
+Tall ash Shahm|تل الشحم|Tell Chahem;Tall ash Shaḩm|34.6333|36.1333|v
+Al Masnaa|المصنع|Masnaa;Al Maşna`|33.7047|35.9183|v
+Safa' as Safwah|صفاء الصفوة|Safa es Safaoue;Safa es Safaoué;Safa es Safoue;Safa es Safoué;Şafā' aş Şafwah|34.4999|36.4000|v
+Bayt Hayrah|بيت حيرة|Beit Hira|34.4333|36.4667|v
+Al Majwiyah|المجوية|El Mijouiye;El Mijouîyé;Al Majwīyah|34.4981|36.3663|v
+Mazraat El Barghoutiyeh|مزرعة البرغوتية||33.5901|35.4224|v
+Tyre|صور|Tyr;Sour|33.2721|35.1964|c
+Nabatieh|النبطية|An Nabatiyah;An Nabaţīyah;Nabatîyé|33.3812|35.4825|c
+Taaid|تعيد||33.5740|35.5449|v
+Kfaraabida|كفرعبيدا|Kfar Aabida|34.2280|35.6628|t
+Arsal|عرسال|Aarsal|34.1803|36.4188|t
+Bcharre|بشري|Bsharri;Becharre;Bcharré;Bsharre|34.2507|36.0100|t
+Mashaa|حي المشاع|Haï El Mchâa|33.3877|35.4782|h
+Christians Neighbourhood|حي المسيحيين||33.3783|35.4883|h
+Bir el Qandeel|بئر القنديل||33.3761|35.4808|h
+Nabatieh El Fawqa|النبطيه الفوقا||33.3619|35.4987|v
+Assaraya|حي السرايا||33.3760|35.4835|h
+Bdedoun|بدادون|Bdadoun|33.8092|35.5692|v
+Bisaba|بسابا|Bsaba;Bessaba|33.8032|35.5421|v
+Al Salam Village|قرية السلام||33.8568|35.7451|v
+Zaarour|الزعرور||33.9225|35.8025|v
+Bqaiaa|البقيعة|Bqayaa;Boqaiaa;El Bqaïaa|34.6635|36.3380|v
+Jabal El Mansoura|جبل المنصورة||34.6322|36.3194|v
+Khat El Petrol|خط البترول||34.6849|36.3457|v
+Al Farid|الفرض||34.6281|36.3757|v
+Wadi Khalid|وادي خالد|Wadi Khaled;Ouâdi Khâled|34.6233|36.3876|t
+Al Saed|الساعد||34.6257|36.3920|v
+Bekaa Kafra|بقاع كفرا|Beqaa Kafra|34.2376|36.0056|v
+Barashit|برعشيت|Braachit;Baraachit|33.1755|35.4419|v
+Memneh|ممنع|Memneaa;Memnaa|34.5002|36.1756|v
+Aayoun Orghoush|عيون ارغش|Aayoun Orghoch|34.2612|36.1291|v
+Ain Al Sindyana|عين السنديانة|Ain El Sindiyneh;Ain el Sendianeh|33.9019|35.7304|v
+Halba|حلبا||34.5450|36.0780|t
+Qsouba|قصوبة|Qassoube|33.6768|35.4246|v
+Haris|حاريص|Hariss|33.1803|35.3770|v
+Tarchich|ترشيش||33.8768|35.8028|v
+Dbayeh|الضبية|Dbaye;Dbaiye;Ad Dubayya;Ad-Dubayya|33.9420|35.5938|t
+Antelias|أنطلياس||33.9124|35.5936|t
+Kaslik|الكسليك||33.9840|35.6192|t
+Achrafieh|الاشرفية|Ashrafieh;Achrafiyeh|33.8862|35.5194|s
+Nahr Ibrahim|نهر ابراهيم||34.0651|35.6492|v
+Sahel Alma|ساحل علما|Sahel Aalma;Sahêl Aalma|33.9941|35.6563|v
+Fatqa|فتقا||34.0346|35.6633|v
+Batroun|البترون|Batroûn|34.2549|35.6589|t
+Byblos|جبيل|Jbeil|34.1237|35.6494|t
+Halat|حالات||34.0842|35.6585|t
+Ghazir|غزير||34.0162|35.6609|t
+El Kfour|كفور||34.0349|35.6928|v
+Dlebta|دلبتا|Delbta|34.0098|35.6927|v
+Kfar Yassine|كفرياسين||34.0250|35.6361|v
+Maad|معاد||34.1937|35.6807|v
+Baabda|بعبدا||33.8336|35.5446|t
+Hermel|الهرمل||34.3973|36.3890|t
+Bashura|الباشورة|Bachoura|33.8920|35.5037|s
+Qobaiyat|القبيات||33.8948|35.5342|h
+Zouk Mikael|ذوق مكايل|Zouk Mkayel;Zouq Mikael|33.9701|35.6214|t
+Deir Al Qamar|دير القمر|Deir El Qamar|33.6980|35.5647|v
+Beit Ed Dine|بيت الدين|Btaddine;Beiteddine|33.6942|35.5812|v
+Haret Sakhr|حارة صخر|Harit Sakhir;Haret Sakher|33.9890|35.6428|v
+Wata Sillam|وطى سلام||34.0216|35.6285|v
+Sidon|صيدا|Saida;Saida|33.5642|35.3753|c
+Aaba|عابا||34.3488|35.8343|v
+Aabba|عبا|Ebba;Abba|33.3617|35.4027|v
+Aamchit|عمشيت|Amsheet;Amchit|34.1421|35.6465|t
+Zqaq Al Blat|زقاق البلاط|Zokak El Blat|33.8929|35.4984|s
+Habboush|حبوش|Habbouch|33.4092|35.4813|t
+Ain Ebel|عين إبل||33.1093|35.4031|v
+Jezzine|جزين||33.5439|35.5844|t
+Afqa|افقا||34.0680|35.8904|v
+Lassa|لاسا||34.0684|35.8537|v
+Ghineh|غينة|Ghine|34.0403|35.7084|v
+Mchati|المشاتي||34.0500|35.7627|v
+Ghabat|غابات|Ghabate;Al Ghabat|34.0795|35.8660|v
+Faytroun|فيطرون|Faitroun;Feitroun;Feitrun|33.9907|35.7313|t
+Zouk Mosbeh|ذوق مصبح||33.9558|35.6152|t
+Braij|البريج|Barij;Breij|34.1198|35.7044|v
+Ras Usta|رأس أسطا|Ras Osta|34.1169|35.7137|v
+Ghedrass|غدراس|Ghidras|34.0448|35.6794|v
+Azra|عذره||34.0626|35.7055|v
+Bzoummar|بزمار||33.9866|35.6804|v
+Ashqout|عشقوت|Aachqout;Achkout;Achqout|33.9914|35.7059|v
+Namoura|نمورة|Nammoura;Nmoura|34.0516|35.6736|v
+Zaaitre|زعيتره|Zaaitreh;Zaaitra|34.0701|35.6955|v
+Tabarja|طبرجا||34.0303|35.6326|v
+Jouret El Tormos|جورة ترمس|Jouret Et Tormos|34.0453|35.7164|v
+Yahchouch|يحشوش||34.0684|35.7381|v
+Hiyata|حياطة|Hayata|34.0257|35.7201|v
+Chahtoul|شحتول||34.0339|35.7218|v
+Qartaba|قرطبا||34.0943|35.8474|v
+Baskinta|بسكنتا||33.9450|35.7880|v
+Dekwaneh|دكوانة|Dekouané|33.8804|35.5466|t
+Sinn El Fil|سن الفيل|Sinn Al Fil;Sin El Fil|33.8779|35.5377|t
+Burj Hammoud|برج حمود|Borj Hamud;Borj Hammoud;Bourj Hammoud|33.8889|35.5390|t
+Naqqach|النقاش|Naccache|33.9228|35.5971|t
+Jabaa|جبعا|Jebaa|34.0049|36.0444|v
+Mayrouba|ميروبا|Mairouba|34.0191|35.7745|v
+Zalqa|زلقا|Zalka|33.8973|35.5776|v
+Hizzine|حزين||33.9703|36.0938|v
+Tayyiba|طيبة|Taibe;Taybeh|33.9579|36.1662|v
+Maarab|معراب||33.9986|35.6779|v
+Aramoun|عرمون|Aaramoun|34.0189|35.6996|v
+Qehmez|قهمز|Qahmez|34.0560|35.8125|v
+Ballouneh|بلونة||33.9537|35.6767|t
+Rayfoun|ريفون|Reifun;Raifoun|33.9787|35.7048|v
+Gharzouz|غرزوز||34.1842|35.6728|v
+Chmout|شموت|Shmout|34.1978|35.6706|v
+Berbara|البربارة|Barbara|34.1953|35.6386|v
+Bejjeh|بجه|Bejje|34.1797|35.7166|v
+Haqel|حقل||34.1707|35.7505|v
+Monsef|منصف|Mounsef|34.1821|35.6444|v
+Lehfed|لحفد||34.1671|35.7799|v
+Ehmej|اهمج||34.1223|35.7856|v
+Zebdine|زبدين||34.0953|35.7171|v
+Ghosta|غوسطا||33.9885|35.6734|v
+El Arz|الأرز|Arez;Ariz;Cedars;The Cedars;Arz|34.2437|36.0403|v
+Babliyeh|البابلية|El Babliye|33.4212|35.3422|v
+Insariya|الأنصارية|Ansariyeh;Al-Ansariyyah;Insariyeh;Insariye|33.4103|35.2791|v
+Beit Mery|بيت مري|Beit Meri|33.8663|35.6033|t
+Safra|صفرا||34.0372|35.6382|v
+Bouar|بوار||34.0480|35.6407|v
+Sarba|صربا||33.9774|35.6185|t
+Daraoun|درعون|Daraaoun|33.9763|35.6603|v
+Harissa|حريصا||33.9821|35.6506|v
+Chtoura|شتورا|Chtaura|33.8120|35.8553|t
+Ras Baalbek|رأس بعلبك|Râs Baalbek|34.2598|36.4200|v
+Fakeha|الفاكهه|Fakiha;Fekeheh;Fakehe|34.2450|36.4030|v
+Labweh|اللبوة|Laboueh|34.1955|36.3571|v
+Nabi Osmane|النبي عثمان|Nabi Osman|34.2145|36.3689|v
+Enfeh|أنفة|Anfeh;Enfé|34.3579|35.7340|t
+Chekka|شكا|Shekka|34.3309|35.7351|t
+Mradieh|مرادية|Mradiyeh|34.0704|35.7100|v
+Qaa|القاع|El Kaa;Al Qaa;El Qaa|34.3408|36.4800|t
+As Sarafand|الصرفند|Sarafand|33.4492|35.2977|v
+Kfar Dabash|كفر دبش|Kfar Dabach|33.9480|36.0322|t
+Naqura|الناقورة|Naqoura;En Naqoura|33.1183|35.1298|v
+Tibnine|تبنين|Tebnine|33.1933|35.4118|t
+Hula|حولا|Hule;Houla|33.2102|35.5187|v
+Barja|برجا||33.6448|35.4330|t
+Hammana|حمانا||33.8270|35.7359|t
+Aley|عاليه|Aaley|33.8083|35.6061|c
+Zeytoun|زيتون|Zaitoun;Zeitoun|34.0625|35.6838|v
+Basloukit|بسلوقيط|Baslouqit|34.3079|35.9672|v
+Ehden|إهدن||34.2907|35.9657|t
+Tannourine|تنورين||34.1843|35.9027|v
+Bmahray|بمهريه||33.7578|35.7195|v
+Baabdat|بعبدات||33.8873|35.6675|v
+Hrajel|حراجل||34.0148|35.7946|v
+Hsayn|حصين||34.0508|35.7091|v
+Raachine|رعشين|Raashine|34.0100|35.7171|v
+Daraya|داريا|Daraiya|33.9557|35.6976|v
+Maaysra|المعيصرة||34.0657|35.6685|v
+Batha|بطحا||33.9862|35.6595|v
+Duris|دورس|Douris|33.9879|36.1797|v
+Tfail|طفيل|Tufail|33.8500|36.3668|v
+Maaraboun|معربون|Maarboun|33.8517|36.1888|v
+Majdalun|مجدلون|Majdaloun|33.9900|36.1358|v
+Ain Kafr Zabad|عين كفر زبد|Ain Kfar Zabad;Kfar Zabad;Ain Kafer Zabad|33.7961|36.0039|v
+Al Faua|الفوعة||33.7805|35.9683|v
+Nabay|نابيه|Nabiyeh|33.8990|35.6189|v
+Qennabet Broummana|قنابة|Qannabet Broumana|33.8947|35.6178|v
+Jeddayel|جدايل|Jdayel|34.1636|35.6487|v
+Taraya|طاريا|Taraiya;Taria|33.9835|36.0238|v
+Deir Siriane|دير سريان|Dir Siryan;Deir Seryan|33.2921|35.5002|v
+Et Taibeh|الطيبة|Tayibe;At Taybah;At-Tayyiba|33.2750|35.5205|t
+Kafr Tibnit|كفر تبنيت|Kfar Tebnit|33.3500|35.5111|v
+Saghbine|صغبين||33.6121|35.6972|v
+Bab Maraa|باب مارع|Bab Mareaa|33.5825|35.6804|v
+Ain Majdalaine|عين مجدلين||33.5225|35.6022|v
+Mtein|متين|Mtain|33.8931|35.7437|v
+Niha|نيحا||33.8931|35.9644|v
+Kafrayya|كفريا|Kefraya|33.6661|35.7375|v
+Machta Hammoud|مشتى حمود||34.6332|36.3261|v
+Salima|صاليما||33.8728|35.6968|v
+Qarnayel|قرنايل|Qornayel|33.8558|35.7276|v
+El Khraibe|الخريبة||33.8728|36.1634|v
+Ham|حام||33.8721|36.2029|v
+Kafra|كفرا||33.1698|35.3455|v
+Yatar|ياطر|Yater|33.1555|35.3317|v
+Qarha|قرحا||34.6219|36.4446|v
+Zouk el Kharab|ذوق الخراب|Zouk El Khrab;Zouk El Kharab|33.9436|35.6014|t
+Aaitanit|عيتنيت|Aitanit;Aitanite|33.5613|35.6706|v
+Taanayel|تعنايل||33.7961|35.8721|v
+El Aarida|العريضة|Aarida|34.6329|35.9787|v
+Kanisa|كنيسة|Knaisse Hnaider;Kneisset Hnaider;Kaniset;Knaisse|34.6007|36.4390|v
+As Sammaqiya|السماقية|Sammaqiyeh;Semmaqiye|34.6391|36.0027|v
+Karm Sadda|كرم سدة|Karmsaddeh;Karm Saddeh|34.3064|35.8934|v
+Kfarfou|كفر فو||34.3170|35.8820|v
+Ras Kifa|رأس كيفا|Raskifa|34.3114|35.8695|v
+Kousba|كوسبا||34.2984|35.8503|v
+Kfar Aaqqa|كفر عقا||34.3037|35.8362|v
+Tourza|طورزا||34.2829|35.8980|v
+Qnat|قنات||34.2529|35.8954|v
+Ainata|عيناتا|Aynata|34.1868|36.0817|v
+Tall al Bira|تل البيرة|Tall Bireh;Tell Biri;Tall Bire|34.6226|36.0588|v
+Tall Bibi|تل بيبي|Tell Bibi|34.6170|36.0066|v
+Al Kanisa|الكنيسة|El Kneisse|34.6187|36.0212|v
+Al Maghraq|المغراق|Meghraq|34.6100|36.0186|v
+Hokr Ed Dahri|حكر الضهري|Hokr ed Dahri|34.6300|36.0235|v
+Ain Zebde|عين زبدة|Ain Zebdeh|33.6222|35.7036|v
+Qaraoun|قرعون|Qaraun;El Qaraaoun|33.5632|35.7204|t
+Baaloul|بعلول||33.5881|35.7478|t
+Lala|لالا||33.6009|35.7629|v
+Aaqoura|عاقورة|El Aaqoura;Aqoura;Akoura;Aakoura|34.1212|35.9030|v
+Douma|دوما||34.2046|35.8407|v
+Hrayeq|حرايق|Hrayek|34.2066|35.8544|v
+Bchaaleh|بشعلة|Bchaale|34.2039|35.8274|v
+Balaa|بلعه||34.1784|35.8745|v
+Aabla|عبلة||34.1511|36.2741|v
+Majdal|مجدل||34.2539|35.7945|v
+Haitoura|حيطورة||33.5194|35.5523|v
+Kaitouly|قيتولي|Qaitoule|33.5374|35.5522|v
+Maknounieh|المكنونية|Maknouniye|33.5289|35.5476|v
+Qabb Ilyas|قب إلياس|Kab Elias;Qab Elias;Qob Elias;Qabb Elias|33.7985|35.8256|t
+Makseh|مكسة|Makse;Meksi|33.8086|35.8308|v
+Zebdol|زبدل||33.8142|35.8368|v
+Mar Moussa|مار موسى||33.9010|35.6861|v
+Sufayla|سفيلة|Sfaile;Sfayla|33.8856|35.6756|v
+Zaraaoun|زرعون|Zaraoun|33.8959|35.7091|v
+Maqnah|مقنة|Maqne;Makneh;Maqna|34.0774|36.2065|t
+Knaisse|كنيسة|Kanisa|34.1179|36.1664|v
+Shaat|شعت|Chaat|34.1418|36.2318|v
+Dayr Al Aachayer|دير عشاير|Deïr el Aachâyer|33.5566|36.0107|v
+Rihan|ريحان|Rihane|33.4389|35.5633|v
+Tannoura|تنورة||33.4735|35.8015|v
+Bakkifa|بكيفا||33.4944|35.8200|v
+Nabaat|النبعات||33.4890|35.7552|v
+Toultata|ثلثاتة||33.4958|35.7466|v
+Aytit|عيتيت|Aitit;Aaytit;Aaitit|33.2250|35.3060|v
+Bar Elias|بر إلياس|Barr Elias|33.7743|35.9044|t
+Terbol|تربل||33.8183|35.9848|v
+Maameltein|معاملتين|El Maamelteine;Maamelteine|34.0090|35.6456|v
+Ghadir|غدير||33.9775|35.6343|v
+Qana|قانا||33.2090|35.2985|v
+El Maaiziye|المعيزية|Al Mu`ayziyah;Al Mu`ayzīyah;El Maaïzîyé|34.4021|35.9128|v
+Zgharta|زغرتا||34.3935|35.8958|t
+Shoueifat|شويفات|Chouaifat;Chweifat;Choueifat|33.8170|35.5162|v
+Jarmaq|جرمق||33.3883|35.5403|v
+Bsous|بسوس||33.8171|35.5801|v
+Beshamoun|بشامون|Bchamoun;Bshamoun;Bechamoun|33.7820|35.5316|t
+Kahale|الكحالة|Kahhaleh;Kahaleh|33.8227|35.5829|t
+Ramlieh|رملية|Ramliye|33.7478|35.6482|v
+Sawfar|صوفر|Saoufar;Sofar|33.8021|35.7012|v
+Souk El Gharb|سوق الغرب|Souq El Gharb|33.7900|35.5718|v
+Laqlouq|لقلوق||34.1388|35.8735|v
+Yanouh|يانوح||34.1006|35.8840|v
+Hjoula|حجولا||34.1340|35.7443|v
+Hbous|حبوس||33.9295|35.6418|v
+Ain Aar|عين عار||33.9228|35.6449|v
+Qornet Shahwane|قرنة شهوان|Cornet Chawan;Kornet Chehwan;Cornet Chahwan;Qornet Chahouane|33.9153|35.6260|v
+Zakrit|زكريت|Zikrit|33.9365|35.6320|v
+Deir Tamiche|دير طاميش|Deir Tamish;Deir Tamich|33.9401|35.6209|v
+Mazraat Yachou|مزرعة يشوع|Mazraet Yachou;Mazraat Yachouh|33.9300|35.6327|v
+Mazraet Deir Aoukar|مزرعة دير عوكر|Awkar;Aoukar|33.9319|35.6078|v
+Mar Abda El Mchammar|دير مار عبدا المشمر||33.9426|35.6331|v
+Haret El Belleni|حارة البلان|Haret El Bellane|33.9403|35.6002|v
+Kornet El Hamra|قرنة الحمرا|Cornet El Hamra;Qornet El Hamra|33.9359|35.6480|v
+Mazraet El Hadira|مزرعة الحضيرة||33.9307|35.6057|v
+Rabieh|الرابية|Rabiyeh;Ar-Rabiyya|33.9191|35.6056|v
+Ghbaleh|غبالة|Ghbale|34.0537|35.7227|v
+Ghalboun|غلبون||34.1738|35.7053|v
+Bhannes|بحنس||33.9051|35.6566|v
+Jeita|جعيتا|Jaaita|33.9509|35.6448|v
+Kfarhouna|كفر حونة|Kfar Houneh|33.4939|35.5851|v
+Brissa|بريصا|Braissé|34.4434|36.3162|v
+Chemlane|شملان|Chimlane|33.7817|35.5455|v
+Ain Anoub|عين عنوب|Ain Aanoub|33.7858|35.5426|v
+Aytat|عيتات|Aaytat;Aitat|33.7953|35.5576|v
+Bmekkine|بمكين|Bmakine|33.7984|35.5698|v
+Ain El Remmaneh|عين الرمانة|Ain Er Roummaneh;Ain El Remaneh|33.8042|35.5887|v
+Qmatiyeh|قماطية|Qmatiye;Komatiyeh|33.8020|35.5795|v
+Khalde|خلدة|Khaldeh|33.7818|35.4857|t
+Chiyah|شياح|Chiayah;Chiah|33.8652|35.5180|t
+Ghobeiry|غبيري|Ghbeiry|33.8597|35.5057|t
+Hazmieh|حازمية|Hazmiyya;Hazmiyeh|33.8541|35.5374|t
+Forn el Chebbak|فرن الشباك|Furn Al Shebak;Furn Al-Shebak|33.8720|35.5223|t
+Beit Chabab|بيت شباب|Beit Chabeb;Beit Chabéb;Beit Chebab|33.9275|35.6723|v
+Bauchrieh|بوشرية|Baouchriyeh;Baouchriye|33.8895|35.5549|v
+Jal El Dib|جل الديب|Jall Ed Dib;Jal el-Dib;Jal el Dib|33.9085|35.5819|v
+Ajaltoun|عجلتون|Aajaltoun|33.9651|35.6856|v
+Kfar Him|كفر حيم||33.6880|35.5232|v
+Okaibe|عقيبة|Aaqaybeh|34.0567|35.6451|v
+Maisat|ميسات|Maissate|33.2627|35.6193|v
+Deir El Ahmar|دير الأحمر||34.1251|36.1313|t
+Aynata|عيناتا|Aainata|33.1292|35.4397|v
+Hadath|الحدث||33.8350|35.5363|v
+Selaata|سلعاتا||34.2797|35.6646|v
+Ayta Ash Shab|عيتا الشعب|Aita El Shaab;Ayta Al Shaab;Ayta al-Shaab;Aita Ech Chaab|33.0991|35.3408|v
+Rmeish|رميش|Rmaysh;Rmeich;Rmaïch|33.0778|35.3678|t
+Shebaa|شبعا|Chebaa|33.3445|35.7494|v
+Meiss Ej Jabal|ميس الجبل|Mays al Jabal;Meiss El Jabal|33.1700|35.5242|t
+Fardis|الفرديس||33.3711|35.6674|v
+Hebbariye|الهبارية|Hebbariyeh;Hebbariya;Hebariya;Hibbariyeh;Habbariyeh|33.3681|35.6962|v
+Joub Jannine|جب جنين|Joubb Jannine;Jeb Jennine;Jeb Jannine|33.6263|35.7840|t
+Fourzol|فرزل|Ferzol|33.8745|35.9436|v
+Yaroun|يارون|Yarun|33.0810|35.4221|v
+Maroun Al Ras|مارون الرأس|Maroun al-Rass;Marun ar-Ras;Maroun al-Ras;Maroun El Ras|33.1031|35.4450|v
+Sammoukha|صموخة||33.0681|35.3509|v
+Marwahin|مروحين||33.1086|35.2767|v
+Qawzah|قوزح|Qouzah|33.1215|35.3401|v
+Al Nabi Shayth|النبي شيث|En Nabi Chit;Nabi Chit|33.8727|36.1109|v
+Saraain El Faouqa|سرعين الفوقا||33.8780|36.0927|v
+El Marj|المرج|Marj|33.7623|35.8814|v
+Miniara|منيارة|Minyara|34.5313|36.0596|v
+Daraiya|داريا||34.3293|35.8696|v
+Marjayoun|مرجعيون|Marjaayoun|33.3593|35.5902|t
+Aadloun|عدلون||33.4048|35.2744|t
+Mazraat El Mankhale|مزرعة المنهلي||33.4001|35.2676|v
+Amioun|أميون||34.3001|35.8167|t
+Es Salhiye|الصالحية||34.0765|35.7125|v
+Khrayeb|الخرايب|El Kharayeb|34.0755|35.7076|v
+Bsarma|بصرما||34.3342|35.8412|v
+Thoum|تحوم||34.2133|35.6616|v
+Lebaa|لبعا||33.5477|35.4513|v
+Safarayh|صفاريه|Sfarey;Sfarai;Sfaray|33.5540|35.5018|v
+Ain El Mir|عين المير||33.5405|35.4539|v
+Anan|أنان|Anane|33.5667|35.5090|v
+Al Humsiyya|الحمصية|Homsiyeh;Homsieh|33.5500|35.5509|v
+Rum|روم|Roum|33.5514|35.5281|v
+Hnaider|حنيدر|Henayder|34.6150|36.4282|v
+El Majdal|المجدل||34.6285|36.3968|v
+Muqeible|المقيبلة|Mqaybleh;Mqaible|34.6439|36.3533|v
+Aabadiye|عبادية|Aabadiyeh|33.8368|35.6216|v
+Ras Al Matn|رأس المتن|Ras El Matn|33.8489|35.6616|v
+Shlifa|شليفا|Chlifa|34.0848|36.1013|v
+Hasroun|حصرون||34.2411|35.9813|v
+Dibbin|دبين|Dibbine;Debbine|33.3698|35.5939|v
+Beqaatet Kenaan|بقعاتة كنعان|Beqaatet Kanaane|33.9636|35.7685|v
+Blida|بليدا||33.1398|35.5153|v
+Al Qoubaiyat|القبيات|Koubayat;Qobayat|34.5687|36.2803|t
+Akrum|أكروم|Aakroum;Akrom;Akroum|34.5441|36.3636|v
+Qinia|قنيا|Qinye;Qenia|34.5865|36.3684|v
+Kfar Toun|كفر تون||34.5587|36.3577|v
+Al Birah|البيرة|El Bireh;Al Bireh|34.5875|36.2331|v
+Deir el Balamand|دير البلمند|Balmand;Balamand|34.3650|35.7801|v
+Qalhat|قلحات|Kalhat;Kelhat|34.3566|35.7811|v
+Zakroun|زكرون||34.3534|35.7528|v
+Aintoura|عينطورة||33.9599|35.6351|v
+Fiaa|فيع||34.3480|35.7899|v
+Darbechtar|دار بعشتار|Dar Baachtar|34.2731|35.7942|v
+Mastita|مستيتا|Mestita|34.1048|35.6596|v
+Jieh|الجية||33.6455|35.4036|t
+Khenchara|الخنشارة|Khinchara|33.9225|35.7382|v
+Marjaba|مرجبا||33.9163|35.7536|v
+Bteghrine|بتغرين||33.9304|35.7445|t
+Wata El Mrouj|وطى المروج||33.9100|35.7436|v
+Zighrin|زغرين|Zaghrine;Zeghrine|33.9249|35.7126|v
+Himlaya|حملايا|Hamlaya;Hemlaya|33.9397|35.7073|v
+Freike|فريكة|Fraike|33.9345|35.6576|v
+Qalamoun|قلمون|Kalamoun|34.3879|35.7881|v
+Barsa|برسا||34.3882|35.8278|v
+Ain Akrine|عين عكرين|Ain Aakrine|34.2878|35.8449|v
+Bziza|بزيزا||34.2732|35.8206|v
+Zandouqa|زندوقة|Zandouka|33.8650|35.6376|v
+Qleiat|قليعات|Qleiaat;Qlaiaat;Klayaat|33.9728|35.7143|t
+Buqaata|بقعاتا|Beqaata|34.0033|35.7286|v
+Brital|بريتال|Britel|33.9386|36.1471|v
+Al Khudr|الخضر|Khodor;El Khodr;Al Khader;Al Khoudr|33.9045|36.1211|v
+Hasbaya|حاصبيا|Hasbaiya|33.3965|35.6812|t
+Miniyeh|المنية|Minieh|34.4757|35.9305|t
+Ain Al Kharruba|عين الخروبة|Ain El Kharroube;Ain El Kharroubeh|33.9357|35.7000|v
+Rashaya|راشيا|Rachaya;Rachaiya|33.5014|35.8449|t
+Ghazza|غزة|Ghaza;Ghazze|33.6712|35.8276|v
+Kfar Mishki|كفر مشكي|Kfar Mechki|33.5147|35.7662|v
+Ain At Tina|عين التينة|Ain El Tineh|33.5021|35.6424|v
+Beit Lahia|بيت لاهيا||33.4841|35.8025|v
+Kaftoun|كفتون||34.2667|35.7686|v
+Kfifan|كفيفان|Kfifane;Kfifen|34.2308|35.7186|v
+Billa|بلا||34.2653|35.8918|v
+Hadchit|حدشيت|Hadshit|34.2553|35.9840|v
+Hsarat|حصارات||34.1663|35.6889|v
+Qarqaf|قرقف|Karkaf|34.4871|36.0195|v
+Shadra|شدرا|Chadra|34.6189|36.3202|v
+Andakit|عندقت|Andqat;Aandqat;Andkit;Aandeqet;Aandaket;Aandqet|34.5871|36.3058|v
+Kfar Qahel|كفر قاهل||34.3567|35.8491|v
+Menjez|منجز|Mounjez|34.6162|36.2487|v
+Charbila|شربيلا|Sharbila|34.5824|36.1485|v
+Zabboud|زبود||34.2414|36.3191|v
+Nahla|نحلة|Nahleh;Nahle|34.0423|36.2586|v
+Toula|تولا||34.2004|35.7273|v
+Bekhaaz|بخعاز||34.1880|35.6674|v
+Eddeh|إده|Edde|34.1418|35.6654|v
+Alita|عاليتا|Aalita|34.0909|35.6907|v
+Kawkaba|كوكبا||33.5284|35.7821|v
+Ezz El Arab|عز العرب|Aaz El Aarab|33.5209|35.8028|v
+Machghara|مشغرة|Mashghara;Machgharah|33.5306|35.6541|v
+Kharayeb|خرايب||34.2403|36.3028|v
+Hlabta|حلبتا|Halbata|34.2557|36.2880|v
+Maaysarah|المعيسرة||34.2766|36.2924|v
+Younine|يونين||34.0790|36.2752|t
+Khourmata|خورماتا|Khermateh|34.0873|36.2528|v
+Riha|ريحا||34.1523|36.1922|v
+Karm Aaqil|كرم عقيل||34.1419|36.2240|h
+Rasm El Hadeth|رسم الحدث||34.1410|36.2758|v
+Kafr Quq|كفر قوق|Kfar Qouq|33.5345|35.8922|v
+Haour Taala|حور تعلا|Hortaala;Hour Taala|33.9179|36.1416|v
+Haouch Barada|حوش بردى|Hoch Barda;Hosh Barda|34.0110|36.1205|v
+Mrah El Khaoukh|مراح الخوخ|Mrah El Khawkh|34.5874|36.3546|v
+Al Bazuriya|البازورية|Bazouriyeh;Bazouriye;al-Bazouriyeh;Bazourieh|33.2534|35.2714|t
+Ayha|عيحا|Aaiha;Aayha|33.5011|35.8776|v
+Nabi Rashad|النبي رشاد|Nabi Rachade;En Nabi Rshade;Nabi Rachad|33.9939|36.0382|v
+Hadath|الحدث||34.0010|36.0281|v
+Kfar Dane|كفر دان|Kfardan|34.0114|36.0473|v
+Aabri|عبري||34.0754|35.7841|v
+Qattine|قطين||34.0245|35.7061|v
+Jouret Mhad|جورة مهاد||34.0417|35.7366|v
+Bizhel|بزحل||34.0789|35.6990|v
+Shouaghir|شواغير|Chouaghir|34.4049|36.4273|v
+Tal El Far|تل الفار|Tall El Far|34.4131|36.4124|v
+Mansoura|المنصورية|Mansoureh|34.4271|36.4085|v
+Bouaida|البويضة|Bouayda|34.4373|36.4158|v
+Nasriyeh|ناصرية|Nasriye|34.4505|36.4229|v
+Hbaline|حبالين|Hbalin|34.1582|35.6841|v
+Jouret Bedrane|جورة بدران||34.0607|35.7123|v
+Ain El Rihaneh|عين الريحانة||33.9597|35.6473|v
+Wata Ej Jaouz|وطى الجوز|Wata El Jawz|34.0153|35.7574|v
+Ain El Delbeh|عين الدلبة|Ain Ed Delbe|34.0287|35.7639|v
+Beit Monzer|بيت منذر|Beit Menzer|34.2600|35.9122|v
+Sehaile|سهيلة|Sehayleh;Shaileh;Sehaileh;Suhayla;Suhaila|33.9593|35.6595|v
+Ain Qinya|عين قنيا|Ain Qenya|33.4014|35.7059|v
+Chouya|شويا|Shouya|33.3948|35.7145|v
+Klayaa|القليعة|Al Qleiaa|33.3348|35.5709|v
+Burj Al Muluk|برج الملوك|Borj El Mlouk|33.3231|35.5632|v
+Dayr Mimas|دير ميماس|Deir Mimas;Dair Mimas|33.3021|35.5467|v
+Mayfadoun|ميفدون|Maifadoun;Mefdon|33.3485|35.4772|v
+Maasser El Shouf|معاصر الشوف|Maasser Ech Chouf;Maasser El Chouf|33.6683|35.6706|v
+Batloun|بتلون||33.6955|35.6522|v
+Fawara|فوارة|Faouarat;Fouara|33.7114|35.6409|v
+Kfar Nabrakh|كفر نبرخ||33.6947|35.6333|v
+Kfar Katra|كفر قطرة|Kfar Qatra|33.7119|35.5855|v
+Jurnaya|جرنايا|Jernaya|33.4881|35.4741|v
+Harouf|حاروف||33.3742|35.4431|v
+Rechmaiya|رشميا|Rechmaya;Rashmaya|33.7366|35.5992|v
+Qatrani|القطراني|Qotrani|33.4402|35.6036|v
+As Salihani|الصالحاني|Salhani;Es Salhani|33.1291|35.3033|v
+Froun|فرون||33.2947|35.4279|v
+Majdel El Meoush|مجدل المعوش|Majdel El Meouch|33.7263|35.6253|v
+Mesherfe|المشرفة|Mecherfeh;Mechrefe|33.7606|35.6560|v
+Mansoura|منصورة||33.6789|35.8154|v
+Naameh|ناعمة|Naame|33.7450|35.4642|v
+Amaret Chalhoub|عمارة شلهوب|Aamaret Chalhoub;Amaret Shalhoub;Imaret Chalhoub|33.8973|35.5686|v
+Majzoub|مجذوب||33.9021|35.5969|v
+Masqa|المسقى||33.8822|35.6460|v
+Qsaibeh|قصيبة||33.8665|35.6509|v
+Debaal|دبعال|Debel|33.2492|35.3489|v
+Zabbougha|زبوغا||33.9531|35.7358|v
+Sfaila|سفيلة|Sfaileh|33.9424|35.6997|v
+Ain Aalaq|عين علق|Ain Alak|33.9201|35.6588|v
+Ain El Qabou|عين القبو||33.9404|35.7609|v
+Aayoun|العيون||33.8828|35.6531|v
+Aayroun|عيرون|Aairoun|33.9079|35.7022|v
+Abu Mizan|أبو ميزان|Abou Mizane;Abou Miziane|33.9396|35.7221|v
+Mar Mikhayil Banabil|مار مخايل بنابيل|Mar Mikhayel Bnabil|33.9008|35.7354|v
+Bhersaf|بحرصاف|Bharsaf|33.9136|35.6675|v
+Dair Shamra|دير شمرا|Deir Chamra|33.9464|35.7114|v
+Dahr El Hossein|ضهر الحصين||33.8693|35.5610|v
+Mar Chaaya|مار شعيا||33.8941|35.6453|v
+Mshikha|مشيخا|Mchikha|33.8856|35.7437|v
+Mkalles|مكلس||33.8608|35.5564|v
+Al Mashrah|المشرح|Machrah|33.8871|35.6487|v
+Saqiyyat Al Misk|ساقية المسك|Saqiet El Misk|33.9182|35.6776|v
+Ghabeh|الغابة|Al-Ghaba;Al Ghabeh|33.8818|35.6405|v
+Qaaqour|القعقور||33.8932|35.7157|v
+Sadd El Baouchriyeh|سد البوشرية|Sad El Baouchriyeh|33.8759|35.5632|v
+Aintoura|عينطورة||33.8866|35.7750|v
+Deir Mar Roukoz|دير مار روكز|Mar Roukoz|33.8676|35.5539|v
+Dahr El Souane|ضهر صوان|Dahr El Sawan;Daher El Souwan;Dahr Es Souane|33.9037|35.6584|v
+Damit|دميت|Dmit|33.6927|35.5060|v
+Arsoun|أرصون||33.8587|35.6891|v
+Qortada|قرطاضة|Qirtada|33.8619|35.6291|v
+Kfar Amay|كفر عمي|Kfar Aammay|33.7679|35.5934|v
+Kfarshima|كفر شيما|Kfar Shima;Kfar Chima;Kfarchima|33.8137|35.5355|t
+Harharaya|هرهريا||34.0249|35.6987|v
+Aramta|عرمتى|Aaramta|33.4618|35.5744|v
+Al Mutulla|المطلة|Mtoulle;Mtolleh;Mtolle|33.6106|35.5393|v
+Gharife|غريفة||33.6392|35.5520|v
+Baaqline|بعقلين|Baakline|33.6774|35.5635|v
+Zillaya|زلاية|Zellaya|33.4588|35.6707|v
+Boutmeh|بطمة|Boutme|33.6613|35.6223|v
+Sohmor|سحمر||33.5192|35.6908|v
+Houch Hala|حوش حالا||33.8474|36.0005|v
+Khiam|الخيام|Khiyam|33.3272|35.6090|v
+Bteddine El Loqsh|بتدين اللقش||33.5688|35.5578|v
+Aabra|عبرا|Abra|33.5648|35.3984|v
+Erkay|إركي|Arkey;Arki|33.4603|35.4150|v
+Bqosta|بقسطة|Sharhabil|33.5763|35.3999|v
+Kafr Hatta|كفر حتى|Kfar Hatta|33.5042|35.4518|v
+Tanbourit|طنبوريت||33.5168|35.4150|v
+Teffahta|تفاحتا|Toufahta;Tefahta|33.4398|35.3685|v
+Aanqoun|عنقون||33.5008|35.4320|v
+Bnaafoul|بنعفول|Benafoul|33.4834|35.4213|v
+Khartoum|خرطوم||33.4073|35.3711|v
+Zayta|زيتا|Zaita;Zeita|33.5048|35.3928|v
+Fanar|الفنار||33.8804|35.5748|t
+Ain Saadeh|عين سعادة|Ain Saade|33.8633|35.5872|t
+Biaqout|بياقوت|Biakout|33.8956|35.5832|t
+Mezher|مزهر||33.9084|35.5953|v
+Bsalim|بصاليم||33.8993|35.6045|t
+Broumana|برمانا|Broummana;Brummana|33.8830|35.6323|t
+Qennarit|قناريت||33.5028|35.3795|v
+Darb Es Sim|درب السيم|Darb El Sim|33.5374|35.3840|v
+Haret Saida|حارة صيدا||33.5563|35.3956|v
+Maghdoucheh|مغدوشة|Maghdousheh;Maghdouche|33.5202|35.3863|t
+Aaddoussiyeh|العدوسية||33.4692|35.3457|v
+Aaqtanit|عقتنيت|Aktanit|33.4891|35.3807|v
+Aarab Ej Jall|عرب الجل||33.4830|35.4567|v
+Kafr Maliki|كفر ملكي|Kfar Melkeh;Kfar Melki|33.5019|35.4785|v
+Ain Ed Delb|عين الدلب||33.5416|35.4050|v
+Bissariyeh|البيسارية|Baysarieh;Al-Bissariya;Baiseriyeh;Baisariyeh;Baissariyeh|33.4459|35.3222|v
+Bramiyeh|البرامية|Bramiye|33.5740|35.3922|v
+Saksakiyeh|السكسكية|Siksikieh|33.4393|35.2833|v
+Ghaziyeh|الغازية|Ghaziye;Ghazieh|33.5194|35.3726|t
+Maamariyeh|المعمارية|Maamriye|33.4908|35.3713|v
+Najjariyeh|النجارية||33.4734|35.3486|v
+Al Kharayeb|الخرايب|Al Kharayib|33.3450|35.2998|v
+Zrariyeh|الزرارية|Zrariye;Zrarieh;Az Zaraiyya|33.3421|35.3317|v
+Miyeh w Miyeh|المية ومية|Mieh w Mieh|33.5431|35.3973|v
+Salhiyeh|الصالحية||33.5590|35.4249|v
+Khzaiz|خزيز||33.4664|35.4058|v
+Kafr Shallal|كفر شلال|Kfar Chellal|33.4941|35.4699|v
+Kafr Bayt|كفر بيت|Kfar Beit|33.4969|35.4627|v
+Ghassaniyeh|الغسانية||33.4201|35.3593|v
+Loubieh|اللوبية|Loubiye;Loubbiyeh;Lubiya|33.4273|35.2853|v
+Zeghdraiya|زغدريا|Zaghdraiya|33.5318|35.3948|v
+Qraiyeh|القرية||33.5375|35.4182|v
+Arzai|ارزي|Arzay;Arzi|33.3332|35.2986|v
+Majdelyoun|مجدليون||33.5569|35.4130|v
+Aalmane|علمان الشوف||33.5880|35.4070|v
+Ketermaya|كترمايا||33.6145|35.4475|v
+Kfar Faqoud|كفرفاقود||33.7012|35.5380|v
+Deir Baba|دير بابا||33.6960|35.5248|v
+Baassir|بعاصير|Baasir|33.6600|35.4502|v
+Jadra|جدرا||33.6346|35.4075|v
+Hasrout|حصروت||33.6269|35.5366|v
+Dalhoun|دلهون||33.6228|35.4695|v
+Bakifa|بكيفا|Bkifa|33.5954|35.5041|v
+Sirjbal|سرجبال||33.6846|35.5118|v
+Tabbaya|عرب طبايا|Tobbaya|33.4879|35.4414|v
+Bouarej|بوارج|Bwarej|33.8189|35.8144|v
+Ablah|أبلح||33.8716|35.9640|v
+Jalala|جلالا|Jlala|33.8135|35.8589|v
+Touayteh|تويتي||33.8609|35.8544|v
+Hazerta|حزرتا||33.8807|35.8665|v
+Raait|رعيت||33.8442|36.0339|v
+Deir El Ghazal|دير الغزال||33.8255|36.0355|v
+Hay El Fikani|حي الفيكاني||33.8474|36.0266|v
+Deir Dalloum|دير دلوم||34.5272|36.0228|v
+Rmoul|رمول||34.5723|36.0134|v
+El Haissa|الحيصة|Hissa|34.5936|36.0521|v
+Bzal|بزال|Bazel;Bezal|34.4686|36.0409|v
+El Bayada|البياضة||34.5183|35.9910|v
+Brissat|بريسات|Braissat|34.2408|35.9411|v
+Bhamdoun|بحمدون||33.8031|35.6594|t
+Bserrine|بسرين||33.7580|35.6367|v
+Chemmis|شميس|Shemmis|33.6413|35.4654|v
+Al Masrab|المسرب|El Masrab|33.6248|35.4813|v
+Humayri|حميري|Hmairi;Haumeiri;Houmayri;Humairi|33.2958|35.3521|v
+Yarine|يارين||33.1062|35.2329|v
+Houch El Ghanam|حوش الغنم||33.8738|36.0273|v
+Rayaq|رياق|Rayak|33.8522|36.0142|v
+Jdita|جديتا||33.8243|35.8340|v
+Mrayjat|مريجات|Mreijat|33.8070|35.8168|v
+Kfar Selouan|كفرسلوان|Kfar Selouane|33.8560|35.7799|v
+Jouar El Houz|جوار الحوز||33.8618|35.7593|v
+Ghaboun|الغابون||33.7816|35.5951|v
+Baysour|بيصور|Bayssour;Baissour|33.7652|35.5681|v
+Aramoun|عرمون|Aaramoun|33.7611|35.5203|v
+Kfar Matta|كفر متى||33.7253|35.5291|v
+Abey|عبيه|Aabey|33.7344|35.5246|v
+Daqqoun|دقون||33.7301|35.5141|v
+Ain Drafil|عين درافيل||33.7478|35.5080|v
+Baaourta|بعورته|Baaouerta|33.7358|35.5025|v
+Yarzeh|يرزة|Yarze|33.8309|35.5551|v
+Btorram|بطرام|Btourram;Bterram|34.3326|35.8100|v
+Ain El Qash|عين القش||33.9232|35.7017|v
+Bkeftine|بكفتين||34.3830|35.8613|v
+Bdebba|بدبا|Bdibba|34.3468|35.8199|v
+Deddeh|دده||34.3810|35.8005|v
+Aalma|علما||34.4251|35.8955|v
+Bousit|بوسيط|Boussit|34.4390|35.9237|v
+Aadoueh|عدوة|Aadoui|34.4505|35.9861|v
+Bebnine|ببنين||34.4981|35.9957|v
+Aamara|عمارة||34.5320|36.0099|v
+Cheikh Taba|الشيخ طابا||34.5322|36.0777|v
+Habchit|حبشيت|Habshit|34.4673|36.0909|v
+Jayroun|جيرون|Jairoun|34.4302|36.1084|v
+Houara|حوارة||34.4186|36.0719|v
+Beit Jida|بيت جيدا||34.3950|36.0105|v
+Aassoun|عاصون||34.3848|36.0109|v
+Bqaa Safrine|بقاع صفرين|Bqaa Safrin|34.3760|36.0240|v
+Hamoul|حامول||33.1259|35.1666|h
+Shama|شمع|Chamaa;Chama|33.1463|35.2073|v
+Zibqin|زبقين|Zebqine;Zabqin;Zabqine;Zibqine|33.1644|35.2665|v
+Kounine|كونين|Kunin|33.1479|35.4314|v
+Mansourieh|المنصورية|Al Mansuriyya;Mansouriye|33.8575|35.5665|v
+Bqennaya|بقنايا||33.9030|35.5889|v
+Daychouniyeh|الديشونية||33.8493|35.5770|v
+Majdel Tarshish|مجدل ترشيش|Majdel Tarchiche;Majdel Tarchich|33.8933|35.8006|v
+Roumieh|رومية|Roumie|33.8820|35.6146|v
+Qennabet Salima|قنابة صاليما||33.8858|35.6927|v
+Khallat Al Mutayn|خلة المتين|Khallet El Mtain|33.8986|35.7261|v
+Mar Boutros Karm Et Tine|مار بطرس كرم التين||33.9323|35.6856|v
+Safra|صفرا||34.1477|36.1650|v
+Zaghla|زغلة||33.4043|35.6922|v
+Bazyoun|بزيون|Beziyoun|34.0982|35.7552|v
+Ain Ed Delbeh|عين الدلبة|Ain El Delbeh|34.0915|35.7624|v
+Kfar Masshoun|كفر مسحون|Kfar Mashoun|34.1470|35.6715|v
+Kfoun|كفون||34.1548|35.7052|v
+Ghorfine|غرفين|Gharfine;Gherfine|34.1533|35.6636|v
+Hosrayel|حصرايل|Hasrayel|34.1589|35.6553|v
+Adonis|أدونيس||34.0805|35.7372|v
+Behdaydat|بحديدات||34.1484|35.7071|v
+Habil|هابيل||34.1490|35.7399|v
+Tartij|ترتج||34.1837|35.8212|v
+Mzarib|مزارب||34.0797|35.8793|v
+Aabaydat|عبيدات|Aabeidat|34.1641|35.7270|v
+Blat|بلاط||34.1150|35.6681|v
+Kfar Kiddeh|كفر كده|Kfar Kidde;Kfar Kidda|34.2012|35.6525|v
+Aalmat Ech Chmaliyeh|علمات الشمالية||34.1097|35.7783|v
+Aalmat Ej Jnoubiyeh|علمات الجنوبية||34.0999|35.7819|v
+Mechmech|مشمش جبيل|Meshmesh;MechMech Jbeil|34.1440|35.7809|v
+Hsoun|حصون||34.0923|35.7370|v
+Fidar|الفيدار|El Fidar;Al Fidar|34.0984|35.6586|v
+Ferhet|فرحت||34.1003|35.7623|v
+Fatreh|فتري|Fatre|34.0872|35.7086|v
+Majdel|المجدل||34.1070|35.8989|v
+Seraaita|سرعيتا||34.0830|35.8662|v
+Souaneh|صوانة||34.0933|35.7749|v
+Dmalsa|دملصا||34.1494|35.6825|v
+Kfar Chellan|كفر شلان|Kfar Chellane;Kafr Chellan|34.4260|35.9819|v
+Taran|طاران||34.4066|36.0312|v
+Qattine|القطين|Kattine|34.3922|36.0265|v
+Miryata|مرياطا|Miriata|34.4112|35.9281|v
+Beit Hassan|بيت حسان|Beit Hasna|34.3852|35.9593|v
+Miziara|مزيارة||34.3322|35.9317|v
+Bchernata|بشرناطا||34.3433|35.9865|v
+Bane|بان|Bâne|34.2764|35.9562|v
+Sakhra|صخرة||34.3606|35.9205|v
+Hurata|حوراتا البترون|Hourata el Batroun|34.1881|35.9327|v
+Beino|بينو||34.5384|36.1810|v
+Tourzaiya|طورزيا||34.1099|35.7591|v
+Mchane|مشان|Mechane|34.0826|35.7513|v
+Qorqraiya|قرقريا||34.0733|35.8178|v
+Mghayreh|المغيرة||34.0977|35.8734|v
+Janneh|جنة|Janne|34.0793|35.8280|v
+Ain Jrain|عين جرين||34.0850|35.7618|v
+Kafr|كفر||34.1533|35.6988|v
+Mar Sarkis|مار سركيس||34.0975|35.8565|h
+Mayfouq|ميفوق|Mayfouk;Maifouq;Maifouk|34.1816|35.7784|v
+Saqi Richmaya|سقي رشميا||34.1587|35.7884|v
+Jaj|جاج|Jej|34.1643|35.8060|v
+Mrah El Sreij|مراح السريج|Mrah Es Srayj|34.4201|35.9955|v
+Zane|زان||34.2240|35.7556|v
+Harbouna|حربونا||34.2402|35.7460|v
+Sourat|صورات||34.2364|35.7585|v
+Rachkida|راشكيدا||34.2638|35.7155|v
+Kfar Hatna|كفرحتنا||34.2311|35.7464|v
+Aabdelli|عبدللي|Abdelli;Aabdelle|34.2064|35.7215|v
+Smar Jbeil|سمار جبيل||34.2192|35.6866|v
+Jrabta|جربتا|Jrebta|34.2019|35.7091|v
+Sghar|صغار||34.2010|35.6951|v
+Rachana|راشانا|Rashana|34.2152|35.6740|v
+Ghouma|غوما||34.2142|35.6930|v
+Kouba|كبا|Koubba|34.2717|35.6635|v
+Mrah Chdid|مراح شديد||34.2258|35.6893|v
+Heri|هري|El Heri|34.3055|35.7130|v
+Eddeh|إده|Edde|34.2348|35.6916|v
+Aabrine|عبرين||34.2528|35.7057|v
+Kour|كور||34.2381|35.7366|v
+Bijdarfil|بجدرفل||34.2441|35.7162|v
+Kfar Hay|كفر حي||34.2495|35.7432|v
+Hadtoun|حدتون||34.1946|35.7985|v
+Ftahat|فتاحات||34.2309|35.7601|v
+Aalali|علالي||34.2045|35.7727|v
+Jrane|جران|Jrâne|34.2239|35.7062|v
+Kfar Shlaimane|كفر شليمان|Kfar Chlaimane|34.2318|35.7754|v
+Boqsmaiya|بقسميا||34.2512|35.7656|v
+Mar Mama|مار ماما||34.1882|35.7591|v
+Douq|دوق|Douk|34.1956|35.7470|v
+Chabtine|شبطين||34.2116|35.7498|v
+Derya|دريا||34.2184|35.7248|v
+Masrah|مسرح||34.1864|35.7392|v
+Dahr Abi Yaghi|ضهر ابي ياغي||34.1899|35.7283|v
+Ram|الرام|Ram El Batroun|34.1839|35.7991|v
+Hardine|حردين||34.2351|35.8580|v
+Kfour El Aarbi|كفور العربي||34.2239|35.8659|v
+Chikhane|شيخان|Shikhane|34.1736|35.6571|v
+Beit Habbaq|بيت حباق|Beit Hbaq|34.1637|35.7069|v
+Chamate|شامات|Chamat;Shamat|34.1657|35.6984|v
+Kfar Baal|كفر بعال||34.1118|35.7472|v
+Jlisseh|جليسة||34.1161|35.6910|v
+Mazraat Es Siyad|مزرعة السياد||34.1061|35.8612|v
+Ramoute|راموط|Ramout|34.1675|35.7105|v
+Ain Kfaa|عين كفاع||34.1896|35.6951|v
+Bentael|بنتاعل|Bintaael|34.1463|35.6927|v
+Frat|فراط||34.0877|35.7894|v
+Hdayneh|هدينة|Hedayne;Hedayné;Hdineh|34.0915|35.8684|v
+Bichtlida|بشتليدا||34.1316|35.7234|v
+Fghal|فغال||34.2062|35.6754|v
+Mrah El Hbas|مراح الحباس||33.5487|35.4639|v
+Mazraat Ad Dahr|مزرعة الضهر|Mazraat El Dahr|33.5952|35.5159|v
+At Tiri|الطيري|Al Tiri;Tayri;Taire|33.1423|35.4029|v
+Wardaniyeh|الوردانية|Al Wardaniyya|33.6116|35.4344|v
+Kfar Zaina|كفر زينا|Kfar Zeina|34.3662|35.8805|v
+Machha|مشحا||34.5386|36.1148|v
+Qusayr|قصير|Qsair;El Qsair;Al Qusayr|34.6058|36.2389|v
+Rimah|رماح|Rmah;Rmah En Nahriyeh|34.6202|36.2640|v
+Bakka|بكا||33.5925|35.9246|v
+Ain Arab|عين عرب|Ain Aarab|33.5762|35.8741|v
+Kfar Danis|كفر دنيس|Kfar Denis;Kfardenis|33.5484|35.8514|v
+Kherbet Rouha|خربة روحا|Khirbet Rouha|33.5726|35.8531|v
+Rafid|الرفيد||33.5724|35.8151|v
+Shihin|شيحين|Chihine;Sheheen;Shehin|33.1277|35.2589|v
+Toura|طورا||33.2932|35.2970|v
+Maarakeh|معركة|Maraka;Maarake|33.2732|35.3105|v
+Burj Rahhal|برج رحال|Borj Rahhal;Bourj Rahal|33.3109|35.2799|v
+Deir Aames|دير عامص||33.1977|35.3378|v
+Barti|برتي|Berti|33.5204|35.4837|v
+Jarjouaa|جرجوع||33.4456|35.5166|v
+Borjein|البرجين||33.6572|35.4842|v
+Bqerzala|بقرزلا|Bqerzla|34.5100|36.0561|v
+Btebyat|بتبيات||33.8343|35.7067|v
+Deir El Harf|دير الحرف||33.8491|35.6873|v
+Wadi El Doum|وادي الدلم|Ouadi Ed-Delm|33.7947|35.8129|v
+Fraidis|فريديس|Fraidiss|33.7110|35.6774|v
+Majdal Baana|مجدل بعنا|Majdel Baana|33.7776|35.6716|v
+Shanay|شاناي|Chanay|33.7877|35.6595|v
+Bzebdine|بزبدين||33.8708|35.7339|v
+Deir Khouna|دير خونا||33.8318|35.6652|v
+Chouit|شويت|Shouit|33.8298|35.6074|v
+Al Qalaa|القلعة|Qalaa|33.8416|35.7270|v
+Al Khurayba|الخريبة|Khreibeh|33.8245|35.7143|v
+Luwayza|لويزة|Louayzeh;Louaize;Louaizé|33.8379|35.5654|v
+Al Fayyadiya|الفياضية|Fayadiyeh;Faiyadiyeh;Fayadieh|33.8483|35.5508|v
+Mirdasha|مرداشة|Merdacheh|33.8231|35.5420|v
+Dulayba|دليبة|Dlaybeh;Dlaibe|33.8793|35.6879|v
+Butshay|بطشاي|Boutchay;Betchay|33.8259|35.5441|v
+Aaraiya|عاريا|Araiya;Aaraya|33.8291|35.5893|v
+Baalchmay|بعلشميه|Baalchmâyé|33.8153|35.6446|v
+Ain Mouaffaq|عين موفق||33.8225|35.6517|v
+Al Hilaliyya|الهلالية|Hlaliyeh|33.8330|35.6370|v
+Jouret Arsoun|جورة أرصون||33.8512|35.7099|v
+Dahr El Aaqline|ضهر العقلين|Aaqline|33.6810|35.4737|v
+Hmaileh|حميلة||33.4489|35.4677|v
+Sarba|صربا||33.4670|35.4746|v
+Zefta|زفتا||33.4455|35.4017|v
+Bidyas|بدياس|Bedias;Bdayas|33.3123|35.3002|v
+Insar|أنصار|Ansar|33.3796|35.3553|v
+Qasr|القصر||34.4789|36.4405|v
+Rimhala|رمحالا|Remhala|33.7418|35.5636|v
+Ain Trez|عين تراز||33.7348|35.5831|v
+Btalloun|بتلون|Btalloûn|33.7872|35.6400|v
+Keyfoun|كيفون|Kaifoun|33.7785|35.5594|v
+Deir Qoubel|دير قوبل|Deir Qoubil|33.7936|35.5145|v
+Blaybel|بليبل|Blaibel|33.8084|35.5509|v
+Houmal|حومال||33.8105|35.5581|v
+Bkhichtay|بخشتيه|Bkhechtay;Bkheshtay|33.7974|35.6219|v
+Sarhmoul|سرحمول|Sarahmoul|33.7712|35.5309|v
+Bsatine|بساتين||33.7555|35.5264|v
+Ain Ksour|عين كسور||33.7480|35.5335|v
+Qanat Bakish|قناة باكيش|Qanat Bakich|33.9626|35.8200|v
+Darine|دارين||34.6049|36.1102|v
+Saadine|سعدين||34.5969|36.0930|v
+Srar|سرار|Sarar|34.6153|36.1324|v
+Daghla|دغلة|Daghleh;Daghle|34.5804|36.2093|v
+Kafr Nun|كفر نون|Kfar Noun|34.6245|36.2535|v
+Hrar|حرار||34.4572|36.1222|v
+Majdala|مجدلا|Majdla|34.4982|36.0367|v
+Karm Zabdin|كرم زبدين|Karm Zebdine|34.6189|36.3576|v
+Aydamun|عيدمون|Aaidamoun|34.5986|36.2860|v
+Qantara|القنطرة|El Qantara|34.5184|36.0701|v
+Mazraat Baldeh|مزرعة بلده|Baldeh;Balde|34.5624|36.1433|v
+Aadbil|عدبل||34.5349|36.0965|v
+Hayzouq|حيزوق|Haizouq|34.5493|36.1313|v
+Nurat at-Tahta|نورة التحتى|Noura Et Tahta;Noura El Tahta|34.6266|36.1855|v
+Kawashra|كواشرة|Kouachra;Kaweishra|34.6119|36.2057|v
+Nurat Al Fauqa|نورة الفوقى|Noura El Faouqa|34.6204|36.1852|v
+Furaydis|فريديس|Fraydis;Fraidis;El Fraidis|34.6142|36.2285|v
+Jdaidet El Qayteaa|جديدة القيطع|Jdeidet El Qaitaa;Jdeidet Al Qaitaa|34.4645|36.0112|v
+Mqayteaa|مقيطع|Mqaiteaa|34.5580|35.9957|v
+Massaaoudiyeh|مسعودية|Al Massoudieh|34.6054|36.0483|v
+Tall Humayra|تل حميرة|Tall Hmayra;Tal Hmayreh;Tell Hmaira|34.6262|36.0721|v
+Al Abbudiyya|العبودية|Aabboudiyeh;El Aabboudiye|34.6364|36.1177|v
+Koueikhat|كويخات|Kouikhat|34.5802|36.0911|v
+Kroum Aarab|كروم عرب|Kroum El Arab|34.5551|36.0917|v
+Aarqa|عرقا||34.5304|36.0371|v
+Mar Touma|مار توما||34.5114|36.0278|v
+Sayssouq|سيسوق|Saissouq;Saysouq;Saysouk|34.4895|36.0523|v
+Berqayel|برقايل||34.4768|36.0329|v
+Rihaniyeh|ريحانية||34.4925|35.9791|v
+Aarmeh|العرمة||34.6297|36.1622|v
+Qochloq|قشلق||34.6176|36.1551|v
+Janine|جانين||34.6293|36.1475|v
+Zouq El Hbalsa|ذوق الحبالصة|Zouk al-Habalsa|34.5172|36.0368|v
+Zouq Haddara|ذوق حدارة||34.5155|36.0302|v
+Zouq El Moqachrine|ذوق المقشرين|Zouq El Mqachrine|34.5197|36.0287|v
+Haytla|هيتلا|Haitla|34.6020|36.1340|v
+Baghdadi|دوسة بغدادي||34.6021|36.1881|v
+Ammatour|عماطور|Ammatur|33.6428|35.6083|t
+Marj Al Samah|مرج السماح|Marj Es Simah|33.5067|35.7954|v
+Jbal El Botm|جبال البطم||33.1766|35.2910|v
+Tayr Falsay|طير فلسيه|Tair Filsay|33.3088|35.3460|v
+Qlaileh|القليلة|Kleile;Qlaile;Qulailah;Qalila|33.1964|35.2294|v
+Al Haniyya|الحنية|Henniyeh;El Henniyeh;Hanniye;Haniyeh;Al-Haniyya;Al Haniyeh|33.1861|35.2231|v
+Barish|باريش|Barich|33.2740|35.3507|v
+Majdal Zun|مجدل زون|Majdel Zoun;Majdal Zoun|33.1503|35.2260|v
+Chehabiyeh|الشهابية|Shehabieh;Shehabiya|33.2433|35.3831|v
+Shabriha|شبريحا|Chabriha|33.2921|35.2320|v
+Arzoun|أرزون||33.2806|35.3779|v
+Al Mansuri|المنصوري|Mansouri|33.1737|35.2111|v
+Yanouh|يانوح|Ynouh|33.2596|35.3043|v
+Selaa|سلعا|Salaa|33.2538|35.3834|v
+Jouaiya|جويا|Jwayya;Joya|33.2377|35.3378|v
+Maaroub|معروب||33.2843|35.3467|v
+Ain Abou Abdallah|عين أبو عبد الله|Ain Abu Aabdalla|33.3156|35.2586|v
+Al Aabbasiyya|العباسية|Aabbassiyeh;Aabbassiye;Abbasiya|33.2971|35.2831|t
+Mahrouna|محرونة|Mahrouneh|33.2187|35.3427|v
+Mazraat El Mechref|مزرعة مشرف||33.2093|35.3361|v
+Biyad|البياض||33.2054|35.3265|v
+Recheknanay|رشكنانية|Rechkananey|33.1893|35.3223|v
+Saddiqine|صديقين|Siddiqine;Seddiqine;Siddikine|33.1887|35.3092|v
+Alma ash Shab|علما الشعب|Aalma Ech Chaab;Alma ach Chab|33.1041|35.1785|v
+Ain Baal|عين بعال||33.2330|35.2664|v
+Baflay|بافلية|Bafliye|33.2627|35.3655|v
+Batoulay|باتولية|Batouliyeh;Batouliye|33.2250|35.2574|v
+Derdghaya|دردغيا|Derdghaiya;Derdghia|33.2802|35.3703|v
+Deir Kifa|دير كيفا||33.2573|35.3986|v
+Taalbaiya|تعلبايا|Taalabaya;Taalbaya|33.8173|35.8677|v
+Hamat|حامات||34.2848|35.6921|v
+Ras Nhach|راس نحاش||34.2807|35.7200|v
+Boustane|بستان|El Boustane|33.1010|35.2548|v
+Shaaitiyeh|الشعيتية|Shaaytieh;Al Shaitiya;Chaaitiyeh|33.1963|35.2648|v
+Deir Qanoun El Ain|دير قانون رأس العين||33.2222|35.2434|v
+Tayr Debba|طير دبا|Tair Debba;Tayr Dibba|33.2741|35.2772|v
+Shehour|شحور|Chahour;Chehour|33.2989|35.3700|v
+Srifa|صريفا||33.2825|35.3992|v
+Naffakhiyeh|النفاخية|Naffakhiye|33.2710|35.3865|v
+Mjadel|المجادل||33.2286|35.3590|v
+Burj Al Shamali|برج الشمالي|Borj El Chmali;Borj Ech Chemali;Burj ash Shamali;Burj ash-Shamali;Borj Ech Chmali|33.2616|35.2368|t
+Dayr Qanun An Nahr|دير قانون النهر|Deir Qanoun En Nahr;Dair Qanun An Nahr|33.2993|35.3112|v
+Jinnata|جناتا|Jannata;Janat;Jennata|33.2861|35.3202|v
+Jibbain|الجبين|Jebbayn;Ej Jibbain;Jebbain;Al Jabin|33.1221|35.2353|v
+Tayr Harfa|طير حرفا|Tair Harfa|33.1267|35.2191|v
+Rashaf|رشاف|Rachaf|33.1440|35.3645|v
+Dibil|دبل|Debl;Dibl|33.1220|35.3664|v
+Bayt Lif|بيت ليف|Beit Lif;Bait Lif|33.1343|35.3330|t
+Umm Tuta|أم توتة|Oum Toute;Um Touteh|33.1127|35.2550|v
+Mazraat az Zallutiyya|مزرعة الزلوطية|Mazraat ez Zalloutiye;Zalloutiye|33.1117|35.2467|v
+Ras el Masri|رأس المصري||33.1139|35.1717|h
+Labbouneh|لبونة|Labboune;Labbuna;Labouneh|33.0933|35.1487|h
+Ash Shumara|الشومرة|Ech Choumara|33.1192|35.1424|v
+Al Matmura|المطمورة|El Matmoura|33.1076|35.2175|v
+Jijim|ججيم|Jejim|33.1232|35.1930|h
+Al Bayaz|البياض||33.1299|35.2176|v
+Mazraat Dayr Hanna|مزرعة دير حنا|Mazraat Deir Hanna;Mazraat Dair Hanna|33.1585|35.1785|h
+Mazraat Umm ar-Rubb|مزرعة أم الرب|Mazraat Oum er Robb|33.1421|35.1733|h
+Iskandaruna|إسكندرونة|Iskanndarouna;Iskandarouna|33.1525|35.1724|h
+Al Bayyada|البياضة|Biyyadah;Al Bayada|33.1626|35.1817|v
+Khirbat Qanafar|خربة قنفار|Khirbet Qanafar|33.6391|35.7193|v
+Qanafez|قنافذ||34.4865|36.4071|v
+Sharbine|شربين|Charbîne;Ech Charbîné;Charbine|34.4584|36.3596|v
+Kouakh|كواخ||34.4671|36.3906|v
+Boustane|بستان||34.5091|36.3265|v
+Hmaireh|حميرة|Hmaire|34.4963|36.3300|v
+Jouar El Hachich|جوار الحشيش||34.4867|36.3261|v
+Hariqa|حريقة||34.4882|36.3790|v
+Fissane|فيسان||34.4754|36.3471|v
+Mrah El Ain|مراح العين||34.4707|36.3360|v
+Mhamra|المحمرة||34.5044|35.9646|v
+Aabdeh|العبدة|Abde;Abdeh|34.5127|35.9725|v
+Beit Ayoub|بيت ايوب||34.4729|36.1597|v
+Qoubbet Chamra|قبة شمرا||34.5433|36.0064|v
+Sammouniyeh|سمونية|Sammouniye|34.5757|36.0496|v
+Qraiyat|القريات||34.4808|36.1539|v
+Rahbeh|رحبة|Rahbe|34.5051|36.1467|v
+Mechmech|مشمش||34.4713|36.1709|v
+Fnaydeq|فنيدق|Fnaideq;Fnaidek|34.4757|36.1831|v
+Aaiyat|عيات||34.5348|36.1970|v
+Ain Yaaqoub|عين يعقوب||34.5223|36.1969|v
+Bezbina|بزبينا||34.5175|36.1906|v
+Kfar Sir|كفر صير||33.3259|35.4000|v
+Shahim|شحيم|Chehim;Shhim;Shehim;Chehime|33.6242|35.4846|t
+Joun|جون||33.5801|35.4563|v
+Mazboud|مزبود||33.6089|35.4825|v
+Deir Amar|دير عمار|Deir Aamar;Deir Aammar;Deir Ammar|34.4620|35.8994|v
+Hilane|حيلان|Hailane|34.4269|35.9586|v
+Tourbol|تربل||34.4477|35.9434|v
+Markabta|مركبتا||34.4532|35.9662|v
+Beit Aaoukar|بيت عوكر||34.4329|35.9168|v
+Sir Ed Danniyeh|سير الضنية|Sir Ad Dinniyeh;Sir El Denniyeh|34.3842|36.0273|v
+Asnoun|اصنون||34.3871|35.8877|v
+Ardeh|أردة||34.4086|35.9149|v
+Kfar Dlaqous|كفر دلاقوس||34.3927|35.9055|v
+Haret El Faouar|حارة الفوار|Haret El Fouar;Haret Al Fouar|34.4323|35.8881|v
+Aachach|عشاش||34.4119|35.9346|v
+Qadriyeh|القادرية||34.4139|35.9240|v
+Bsebaal|بسبعل||34.3531|35.8760|v
+Kfar Yachit|كفر ياشيت||34.3466|35.8939|v
+Kfar Sghab|كفر صغاب||34.3382|35.9038|v
+Aarjes|عرجس|Arjes|34.3326|35.8825|v
+Bneshaai|بنشعي||34.3317|35.8950|v
+Sebaal|سبعل||34.3118|35.9085|v
+Aitou|أيطو|Aytou;Aïtou|34.3073|35.9212|v
+Aarbet Qouzhaiya|عربة قزحيا|Aarbet Qouzhaïya|34.2929|35.9277|v
+Aslout|أصلوت||34.3254|35.9620|v
+Seraal|سرعيل||34.2906|35.9120|v
+Mazraat En Nahr|مزرعة النهر|Mazraat El Nahr|34.2841|35.9173|v
+Kfar Haoura|كفر حورا||34.3729|35.8691|v
+Bchannine|بشنين||34.3486|35.8595|v
+Kfar Chakhna|كفر شخنا||34.3634|35.8649|v
+Kfar Hata|كفر حاتا||34.3816|35.9030|v
+Iaal|إيعال||34.3587|35.9137|v
+Mejdlaiya|مجدليا|Mejdlaya;Majdalaya|34.4143|35.8677|v
+Kefraiya|كفريا||34.4475|35.9600|v
+Ejbaa|اجبع|Ejbeh|34.3093|35.9421|v
+Beit Aabeid|بيت عبيد||34.4304|35.9212|v
+Rachaaine|رشعين||34.3961|35.9211|v
+Harf Miziara|حرف مزيارة||34.3329|35.9423|v
+Hmaiss|حميص|Hmeis|34.3299|35.9351|v
+Mazraat Et Teffah|مزرعة التفاح||34.3216|35.9494|v
+Damour|الدامور||33.7308|35.4555|v
+Buhairet Toula|بحيرة تولا||34.3238|35.9690|v
+Sawaqi|السواقي||34.3308|36.0116|v
+Toula|تولا||34.3166|35.9635|v
+Ayn Jarfa|عين جرفا|Ain Jerfa|33.3841|35.6854|v
+Shir Humayrin|شير حميرين|Chir Hmairine;Shir Hmairine|34.6191|36.1167|v
+Bakhaoun|بخعون|Bakhoun|34.4132|36.0114|v
+Aaimar|عيمر||34.3480|35.9662|v
+Draira|ضريرة||34.3602|35.9943|v
+Nfayseh|نفيسة|Nfisseh;Nfeisseh;Nfaisseh|34.5465|36.0857|v
+Cheikh Mohammad|الشيخ محمد||34.5509|36.0834|v
+Nakhleh|نخلة||34.3653|35.8271|v
+Batroumine|بترومين||34.3658|35.8106|v
+Bechmizzine|بشمزين||34.3201|35.7961|v
+Btouratij|بتوراتيج||34.3616|35.8390|v
+As Siyaha|السياحة||33.1795|35.2091|h
+Maachouq|معشوق|Maashouq;Maachouk;Maachoûq|33.2671|35.2242|v
+Kfour|الكفور||33.3983|35.4518|v
+Toul|تول||33.3895|35.4446|v
+Zebdine|زبدين||33.3766|35.4621|v
+Shoukine|شوكين|Choukine|33.3530|35.4622|v
+Jibchit|جبشيت|Jebchit;Jebshit|33.3648|35.4276|v
+Doueir|الدوير||33.3881|35.4199|v
+Beit Shama|بيت شاما|Beit Chama|33.9216|36.0281|v
+Tal El Akhdar|تل الأخضر|Tall El Akhdar|33.7343|35.8264|v
+Tall Znoub|تل ذنوب|Tal Znoub;Tell Znoub|33.6618|35.7787|v
+Dayr Tahnish|دير طحنيش|Deir Tahnich|33.7013|35.7587|v
+Aana|عانا||33.6921|35.7566|v
+Touline|تولين||33.2482|35.4435|v
+Touairi|طويري|Touayri|33.2731|35.4227|v
+Qabrikha|قبريخا|Kabrika|33.2463|35.4634|v
+Shmestar|شمسطار|Chmistar;Chmestar|33.9651|36.0171|v
+Bireh|البيرة|El Bireh|33.5847|35.8199|v
+Yohmor|يحمر||33.4868|35.6729|v
+Libbaya|لبايا||33.4814|35.7234|v
+Mazraat Deir El Aachayer|مزرعة دير العشاير|Mazraat Deïr el Aachâyer|33.5767|36.0099|v
+Helweh|حلوة|Haloua|33.6109|35.9980|v
+Morh el Ouaarat|مرح الوعرة|Morh el Ouaarât|33.6003|36.0214|v
+Yanta|ينطا||33.6041|35.9448|v
+Dahr El Baidar|ضهر البيدر|Dahr El Baydar;Dahr Al Baydar|33.8109|35.7661|v
+Borj El Yahoudiyeh|برج اليهودية||34.4551|35.9128|v
+Bahsas|بحصاص|El Bahsas|34.4169|35.8257|v
+Kniseh|كنيسة||33.2056|35.2632|v
+Aaichiyeh|العيشية||33.4074|35.5564|v
+Ain Dara|عين دارة||33.7807|35.7247|v
+Shamlikh|شمليخ|Chamlikh|33.7824|35.7063|v
+Toueit Ain Dara|تويتة||33.7919|35.7242|v
+Qartaboun|قرطبون|Kartaboun;Kartaboune|34.1090|35.6526|v
+Btekhnay|بتخني||33.8414|35.7190|v
+Bathaniyeh|بطحانية|Bathaniye|33.4211|35.7090|v
+Mimes|ميمس||33.4194|35.7135|v
+Ain Tanta|عين طنطا||33.4127|35.7272|v
+Khalwat|الخلوات||33.4176|35.7386|v
+Kfeir|الكفير|Kfair|33.4301|35.7394|v
+Ain Aata|عين عطا|Ain Ata;Ayn Aata|33.4362|35.7789|v
+Marj El Zhour|مرج الزهور||33.4693|35.7473|v
+Haouch El Qenaabeh|حوش القنعبة||33.4769|35.7548|v
+Mazraat Jaafar|مزرعة جعفر||33.4698|35.7704|v
+Ain Hirsha|عين حرشة|Ain Hircha|33.4562|35.7828|v
+Qnabeh|قنابة|Qnaabe;Qnaabeh|33.4803|35.7715|v
+Hammadiyeh|الحمادية||33.2882|35.2428|v
+Hallousiyyeh|حلوسية|Halloussiye;Halousiya|33.3058|35.3279|v
+Kfarhamam|كفر حمام|Kfar Hamam|33.3432|35.6780|v
+Rachaya Al Foukhar|راشيا الفخار|Rachaya El Foukhar;Rashaya Al-Fakhar;Rashaya Al Fakhar|33.3542|35.6675|v
+Kfar Chouba|كفر شوبا|Kfar Shouba;Kfar Shuba;Kafarchouba;Kafr Shuba;KfarShouba;Kfarchouba|33.3277|35.6927|v
+Mazraat El Salamia|مزرعة إسلامية|Mazraat El Slamiyeh|33.3261|35.6619|v
+Halta|حلتا||33.3141|35.6632|v
+Abou Qamha|أبو قمحة||33.3825|35.6624|v
+Khalwat El Biyada|خلوة البياضة||33.3865|35.6794|v
+Qalaa|القلعة||33.3026|35.6641|h
+Al Mari|الماري|El Mari|33.3205|35.6417|v
+Dehayrjate|دحيرجات||33.3095|35.6546|v
+Khraibeh|الخريبة||33.3387|35.6447|v
+El Majidiye|المجيدية|Al Majidiya;Al-Majidiya;Majidieh|33.2843|35.6576|v
+Ain Aarab|عين عرب|Aïn Aarab|33.2966|35.6227|v
+Slaiyeb|الصليب|Es Slaiyeb;Slaïyeb|33.2932|35.6310|v
+Aamra|عمرة||33.2721|35.5968|v
+Aarab El Louaizeh|عرب اللويزة|Arab Al Louaizeh;Arab El Louaizeh|33.2740|35.6146|v
+Tell Znoub ej Jdide|تل ذنوب الجديدة||33.6725|35.7663|v
+Jisr El Qadi|جسر القاضي||33.7275|35.5631|v
+Qabr Chamoun|قبر شمون||33.7543|35.5421|v
+Jahliyeh|الجاهلية|Ej Jahliye|33.6670|35.5140|v
+Deir Koucheh|دير كوشة|Deir Qouche|33.7172|35.5646|v
+Dfoun|دفون||33.7480|35.5585|v
+Btater|بتاتر||33.7695|35.6332|v
+Shartoun|شرتون|Chartoun|33.7445|35.5834|v
+Bchetfine|بشتفين|Bshetfine;Bchatfine|33.7112|35.5543|v
+Harbata|حربتا|Hrabta|34.2065|36.2671|v
+Zouk Bhanine|ذوق بحنين|Zouq Bhannine|34.4960|35.9579|v
+Harf Ardeh|حرف أردة||34.3988|35.9106|v
+Aammiq|عميق||33.7134|35.7732|v
+Berghoz|برغز||33.4081|35.6357|v
+Siret Hana|سيرة هنا|Siret Hanna|34.0262|36.0052|v
+Beit Mchik|بيت مشيخ||34.0439|36.0281|v
+Boudai|بوداي|Bodai|34.0618|36.0631|v
+Dlafy|دلافي|Dellafi|33.4299|35.6459|v
+Kawkaba|كوكبا|Kaukaba|33.3974|35.6423|v
+Arnoun|أرنون||33.3294|35.5254|v
+Blat|بلاط||33.3841|35.6003|v
+Al Yammunah|اليمونة|El Yammouneh;Yammoune;Yammouneh|34.1298|36.0292|v
+Qabaait|قبعيت|Qabit;Kabit|34.4496|36.0967|v
+Khalsah|خالصة|Khalsa|34.6332|36.3124|v
+Majdal|المجدل|El Majdel|34.5717|36.2163|v
+Masla|مصلا|Msalla|34.5917|36.1612|v
+Mresti|مرستي|Mrousti;Mristi;Mrosti|33.6226|35.6486|v
+Qrayn|قرين||34.3971|36.0333|v
+Chmis|شميس||34.3973|36.0246|v
+Sfireh|سفيرة|Safira|34.4002|36.0527|v
+Qemmamine|قمامين||34.4204|36.1394|v
+Hosna|حصنا||34.1034|35.7757|v
+Bahsa|بحصة|El Bahsa|34.3824|36.0371|v
+Jaouz|جوز|Jawz|34.4614|36.2757|v
+Btormaz|بطرماز|Btermaz;Btourmaz;Batramaz|34.4233|36.0361|v
+Qarneh|القرن||34.4410|36.1185|v
+Tlayleh|التليل|Tleil;Altalil|34.5955|36.1371|v
+Souaiseh|السويسة|Souaisse|34.4629|36.3082|v
+Tekrit|تكريت|Takrit|34.5183|36.1595|v
+Brayj|البريج|El Breij|34.4553|36.3819|v
+Baadaran|بعذران||33.6371|35.6202|v
+Miel|ميل|Myle|34.1919|35.9421|v
+Mtayleh|مطيلة|Mtaile|33.7127|35.6499|v
+Charbineh|شربينة||34.1182|35.8610|h
+Moukhada|مخاضة||34.1328|35.8443|v
+Bqarta|بقرتا||34.1271|35.7985|v
+Boqaata|بقعاتا||33.6666|35.5998|v
+Mdairej|مديرج|Mdayrej;Mdeyrej|33.8011|35.7281|v
+Sejoud|سجد||33.4323|35.5355|v
+Haidab|حيداب||33.5267|35.5286|v
+Zhalta|زحلتى||33.5121|35.5476|v
+Raimat|ريمات||33.5274|35.5105|v
+Ain Qana|عين قانا||33.4733|35.5114|v
+Sniyeh|السنية||33.5156|35.5281|v
+Kfar Dajal|كفر دجال|Kfar Dajjal;Kfar Dejjal|33.3443|35.4323|v
+Qataa|قطع||33.5306|35.5346|v
+Nemrine|نمرين||34.3791|36.0557|v
+Qarsita|قرصيتا|Qarsaita|34.3879|36.0624|v
+Nabaa Al Safa|نبع الصفا|Nabeh Al Safa;Nabaa El Safa|33.7515|35.6969|v
+Bqarsouna|بقرصونا||34.3776|36.0447|v
+Sir Al Gharbiyya|سير الغربية|Sir El Gharbiyeh|33.3225|35.3656|v
+Chmayseh|شميسة|Chmaissa|33.8285|35.6835|v
+Arab Salim|عرب صاليم||33.4238|35.5078|v
+Ain Zhalta|عين زحلتا||33.7406|35.6989|v
+Azour|عازور|Aazour|33.5595|35.5352|v
+Braiqah|بريقع|Braiqaa|33.3408|35.3817|v
+Ighmid|إغميد||33.7630|35.6956|v
+Baiqoun|بيقون|Beiqoun|33.6170|35.5817|v
+Qraiyeh|قرية||33.8085|35.6835|v
+Ain El Zeit|عين الزيت|Ain Ez Zeit|34.5890|36.1977|v
+Nabi Sbat|النبي سباط||33.9355|36.2352|v
+Dahr El Harf|ضهر الحرف||33.8643|35.8265|v
+Deir Taqla|دير تقلا||33.3991|35.2916|v
+Debaal|دبعال||34.4343|36.0758|v
+Houeich|الحويش|El Houaich|34.4975|36.1189|v
+Kfar Bebnine|كفر ببنين||34.4062|36.0780|v
+El Hedd|هد||34.5593|36.1585|v
+Qarhaiya|قرحيا||34.4432|36.0786|v
+Ain Tanta|عين تنتا|Ain Tinta|34.5853|36.1855|v
+Jebrayel|جبرايل||34.5221|36.1308|v
+Mazraat Al Shouf|مزرعة الشوف|Mazraat El Chouf|33.6461|35.5801|v
+Ainbal|عينبال|Ain Bal|33.6623|35.5618|v
+Mjeidel|مجيدل|Mjaydel|33.5178|35.4410|v
+Sfenta|سفنتا|Sfenti|33.5080|35.4960|v
+Deyr Ntar|دير انطار|Deyrintar;Deir Ntar;Deir Antar|33.2178|35.3785|v
+Baysour|بيصور|Baissour|33.5357|35.4486|v
+Kfar Jarra|كفر جرة||33.5494|35.4304|v
+Mlikh|مليخ||33.4688|35.5583|v
+Kahlouniyeh|الكحلونية|Kahlouniye|33.6498|35.5904|v
+Rejmeh|الرجمة|Rejme|33.7898|35.6125|v
+Kfar Niss|كفر نيس||33.7381|35.6415|v
+Samqaniyeh|السمقانية||33.6790|35.5885|v
+Maasser Beit Ed Dine|معاصر بيت الدين||33.6983|35.5986|v
+Hreisheh|حريشة|Hraiche|34.3775|35.7543|v
+Wadi El Hour|وادي الحور|Wadi Al Hoor|34.6083|36.1547|v
+Barghoun|برغون||34.3421|35.7534|v
+Mwanseh|المونسة|Mouanse|34.5982|36.3876|v
+Balhoss|بلحص||34.0938|35.8079|v
+Ed Daoura|الدورة||34.5387|36.2211|v
+Majdel Selm|مجدل سلم|Majd El Selem;Majedel Selm;Majdal Selm;Majdal Selem|33.2250|35.4640|v
+Sbouba|سبوبا||34.2208|36.2767|v
+Barghash|برغش|Berghoch;Barghach|34.3884|36.2962|v
+Beshwat|بشوات|Bechouat|34.1512|36.1358|v
+Markaba|مركبا||33.2340|35.5162|v
+Kherbet Selm|خربة سلم|Khirbet Selem;Khirbet Silm|33.2325|35.4193|v
+Tebna|تبنا||33.4476|35.3424|v
+Deir Nbouh|دير نبوح||34.3715|35.9312|v
+Qatlabeh|القطلبة|El Qatlabe|34.5408|36.2802|v
+Aitaroun|عيترون|Aaitaroun|33.1164|35.4715|v
+Jbaa|جباع||33.4859|35.5159|v
+Bouslaiya|بصليا|Bouslaya|33.5010|35.5129|v
+El Bireh|بيرة|Bire|33.7218|35.6437|v
+Sifri|سفري|Es Sifri|33.9222|36.0804|h
+Yahfoufa|يحفوفا||33.8592|36.1224|v
+Massa|ماسا||33.8502|36.0667|v
+Talya|طليا|Talia|33.9354|36.0978|v
+Janta|جنتا|Jenta|33.8564|36.1070|v
+Souaneh|صوانة||33.2336|35.4379|v
+Ransiyeh|الرانسية||33.5241|35.4921|v
+Sidoun|صيدون|Saidoun|33.5210|35.5124|v
+Majdalouna|مجدلونة|Majdalounah|33.5963|35.4490|v
+Al Mughayriyya|المغيرية|Moghayriyah|33.6040|35.4592|v
+As Sarawuniyya|الصرونية|Saraouniyeh|33.5824|35.4430|v
+Jmailiyeh|الجميلية|Al Jumailiyya|33.6002|35.4263|v
+As Sabuniyya|الصابونية|Sabouniye;Sabouniyeh|33.5962|35.4214|v
+Haret Chbib|حارة شبيب||33.7735|35.4723|v
+Roumine|رومين||33.4623|35.4426|v
+Yanar|ينار|Yinnar|33.7886|35.5037|t
+Ghbaline|غبالين|Ghabline|34.1844|35.6931|v
+Aazze|عزة|Azza|33.4553|35.4300|v
+Mazmourah|مزمورة|Mazmoura|33.5957|35.5088|v
+Ej Jleiliye|الجليلية|Jlaliyeh;Jleiliyeh|33.6058|35.5291|v
+Ez Zaarouriye|الزعرورية|Zaarourieh|33.6138|35.5194|v
+Aanout|عانوت||33.6283|35.5167|v
+Qraiaa|قريعة||33.5976|35.4924|v
+Deir El Mkhalles|دير المخلص||33.5843|35.4795|h
+Aaqabeh|العقبة||33.5829|35.4680|v
+Cheikh Zennad|شيخ زناد|Sheikh Zennad;Sheikh Znad|34.6069|35.9872|v
+Ras el Ain|رأس العين|Râs el Aïn|33.2281|35.2185|v
+Er Rachidiye|الرشيدية|Rachîdîyé|33.2394|35.2161|v
+Meshref|مشرف|Mechref|33.7132|35.4668|v
+Douha|دوحة|Doha;Dawha|33.7620|35.4620|v
+Meidoun|ميدون|Maydoun|33.4675|35.6407|v
+Debbieh|الدبية|Ad-Dabiyya;Ad Dabiyya|33.6654|35.4868|v
+Sebrine|سبرين||34.1107|35.7102|v
+Fdar Et Tahta|فدار التحتا|Fdar El Tahta|34.1334|35.6928|v
+Fdar El Faouqa|فدار الفوقا||34.1327|35.7030|v
+Ghanduriyah|الغندورية|Ghandouriye|33.2717|35.4325|v
+Kfar Dounin|كفردونين|Kfar Dounine;Kafrdounin;Kafr Dunin|33.2394|35.3928|v
+Bnehrane|بنهران|Bnehran|34.2745|35.8513|v
+Jbaa|جباع||33.6104|35.6292|v
+Tallousa|طلوسة|Tallouseh;Tallouse;Talloussa;Talusah|33.2295|35.4890|v
+Metrit|متريت||34.2603|35.8415|v
+Dbadeb|دبادب|Dabadeb|34.6120|36.3851|v
+Beit Kassab|بيت كساب|Beit Kessab|34.2456|35.8517|v
+Haret Jandal|حارة جندل||33.6287|35.6067|v
+Bsaba|بسابا||33.6048|35.5553|v
+El Khraibe|الخريبة|Khraibeh|33.6482|35.6450|v
+Mharbiye|محاربية|Mharbiyeh|33.5278|35.4468|v
+Wadi en Njass|وادي النجاص||34.3584|36.0386|v
+Haouch En Nebi|حوش النبي||33.9296|36.0651|v
+Khirbet Ed Dwayr|خربة الدوير||33.2796|35.6389|v
+En Nabi Younes|نبي يونس|Nabi Younos|33.6622|35.4190|v
+Dahr Ain El Haour|ضهور عين الحور||33.6605|35.4978|v
+El Maaniye|المعنية|Maaniyeh|33.6310|35.4477|v
+Kaf el Malloul|كف الملول|Kaff El Malloul|34.3508|35.9573|v
+Haret Beit Madi|حارة بيت ماضي||33.6608|35.4248|v
+Karkha|كرخا||33.5638|35.4473|v
+Behouaita|بحويتا||34.3366|35.9689|v
+Haytula|حيتولة|Haitoule|33.5220|35.4735|v
+Zghartaghrine|زغرتغرين||34.3599|35.9533|v
+Mrah El Mir|مراح المير||33.9611|35.6991|v
+Kharbeh|خاربة جبيل|Kharbe|34.1789|35.7533|v
+Sbail|سبايل||34.1767|35.7428|v
+Hosn Aar|حصن العر||34.1449|35.7293|v
+Jrebta|جربتا جبيل|Jrebta Jbeil|34.1406|35.7213|v
+Bmahrain|بمهرين|Mehrine;Bmehrine;Bmehrayn|34.1237|35.6766|v
+Kfar Hitta|كفر حتى||34.1383|35.6781|v
+Bechtoudar|بشتودار||34.2234|35.8189|v
+Helta|حلتا|Halta|34.2379|35.7781|v
+Aassiya|اسيا|Assia|34.2182|35.7843|v
+Racha|راشا|Rasha|34.2002|35.7867|v
+Qattarah|قطارة|Qattara|34.1845|35.7860|v
+Srobbine|صربين|Srebbine;Sribbine|33.1548|35.3579|v
+Qantara|القنطرة||33.2709|35.4643|v
+El Qoussair|القصير|Qsair|33.2930|35.4567|v
+Mazraat Sarada|مزرعة سرادا|Sarda|33.2911|35.5986|v
+Yohmor|يحمر|Yohmor al-Shaqif|33.3124|35.5177|v
+El Binnay|بنيه|Bnaiye|33.7364|35.5468|v
+Jnah|جناح||33.8657|35.4840|v
+Kfar Hamel|كفر حمل|Kfar Hamal|33.7123|35.5738|v
+Dahr El Ahmar|ضهر الاحمر|Dahr Al Ahmar|33.5283|35.8308|v
+Majdal Balhiss|مجدل بلهيص|Majdel Balhis|33.5374|35.7451|v
+Mdoukha|مدوخا||33.6038|35.8775|v
+Kamed El Laouz|كامد اللوز|Kamed Al Loz|33.6208|35.8232|v
+Aita el Foukhar|عيتا الفخار||33.6396|35.9074|v
+El Aaqabe|عقبة|Aaqbe|33.5040|35.8257|v
+El Khiara|الخيارة|Khiara;Khayara|33.6913|35.8483|v
+Sawiri|الصويري|Saouiri|33.6846|35.9038|v
+Hammara|حمارة|Hammarah;Manara|33.6513|35.8837|v
+Taazaniyeh|تعزانية|Taazniye|33.7841|35.6225|v
+Ain Jdideh|عين الجديدة|Ain Ej Jdideh|33.8066|35.6303|v
+Izal|إيزال||34.3799|35.9816|v
+Beit Zoud|بيت زود||34.4105|35.9883|v
+Sebaal|سبعل|Sibaal|33.7609|35.6172|v
+Beit Daoud|بيت داود||34.3780|35.9601|v
+Warhaniyeh|ورهانية||33.7212|35.6742|v
+Kafr Rumman|كفر رمان|Kfar Roummane|33.3897|35.5018|v
+Ain El Safsaf|عين الصفصاف||33.9132|35.7245|v
+Manzala|منزلة|Manzleh|33.3573|35.4985|v
+Hajjeh|حجة||33.4764|35.3812|v
+Saadnayel|سعد نايل||33.8194|35.8813|t
+Mina|الميناء|El Mina|34.4511|35.8146|t
+Mtaileb|المطيلب|Mtayleb|33.9204|35.6125|t
+Kafr Kila|كفر كلا|Kfar Kela;Kfar Kila|33.2827|35.5588|v
+Odaisseh|عديسة|Aadaisse;Adaisseh|33.2578|35.5467|v
+Bhouara|بحوارا|Behouara|33.7905|35.5965|v
+Mazraat En Nahr|مزرعة النهر||33.7515|35.6403|v
+Ain El Fraydis|عين الفريديس|Ain El Fraidis|33.7814|35.6096|v
+Ain El Halazoun|عين الحلزون||33.7701|35.6462|v
+Aaynab|عيناب|Ainab|33.7669|35.5472|v
+Charoun|شارون||33.7716|35.6858|v
+Bedghane|بدغان||33.7674|35.6714|v
+Mrayjat|مريجات|Mrayjeh|33.7434|35.6732|v
+Bou Zrideh|بو زريدة|Bou Zraide|33.7488|35.5770|v
+Rouaysset En Naamane|رويسة النعمان|Rouisset En Naamane|33.7545|35.6061|v
+Al Hisha|الهيشة|El Hichi;El Hisha;El Hishi;El Hicha|34.6365|36.3649|v
+Kfardebian|كفردبيان|Kfar Debian;Kfar Dibiane|34.0024|35.8339|v
+Koucha|كوشا|Khousha|34.5639|36.0998|v
+Kfar Sghab|كفر صغاب|Kfarsghab|34.2785|35.9627|v
+Anjar|عنجر||33.7282|35.9314|t
+Aadouiye|عدوي|Doueir Aadouiye|34.5808|36.1761|v
+Aakkar El Attiqa|عكار العتيقة|Akkar Al Aatiqa|34.5249|36.2418|v
+Aaouinat|العوينات|Aaouainat;Aawainat|34.6248|36.3034|v
+Aarab Jourmnaya|جرمنايا||34.6119|36.3612|v
+Aarida|عريضا||34.6676|36.3043|v
+Zahriye|الزاهرية||33.2067|35.2166|v
+Beit El Haouch|بيت الحوش|Beit El Haoush|34.4836|35.9995|v
+Beit Mellat|بيت ملات||34.5301|36.1620|v
+Chane|شان||34.4822|36.1145|v
+Daraiya|داريا الشوف||33.6399|35.5052|v
+Rihaniye|الريحانية||34.5820|36.1172|v
+Haouchab|هوشب||34.5866|36.1019|v
+Blouza|بلوزا|Blaouza|34.2619|35.9524|v
+Bajaa|بجعة||34.4900|36.0753|v
+Aayoun|عيون|El Aayoun|34.5279|36.1735|v
+Awade|العوادة||34.6261|36.3778|v
+Nabha|نبحا||34.1831|36.2240|v
+Ain Bousouar|عين بوسوار|Ain Bou Souar|33.4740|35.5195|v
+Aasaymout|عصيموت||34.4349|36.0899|v
+Brih|بريح||33.7147|35.6573|v
+Bir El Hait|بير الهيت||34.0884|35.7224|v
+Amayer|العماير||34.6291|36.3866|v
+Mnaira|منيرة||34.3114|36.3182|v
+Beit Younes|بيت يونس||34.4731|36.1488|v
+Qiyaa|قياعة||33.5658|35.3883|v
+Msaileh|المصيلح|Msayleh|33.4791|35.3518|v
+Sari|ساري||33.3935|35.2743|v
+Shbeil|شبيل|Chbeil|33.4279|35.6003|v
+Zrazir|زرازير||34.1523|36.1230|v
+Bater|باتر||33.6021|35.6173|v
+Habramoun|حبرمون||33.7604|35.6444|v
+Sherin|شرين|Cherin|33.9348|35.7313|v
+Bsifrine|بصفرين||33.8851|35.7002|v
+Malhoun|ملحون||34.1444|35.7006|v
+Marbaa|مربعة||34.1496|35.6977|v
+Mnaitra|منيطرة||34.0737|35.8892|v
+Qass|القص||34.0842|35.7264|v
+Zmar|زمار||34.1231|35.7188|v
+Qnaitra|قنيطرة|Quneitra|33.4810|35.4011|v
+Mhaidle|المحيدلة||33.3829|35.2934|v
+Jamhour|جمهور||33.8282|35.5696|v
+Aaboud|عبود||34.1028|35.8540|v
+Falougha|فالوغا||33.8373|35.7412|v
+Aalmane|علمان||33.3019|35.4702|v
+Dimane|ديمان||34.2457|35.9514|v
+Harfoush|حرفوش|Harfouch|34.1997|36.2444|v
+Bdita|بديتا||34.3900|36.3790|v
+Qarha|قرحا||34.1671|36.2093|v
+Berbara|بربارة||34.5720|36.1884|v
+Chattaha|شطاحة||34.5331|36.1738|v
+Qaabrine|قعبرين||34.5678|36.0338|v
+Qtale|قتالة||33.8219|35.6737|v
+Ramate|رمات||34.2176|35.7167|v
+Ksara|كسارا||33.8280|35.8954|v
+Deir Zenoun|دير زنون|Dair Zanoun|33.7602|35.9095|v
+Chaqdouf|الشقدوف||34.5293|36.1902|v
+Cheikhlar|شيخلار||34.6200|36.2738|v
+Kfar Harra|كفرحرة||34.5587|36.1367|v
+Kasarnaba|قصرنبا|Qsarnaba;Qasr Neba|33.9130|35.9907|v
+Chaloumas|شلوماس||34.1027|35.7425|v
+Fradis|فريديس||34.2774|35.9338|v
+Dalhamiye|دلهمية||33.8187|35.9582|v
+Mhaidse|محيدثة||33.5559|35.8105|v
+Amaret El Baykat|عمار البيكات||34.6035|36.1648|v
+Aarnaya|عرنايا||33.5091|35.3998|v
+Kafraiya|كفريا||33.5588|35.4355|v
+Aallaq|علق||34.0281|36.1035|v
+Mrah Najib|مراح نجيب||34.0924|36.0686|v
+Beit Habshi|بيت حبشي|Beit Habchi|34.1536|36.0994|v
+Barqa|برقا||34.1733|36.1388|v
+Ram|الرام||34.1715|36.1788|v
+Blaiqa|بليقة|Blaika|34.1497|36.0999|v
+Moqraq|المقرق||34.1741|36.3334|v
+Mrah Aabbas|مراح عباس||34.3978|36.3504|v
+Zarayeb|زرايب||34.0943|36.0458|v
+Mashta Hassan|مشتى حسن|Machta Hassan|34.6266|36.3239|v
+Ilat|ايلات||34.5203|36.1074|v
+Sahle|السهلة||34.5959|36.3377|v
+Tell Kiri|تل كري||34.5979|36.0390|v
+Bednayel|بدنايل||33.9138|36.0069|v
+Hfayer|حفاير||34.0779|36.0715|v
+Ghzaile|الغزيلة||34.5965|36.1139|v
+El Rama|الرامة||34.6179|36.3765|v
+El Qorne|القرنة||34.4787|36.1671|v
+Ain Bourday|عين بورضاي||33.9879|36.2043|v
+Hikr Janine|حكر جنين||34.6354|36.1318|v
+El Aamriye|العمارية||34.5989|36.2200|v
+El Maalqa|المعلقة||34.2507|36.3899|v
+Noura|نورة||34.6240|36.1849|v
+Rajm Khalaf|رجم خلف||34.6178|36.3913|v
+El Qlaiaat|القليعات||34.5820|36.0162|v
+En Nouqra|نقرة||34.1549|36.3363|v
+Saaide|السعيدة||34.0287|36.0808|v
+Jouret Srar|جورة سرار||34.6320|36.1125|v
+Mrah el Jamal|مراح الجمال|Mrah ej Jamal|34.0530|36.0383|v
+Mrah ej Jeddaoui|مراح الجداوي||34.0731|36.0509|v
+Mrah Bou Brahim|مراح بو براهيم||34.0673|36.0416|v
+Mrah Beit Slim|مراح بيت سليم||34.0577|36.0411|v
+Mrah Semaan|مراح سمعان||34.1790|36.1525|v
+Mrah Soukkar|مراح سكر||34.1781|36.1453|v
+Rajm Hssein|رجم حسين||34.6064|36.3834|v
+Majdel Anjar|مجدل عنجر|Majdal Anjar|33.7076|35.9055|v
+Raouda|روضة||33.7480|35.8786|v
+Aadchit|عدشيت|Aadshit al-Qusayr|33.2781|35.4835|v
+Borj El Arab|برج العرب||34.5252|36.0121|v
+Khirbet Char|خربة شار||34.5796|36.1898|v
+Dibbabiye|دبابية|Debbabiye;Debbabiyeh|34.6247|36.2054|v
+El Ain|العين||34.2241|36.3789|v
+Iaat|ايعات||34.0346|36.1740|v
+Joubaniyeh|جوبانية||34.1803|36.1820|v
+Mazraat Ed Dhour|مزرعة الضهور||34.0331|36.0344|v
+Mazraat Matar|مزرعة مطر||34.0979|36.0921|v
+Qiddam|القدام||34.1819|36.1951|v
+Hadatha|حداثا|Haddatha|33.1650|35.3916|v
+Ain El Marj|عين المرج||33.7777|35.6141|v
+Kfar Fila|كفر فيلا||33.4819|35.4984|v
+Bsayleh Al Tahta|بصيلة التحتا||34.1306|36.1231|v
+Cheikh Aayash|الشيخ عياش||34.6290|36.1000|v
+Mazraat Oumm Aali|مزرعة ام علي||34.0447|36.0395|v
+Khirbet Daoud|خربة داوود||34.5864|36.2214|v
+Bsayleh Al Fawka|بصيلة الفوقا||34.1353|36.1174|v
+Mazraat Al Ramassy|مزرعة الرماسي||34.0419|36.0221|v
+Mazraat Es Saiyed|مزرعة السيد||34.1018|36.0857|v
+Qlaile|قليلة||34.1987|36.2283|v
+Houmin El Tahta|حومين التحتا|Houmine Et Tahta;Houmine Al Tahta;Houmin Al Tahta|33.4754|35.4337|v
+Danbo|دنبو|Dinbou|34.4788|36.0854|v
+Khirbe|خربة|Kherbeh|34.5878|36.0182|v
+El Borj Akkar|البرج عكار||34.5321|36.1861|v
+Hmaireh Aakkar|الحميرة||34.4922|36.0482|v
+Mbarkiyet|مباركية||34.4946|36.0708|v
+Swayseh|السويسة|Es Souaïssé;Souaiseh|34.5564|36.1203|v
+Btedaai|بتدعي|Betdaai|34.1136|36.1075|v
+Houch Er Rafqa|حوش الرافقة||33.9175|36.0404|v
+Jdeideh El Joumeh|جديدة الجومة|Jdaidet Ej Joumeh|34.5359|36.0645|v
+Mrah Bou Chahine|مراح بو شاهين||34.1148|36.0904|v
+Haret Hreik|حارة حريك||33.8522|35.5108|v
+Khreibet Ej Jindi|خريبة الجندي||34.5600|36.0913|v
+Tall Aabbas Ech Charqi|تل عباس الشرقي||34.5961|36.0659|v
+Bejjaje|بجاجة||34.2276|36.3512|v
+Tallet El Mjabber|تلة المجابر||34.5779|36.0780|v
+Tall Aabbas El Gharbi|تل عباس الغربي||34.5823|36.0761|v
+Ain Ej Jaouze|عين الجوزة||33.8402|36.3160|v
+Ain El Bnaiye|عين البنية||33.9101|36.2269|v
+Tallet Ez Zefir|تلة الزفير||34.5746|36.0824|v
+Flaoui|فلوية||34.0835|36.0624|v
+Mrah El Aassi|مراح العاصي||34.1786|36.1396|v
+Mrah Haissoun|مراح حيسون||34.0382|36.0400|v
+Mrah El Ahmar|مراح الأحمر||34.0426|36.0116|v
+Mazraat Et Talle|مراح التلة||34.4905|36.3824|v
+Majdalaya|مجدليا||33.7559|35.5724|v
+Barouk|الباروك||33.7041|35.6812|v
+Moukhtara|المختارة|Mokhtara|33.6574|35.6134|v
+Ain Zaitoune|عين الزيتونة||33.9060|35.7419|v
+Karak Nouh|كرك نوح||33.8509|35.9230|v
+Rassiyeh|الرصية|Rassîyé|33.8482|35.8908|s
+Tell Chiha|تل شيحا||33.8410|35.9066|s
+Qillaya|قلايا|Qelaya;Qaliya|33.4343|35.6571|v
+Bazaoun|بزعون||34.2414|35.9875|v
+Chatine|شاتين||34.1899|35.8868|v
+Deir Billa|دير بلا||34.2469|35.8136|v
+Mrah Sejoud|مراح سجد||34.4232|36.3487|v
+Mrah Ech Charqi|مراح الشرقي||34.4005|36.3823|v
+El Waqf|الوقف||34.3901|36.3888|v
+Mrah El Gharbi|مراح الغربي|Mrâh El Gharbi|34.3961|36.3783|v
+Mrah El Mouchref|مراح المشرف||34.4321|36.3620|v
+Toufiqiye|البزالية||34.1723|36.3104|v
+Khalouat|خلوات||33.8396|35.7345|v
+Dahr El Maghara|ضهر المغارة||33.6797|35.4489|v
+Chourit|شوريت|Shourit|33.7386|35.6337|v
+Mrah El Dalil|مراح الدليل||34.4867|36.3855|v
+Qalaouiye|قلاوية||33.2474|35.4183|v
+Mrah Ez Zakbe|مراح الزكبة||34.4793|36.3934|v
+Borj Qalaouiye|برج قلاوية|Burj Qalweyeh|33.2593|35.4227|v
+Mountazah|المنتزه||33.8547|35.5774|v
+Jmayjmeh|جميجمة|Jmaijime|33.2079|35.4392|v
+Eghbeh|إغبة|Aghbe|34.0131|35.7119|v
+Faqra|فقرا||33.9836|35.8099|v
+Kfar Jrif|كفر جريف||34.0508|35.6686|v
+Bmariam|بمريم||33.8302|35.7198|v
+Aarbaniye|عربانية||33.8752|35.6707|v
+Sriri|سريرة|Srayri;Sarira|33.4340|35.6253|v
+Deir Machmouche|دير مشموشة||33.5756|35.5654|v
+Ouardiye|وردية||33.3998|35.5921|v
+Hannaouiye|حناوية|Hanouiyeh|33.2184|35.2777|v
+Jinjlaya|جنجلايا|Jenjlaya|33.4859|35.3978|v
+Sindianet Zeidane|سنديانة زيدان||34.5796|36.2391|v
+Haouchariye|هوشرية||34.4940|36.3944|v
+El Baaoul|البعول||34.4179|36.3350|v
+Khorab el Haiyat|خراب الحيات||34.6497|36.3363|v
+Nmairiye|نميرية|Nmairiyeh;Numayriyah|33.4250|35.4017|v
+Charqiye|شرقية||33.4048|35.4189|v
+Ras El Harf|راس الحرف||33.8116|35.6691|v
+Chbaniye|شبانية||33.8212|35.7080|v
+Qoubbeiaa|قبيع|Qoubbeyaa;Qoubbei;Koubbeih|33.8126|35.6953|v
+Mhaydse|محيدثة||33.9198|35.7001|v
+Hrazmin|حرازمين|Hrazmine|34.1251|35.7946|v
+Aydamoun|عيدامون||34.1530|35.6574|v
+Maaroufiye|المعروفية|Maaroufiyé|33.7961|35.5391|v
+Ain Et Toufaha|عين التفاحة||33.9336|35.7247|v
+Kfar Aaqab|كفرعقاب||33.9446|35.7431|v
+Rihani|ريحانة|Rayhan|34.1672|35.6390|v
+Al Harf|الحرف||33.5754|35.5581|v
+Haouch Tall Safiye|حوش تل صفية||34.0248|36.1399|v
+Sfinet Ed Dreib|سفينة الدريب||34.5724|36.1604|v
+Ain Es Saouda|عين السوداء||34.0023|36.1081|v
+Mchaitiye|مشيتية||34.1544|36.0859|v
+Mazraat Ed Dallil|مزرعة الدليل||34.0398|36.0510|v
+Aayta Ej Jabal|عيتا الجبل|Ayta Al Jabal;Aita Ez Zott|33.1748|35.4044|v
+Ibl Es Saqi|إبل السقي||33.3578|35.6259|v
+Mrah El Aarab|مراح العرب|Mrah El Arab;Mrah el Arab|34.4783|36.3544|v
+Hraiqis|حريقص||34.4537|35.9283|v
+Zrayeb Shoukr|زرايب شكر|Zarayeb Choukr|34.0919|36.0626|v
+Safinet El Qaiteaa|سفينة القيطع|Safinat Al Katyaa;Safinat al-Kaytah;Safinat Al Kaytah|34.4608|36.0279|v
+Mrah El Aouja|مراح العوجا|Mrah El Aaouja|34.1802|36.1605|v
+Dar el Ouassaa|دار الواسعة|Dar El Wasaa|34.1081|36.0572|v
+Saraain Et Tahta|سرعين التحتا||33.8805|36.0837|v
+Khirbet Daoud Baalbek|خربة داوود بعلبك||34.2122|36.5468|v
+Maql El Bwadte|مقل البوادتي||34.0941|36.0521|v
+Marwanieh|مروانية||33.4463|35.3856|v
+Bourghliye|برغلية|Borgholiyeh|33.3121|35.2407|v
+Kfar Falous|كفرفالوس||33.5420|35.4785|v
+Temnin el-Foka|تمنين الفوقا|Tamnine Al Faouka|33.9038|35.9798|v
+Rwaisat Sawfar|رويسات صوفر|Rouissat Sofar|33.7983|35.6781|v
+Senay|سيناي|Sinai|33.3821|35.3675|v
+Wadi Al Jamous|وادي الجاموس|Wadi Ej Jamous|34.5001|36.0130|v
+Meshakhti|مشاقتي|Mchekhti;Mechakhti|33.7596|35.7048|v
+Maasriti|معصريتي|Maasraiti|33.7474|35.6350|v
+Zribet Es Sabha|زريبة الصبحا|Zeribet Es Sabha|34.0395|36.0162|v
+Zighrine Et Tahta|زغرين التحتا||34.4263|36.3611|v
+Mechhellene|مشحلان||34.1431|35.6839|v
+Ed Daoura El Hermel|الدورة الهرمل||34.4029|36.3896|v
+Qsaibe|قصيبة|Koussaybeh;Qsaybeh;Al Qasiba|33.3324|35.3958|v
+Nasriyet Rizq|ناصرية رزق|Nasriyet Rizk|33.8631|36.0594|v
+Haoush El Harimeh|حوش الحريمة|Haouch El Harîmé|33.7190|35.8534|v
+Aabdine|عبدين||34.2745|35.8889|v
+Barhalioun|برحليون||34.2589|35.8762|v
+Mazraat Bani Saab|مزرعة بني صعب||34.2475|35.8839|v
+Safad El Battikh|صفد البطيخ||33.1991|35.4316|v
+Qaaqaait El Jisr|قعقعية الجسر|Qaaqaaiyet El Jusr|33.3301|35.4245|v
+Deir El Zahrani|دير الزهراني||33.4319|35.4591|v
+Mazraat Jnaid|مزرعة جنيد||34.3742|35.9010|v
+Beit Barakat|بيت بركات||34.4316|35.9097|v
+El Hamra|الحمرا||33.3244|35.4938|v
+Benwati|بنواتي|Benouati|33.5763|35.5760|v
+Ras Masqa|رأس مسقا||34.4022|35.8305|v
+Kfar Hilda|كفر حلدا|Kfar Helda|34.2272|35.8394|v
+Bqerqacha|بقرقاشا||34.2390|35.9971|v
+Baazqoun|بعزقون||34.3801|35.9457|v
+Khrayzeh|الخريبة|El Khraize|34.2496|35.7562|v
+Meghrak|مغراق||34.1771|35.8769|v
+Kfar Habou|كفر حبو||34.4152|35.9626|v
+Azqey|عزقي|Azke|34.4351|35.9903|v
+Bechtayel|بشتايل||34.4058|35.9946|v
+Beit El Faqs|بيت الفقس||34.3926|36.0527|v
+Beit Knaty|بيت كناتي||34.4213|35.9414|v
+Mansouriet Bhamdoun|منصورية بحمدون|Mansouriyet Bhamdoun|33.7788|35.6265|v
+Jouret Ballout|جورة البلوط||33.8929|35.6316|v
+Jouar|جوار||33.9284|35.7293|v
+Mehmarch|محمرش||34.1988|35.7688|v
+Beit Chlala|بيت شلالا|Beit Chelala|34.2209|35.8375|v
+Qnaiwer|قنيور|Qnaiouer|34.2621|35.9268|v
+Moghr El Ahwal|مغر الأحول|Moghr El Ahoual|34.2873|35.8738|v
+Wata Haub|وطى حوب|Wata Houb;Ouata Haub|34.1909|35.8976|v
+Bahbouch|بحبوش||34.2777|35.8287|v
+Tallet Zgharta|تلة زغرتا|Et Talle|34.3918|35.8794|v
+Afqa|أفقا||34.3218|35.9908|v
+Haql El Aazime|حقل العزيمة||34.3993|36.0177|v
+Aardat|عردات||34.4067|35.8837|v
+Jdeide|جديدة||34.2479|36.3859|v
+Al Aaqbe|العقبة|Aaqbeh|34.4291|35.8903|v
+Mrah Ez Zaiat|مراح الزيات||34.2171|35.7022|v
+Harf Es Siyad|حرف السياد||34.4212|36.0199|v
+Rachkidde|راشكيدا|Rachkida|34.2398|35.7672|v
+Karbribe|كربريبة||34.2967|35.8804|v
+Mazraat Aartoussi|مزرعة عرطوسي||34.5035|35.9507|v
+Harsoun Ej Jdide|حصرون الجديدة||34.3914|35.8733|v
+Dar Chmizzine|دار شمزين||34.2852|35.7843|v
+Ijdabrine|اجدعبرين|Ejdabrine;Ejd Aabrine|34.2713|35.7439|v
+Ijdabra|اجدبرا||34.2450|35.6921|v
+Khaldiye|خالدية||34.3713|35.9092|v
+Karm El Mohr|كرم المهر||34.3621|35.9869|v
+Rmaile|الرميلة||34.4121|35.9134|v
+Mazraat Beit El Ghoussain|مزرعة بيت الغصين||34.1145|36.0837|v
+Dakoue|دكوة||33.6914|35.8744|v
+Chebreqiyet Aammiq|شبرقية عميق||33.7039|35.8217|v
+Ain Ouzain|عين وزين||33.6789|35.6258|v
+Hawch Beit Ismail|حوش بيت اسماعيل|Haouch Beit Ismail|34.4548|36.4826|v
+Berket Hejoula|بركة حجولا||34.1402|35.7306|v
+Aayoun El Siman|عيون السيمان|Ouyoun Es Simane|33.9925|35.8392|v
+Mazraat Ej Jmaiyel|مزرعة الجميل||34.1401|35.6848|v
+Haouket El Naher|حوكة النهر||34.2675|35.9475|v
+Niha|نيحا||34.2306|35.8861|v
+Watiye|وطية|Ouatiye|34.4334|36.0055|v
+Bqaatouta|بقعتوتا||33.9751|35.7775|v
+Hasbaya El Metn|حاصبيا المتن||33.8741|35.7242|v
+Wadi Chahrour|وادي شحرور|Wadi Shahrour|33.8184|35.5567|v
+Rouaiset El Ballout|رويسة البلوط|Rouisset El Ballout;Ruweist El Ballout|33.8267|35.6473|v
+Wadi El Sitt|وادي الست|Wadi Es Sitt|33.7148|35.6284|v
+Knaisseh|كنيسة||33.7178|35.5752|v
+Berbara|بربارة||33.8566|35.8993|s
+Dhour Al Aabaydiyeh|ضهور العبادية||33.8153|35.6245|v
+Aali En Nahri|علي النهري||33.8573|36.0264|v
+Haret El Khasseh|حارة الخسة||34.3801|35.8374|v
+Al Aqbieh|العقبة|Akabyé|33.4665|35.3182|v
+Montiverdi|مونتيفردي|Monteverde|33.8486|35.5884|v
+Jdaideh|جديدة|Jdeide|34.3655|35.8982|v
+Hboub|حبوب|Haboub|34.1305|35.6727|v
+Dhour El Choueir|ضهور الشوير|Dhour Shweir;Dhour El Shweir|33.9105|35.7119|t
+Nabi Aila|نبي ايلا|Nabi Ayla|33.8809|35.9552|v
+Haouqa|حوقا|Hawka|34.2726|35.9421|v
+Basbina|بسبينا|Besbina|34.2361|35.7075|v
+Kfarchille|كفرشيلا||34.1782|35.7790|v
+Moussaitbeh|المصيطبة|Mousaitbeh|33.8843|35.4891|s
+Ras Beirut|رأس بيروت|Ras Beyrouth|33.8936|35.4752|s
+Medawar|المدور||33.9010|35.5311|s
+Rmeil|الرميل||33.8936|35.5230|s
+Mazraa|المزرعة||33.8740|35.5051|s
+Hosh|الحوش|Haouch;El Haouch|33.2434|35.2385|t
+Arqoub|العرقوب|Aarqoub|33.4006|35.5347|v
+Mahmoudiya|محمودية|Mahmoudiyeh|33.3868|35.5524|v
+Bhamdoun Al Mahatta|بحمدون المحطة|Bhamdoûn al Mahatta|33.8094|35.6566|t
+Masnaa El Dahr|مصنع الضهر||34.0094|36.0038|v
+Zawtar El Sharqiyeh|زوطر الشرقية|Zawtar Ech Charqiyeh;Zaoutar el-Sharqiyeh;Zawtar Al Sharqi;Zaoutar Ech Charqiyeh|33.3237|35.4731|v
+Zawtar El Gharbiyeh|زوطر الغربية|Zaoutar el-Gharbiyyeh;Zaoutar El Gharbiyyeh;Zaoutar El Gharbiyeh|33.3226|35.4597|v
+Bkassine|بكاسين||33.5680|35.5771|v
+Dhour El Hawa|ضهور الهوا||34.3296|35.8264|v
+Houmine El Faouqa|حومين الفوقا||33.4453|35.4874|v
+Aayoun El Ghizlane|عيون الغزلان|Oyoun Al Ghozlan;Oyoun Al Ghazlan|34.4731|36.0183|v
+Qloud El Baqieh|قلود الباقية|Cloud Al Baqrieh;Cloud El Bakriyet|34.4965|36.0597|v
+Deir Jannine|دير جنين|Deir Janin;Deir Jenin|34.5658|36.1761|v
+Sammaqiye|السماقية||33.2208|35.2348|v
+Aatchaneh|عطشانة||33.9128|35.6493|v
+Dahr Al Ain|ضهر العين||34.3852|35.8464|v
+Kfar Zabad|كفر زبد||33.7849|35.9940|v
+Mayasseh|مياسة|El Miyasseh|33.9394|35.6941|v
+Aadchit El Chqif|عدشيت الشقيف||33.3455|35.4135|v
+Aafsdiq|عفصديق||34.3309|35.7849|v
+Badbhoun|بدبهون||34.3369|35.7577|v
+Selfaya|سلفايا||33.7290|35.5690|v
+Kniseh|كنيسة||33.8656|35.6672|v
+Wadi Baanqoudaine|وادي بعنقودين|Ouadi Baanqoudaine|33.5463|35.4385|v
+Hassaniyeh|حسانية||33.5202|35.4534|v
+Mazraat Kaoutariyet Er Riz|مزرعة كوثرية الرز||33.3713|35.3001|v
+Kfar Beda|كفر بدة||33.3614|35.2658|h
+Daoudiyeh|الداودية||33.4297|35.2988|v
+Fadous|فدعوس||34.2284|35.6563|v
+Jensnaya|جنسنايا||33.5353|35.4327|v
+Adous|عدوس|Aadous|34.0185|36.1501|v
+Mtayriyeh|مطيرية||33.5121|35.4038|v
+Choualiq|شواليق||33.5542|35.4411|v
+Niha Sour|نيحا صور||33.2734|35.4020|v
+Mrouj|المروج||33.9097|35.7510|v
+Machraa|مشرع||33.9449|35.7539|v
+Wadi El Karm|وادي الكرم|Ouadi El Karm|33.9504|35.7509|v
+Shouaya|شويا|Chouaya|33.9279|35.7135|v
+Bestiyat|بستيات|Bestiyyat|33.2889|35.3581|v
+Kfarjaouz|كفر جوز|Kfar Jaouz|33.3950|35.4756|v
+Bfaroueh|بفروة||33.4322|35.4218|v
+Kaoutariyet Es Siyad|كوثرية السياد|Kaouthariyet El Saiyad;Kaoutariyet Es-Siyad|33.4099|35.3879|v
+Haouch Snaid|حوش سنيد||33.9267|36.0670|v
+Mghayer|المغاير||34.0361|35.7685|v
+Aain El Ghouaybeh|عين الغويبة||34.0808|35.8606|v
+Mrah El Hajj|مراح الحاج||34.2101|35.7788|v
+Bshille|بشللي|Bchille|34.1037|35.7166|v
+Dahr El Wahech|ضهر الوحش||33.8224|35.5987|v
+Mazraat El Bayad|مزرعة البياض||33.4208|35.4841|v
+Wadi El Laymoun|وادي الليمون|Ouadi El Laymoun|33.5246|35.4672|v
+Mazraat Aarab Soukkar|مزرعة عرب سكر||33.4814|35.4449|v
+Loussia|لوسيا||33.4421|35.6506|v
+Bardeh|بردة||34.5955|36.2536|v
+Aali Et Taher|علي الطاهر||33.3658|35.5124|v
+Nahr El Dahab|نهر الدهب||34.0469|35.7428|v
+Hoshmosh|حشمش|Hechmech|33.8288|36.0231|v
+Jdaidet Ghazir|جديدة غزير||34.0224|35.6921|v
+Bhannine|بحنين||33.5831|35.5976|v
+Wadi Shahine|وادي شاهين|Ouadi Chahine|33.9316|35.6925|v
+Aammiq El Chouf|عميق الشوف|Aamiq El Chouf|33.7183|35.5830|v
+Douair El Remmaneh|دوير الرمان||33.7548|35.5823|v
+Deir Dourit|دير دوريت||33.6858|35.5408|v
+Hakour|حاكور||34.5257|36.0558|v
+Tachaa|تاشع||34.4979|36.1870|v
+Tannourine El Tahta|تنورين التحتا||34.2110|35.8750|v
+Qasmiye|القاسمية|Qasmiyeh|33.3279|35.2523|v
+Dahieh|الضاحية الجنوبية|Dahiyeh;Dahye|33.8453|35.5070|s
+Lwaiza|اللويزة||33.4613|35.5361|v
+Beit Slaybi|بيت صليبي||33.9721|35.9854|v
+Hokr Etti|حكر إطي||34.5758|36.1041|v
+Hmaiss|حميص||34.5740|36.1268|v
+Saidnaya|سعدنايا||34.5908|36.1221|v
+Matariyet el Choumar|مطرية الشومر||33.3388|35.2822|v
+Houra|حورة||33.2942|35.5639|v
+Wata Feres|وطى فارس|Wata Fares|34.2596|35.8137|v
+Mtariyet|مطرية||33.6189|35.4740|v
+Hamra|الحمرا|Hamra Street;Hamra Beirut|33.8960|35.4820|t
+Verdun|فردان||33.8880|35.4850|s
+Gemmayzeh|الجميزة|Gemmayze;Jemmayzeh|33.8957|35.5146|s
+Mar Mikhael|مار مخايل||33.8970|35.5200|s
+Badaro|بدارو||33.8746|35.5160|s
+Tariq El Jdideh|طريق الجديدة|Tarik El Jdideh|33.8700|35.4960|s
+Ain El Mreisseh|عين المريسة|Ain Mreisseh|33.9010|35.4880|s
+Raouche|الروشة|Rawcheh|33.8890|35.4730|s
+Ouzai|الأوزاعي|Ouzaii|33.8490|35.4880|s

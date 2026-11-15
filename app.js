@@ -181,6 +181,25 @@
       got.products = got.extra = got.settings = true; rev++; return true;
     }
     var fb = null;
+    // Orders for the manager: the live socket also streams every product photo first, which on a slow
+    // connection can take minutes, so the manager page used to sit on 0 orders. Orders/requests are
+    // also pulled over plain HTTPS right after sign-in (and every 20 s until the socket catches up).
+    var ordersReady = false, sockOrders = false, pullT = null;
+    function dbUrl(path, t) { return cfg.databaseURL.replace(/\/$/, '') + '/' + path + '.json?auth=' + encodeURIComponent(t); }
+    function restPull() {
+      var u = null; try { u = firebase.auth().currentUser; } catch (e) {} if (!u || !u.getIdToken || sockOrders) return;
+      u.getIdToken().then(function (t) {
+        return Promise.all(['orders', 'requests'].map(function (p) { return fetch(dbUrl(p, t), { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }); }));
+      }).then(function (a) {
+        if (sockOrders || !state.user) return;
+        state.orders = a[0] || {}; state.requests = a[1] || {}; ordersReady = true; emit();
+      }).catch(function () { if (!ordersReady && state.user) { ordersReady = 'error'; emit(); } });
+    }
+    function restWrite(method, path, body) {
+      return firebase.auth().currentUser.getIdToken().then(function (t) {
+        return fetch(dbUrl(path, t), { method: method, body: JSON.stringify(body) }).then(function (r) { if (!r.ok) throw new Error('save failed ' + r.status); });
+      });
+    }
 
     function loadScript(src) { return new Promise(function (res, rej) { var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); }); }
 
@@ -207,8 +226,10 @@
           firebase.auth().onAuthStateChanged(function (u) {
             state.user = u ? { email: u.email, uid: u.uid } : null;
             if (ordersRef) { ordersRef.off(); ordersRef = null; state.orders = {}; fb.ref('requests').off(); state.requests = {}; }
-            if (u) { ordersRef = fb.ref('orders'); ordersRef.on('value', function (s) { state.orders = s.val() || {}; emit(); }, function () { state.orders = {}; emit(); });
-              fb.ref('requests').on('value', function (s) { state.requests = s.val() || {}; emit(); }, function () { state.requests = {}; emit(); }); }
+            clearInterval(pullT); pullT = null; ordersReady = false; sockOrders = false;
+            if (u) { ordersRef = fb.ref('orders'); ordersRef.on('value', function (s) { sockOrders = true; ordersReady = true; clearInterval(pullT); state.orders = s.val() || {}; emit(); }, function () { state.orders = {}; ordersReady = 'error'; emit(); });
+              fb.ref('requests').on('value', function (s) { state.requests = s.val() || {}; emit(); }, function () { state.requests = {}; emit(); });
+              if (window.BLAZE_ADMIN) { restPull(); pullT = setInterval(restPull, 20000); } }
             emit();
           });
         })
@@ -230,6 +251,7 @@
       get live() { return live; },
       ready: function () { return !live || (got.products && got.extra && got.settings); },
       get offline() { return offline; },
+      ordersReady: function () { return !live || ordersReady; },
       rev: function () { return rev; },
       init: init, on: function (f) { subs.push(f); },
       products: products,
@@ -241,10 +263,12 @@
       saveRequest: function (id, data) {
         id = id || 'R' + Date.now().toString(36).toUpperCase();
         if (!live) { state.requests[id] = Object.assign(state.requests[id] || {}, data); ls('requests', state.requests); emit(); return Promise.resolve(id); }
+        if (!sockOrders) { state.requests[id] = Object.assign(state.requests[id] || {}, data); emit(); return restWrite('PATCH', 'requests/' + id, data).then(function () { return id; }); }
         return fb.ref('requests/' + id).update(data).then(function () { return id; });
       },
       deleteRequest: function (id) {
         if (!live) { delete state.requests[id]; ls('requests', state.requests); emit(); return Promise.resolve(); }
+        if (!sockOrders) { delete state.requests[id]; emit(); return restWrite('DELETE', 'requests/' + id, null); }
         return fb.ref('requests/' + id).remove();
       },
 
@@ -255,6 +279,7 @@
           var tr = ls('tracking') || {}; tr[o.code] = track; ls('tracking', tr); emit(); return Promise.resolve(o);
         }
         if (offline || !fb) return Promise.reject(new Error('offline'));
+        if (window.BLAZE_ADMIN && !sockOrders && state.user) { state.orders[o.code] = o; emit(); return restWrite('PUT', 'orders/' + o.code, o).then(function () { return restWrite('PUT', 'tracking/' + o.code, track); }).then(function () { return o; }); }
         return fb.ref('orders/' + o.code).set(o).then(function () { return fb.ref('tracking/' + o.code).set(track); }).then(function () { return o; });
       },
       track: function (code) {
@@ -272,6 +297,7 @@
           Object.assign(o, patch); ls('orders', state.orders);
           var tr = ls('tracking') || {}; tr[code] = Object.assign(tr[code] || {}, tpatch); ls('tracking', tr); emit(); return Promise.resolve();
         }
+        if (!sockOrders) { Object.assign(o, patch); emit(); return restWrite('PATCH', 'orders/' + code, patch).then(function () { return restWrite('PATCH', 'tracking/' + code, tpatch); }); }
         return fb.ref('orders/' + code).update(patch).then(function () { return fb.ref('tracking/' + code).update(tpatch); });
       },
       saveProduct: function (id, patch) {
@@ -374,27 +400,112 @@
   }
 
 
-  // ---------- town lookup (OpenStreetMap) for the village pin ----------
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('[data-usename]'); if (!b) return;
+    var inp = document.getElementById(b.dataset.for); if (!inp) return;
+    inp.value = b.dataset.usename; inp.dispatchEvent(new Event('input', { bubbles: true })); inp.focus();
+  });
+  // ---------- village lookup for the pin ----------
+  // 1) our own list of every Lebanese city / town / village (places.txt, from OpenStreetMap: name|arabic|other spellings|lat|lon|type)
+  //    matched forgivingly: "bicharre" → Bcharre, "al arz" → El Arz, Arabic works too.
+  // 2) only if nothing matches: OpenStreetMap search, limited to settlements (never hospitals, shops…).
+  function pfold(s) {
+    s = String(s || '').toLowerCase().replace(/[أإآٱ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/ؤ/g, 'و').replace(/ئ/g, 'ي');
+    try { s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); } catch (e) {}
+    s = s.replace(/[\u064B-\u0655\u0670\u0640\u200e\u200f]/g, '');
+    s = s.replace(/3/g, 'a').replace(/7/g, 'h').replace(/2/g, 'a').replace(/5/g, 'kh').replace(/8/g, 'gh').replace(/9/g, 'q');
+    s = s.replace(/[`'’‘ʾʿ\-.,()]/g, ' ').replace(/\s+/g, ' ').trim();
+    s = s.replace(/^(el|al|an|ar|as|ash|at|ad|ed|ej|en|er|es|et|ez|ech|the)\s+/, '').replace(/^ال/, '');
+    return s.replace(/\s/g, '');
+  }
+  function pskel(k) { return k.replace(/sch|sh|ch/g, 'c').replace(/kh/g, 'x').replace(/ck|q/g, 'k').replace(/ou|oo|w/g, 'u').replace(/(?!^)[aeiouy]/g, '').replace(/^[aeiouy]+/, '').replace(/(.)\1+/g, '$1').replace(/(.)h$/, '$1'); }
+  function plev(a, b, max) {
+    if (Math.abs(a.length - b.length) > max) return max + 1;
+    var prev = [], cur, i, j;
+    for (j = 0; j <= b.length; j++) prev[j] = j;
+    for (i = 1; i <= a.length; i++) {
+      cur = [i]; var best = i;
+      for (j = 1; j <= b.length; j++) { cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); if (cur[j] < best) best = cur[j]; }
+      if (best > max) return max + 1;
+      prev = cur;
+    }
+    return prev[b.length];
+  }
+  var Places = {
+    list: null, p: null,
+    load: function () {
+      if (this.p) return this.p;
+      var self = this;
+      this.p = fetch('places.txt?v=94772107').then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); }).then(function (t) {
+        self.list = t.trim().split('\n').map(function (l) {
+          var a = l.split('|'), names = [a[0]].concat(a[2] ? a[2].split(';') : []).filter(Boolean);
+          var v = names.map(function (n) { var k = pfold(n); return { n: n, k: k, s: pskel(k) }; });
+          if (a[1]) { var ka = pfold(a[1]); v.push({ n: a[0] || a[1], k: ka, s: ka, ar: true }); }
+          return { en: a[0] || a[1], ar: (a[1] || '').replace(/\s+-\s+.*$/, '').trim(), lat: +a[3], lon: +a[4], t: a[5], v: v };
+        });
+        return self.list;
+      }).catch(function () { self.p = null; return null; });
+      return this.p;
+    },
+    match: function (q) {
+      var qk = pfold(q), qs = pskel(qk); if (qk.length < 2 || !this.list) return null;
+      var tol = qk.length <= 4 ? 1 : qk.length <= 7 ? 2 : 3, bonus = { c: 6, t: 4, v: 2, s: 1, h: 0 }, best = null;
+      this.list.forEach(function (pl) {
+        pl.v.forEach(function (v) {
+          var sc = 0, d;
+          if (v.k === qk) sc = 100;
+          else {
+            if (v.s === qs && qs.length >= 2) sc = 80 - 4 * Math.min(plev(v.k, qk, 6), 6);
+            d = plev(v.k, qk, tol); if (d <= tol) sc = Math.max(sc, 78 - 8 * d);
+            if (qk.length >= 3 && v.k.indexOf(qk) === 0) sc = Math.max(sc, 66 + 14 * qk.length / v.k.length);
+            if (!sc && qs.length >= 3 && plev(v.s, qs, 1) <= 1) sc = 52;
+          }
+          if (!sc) return;
+          sc += bonus[pl.t] || 0;
+          if (!best || sc > best.sc) best = { sc: sc, pl: pl, v: v };
+        });
+      });
+      if (!best || best.sc < 56) return null;
+      var pl = best.pl, name = (best.sc >= 100 && !best.v.ar) ? best.v.n : pl.en;
+      return { lat: pl.lat, lon: pl.lon, label: name + (name !== pl.en ? ' (' + pl.en + ')' : ''), name: name, ar: pl.ar || null, exact: best.sc >= 100 };
+    }
+  };
   var Geo = {
-    cache: ls('geo2') || {}, t: null, seq: 0, eleC: ls('ele') || {},
+    cache: ls('geo3') || {}, t: null, seq: 0, eleC: ls('ele') || {},
     find: function (q, cb) {
       q = (q || '').trim(); var key = q.toLowerCase();
       clearTimeout(this.t);
-      if (q.length < 3) { cb(null, q.length ? 'typing' : ''); return; }
+      if (q.length < 2) { cb(null, q.length ? 'typing' : ''); return; }
+      var self = this, my = ++this.seq;
+      var done = function (hit) {
+        if (my !== self.seq) return;
+        self.cache[key] = hit; ls('geo3', self.cache); cb(hit, hit ? 'found' : 'none');
+        if (hit && hit.ele == null) self.elev(hit.lat, hit.lon, function (e) { if (e == null) return; hit.ele = e; ls('geo3', self.cache); if (my === self.seq) cb(hit, 'found'); });
+      };
       if (this.cache[key] !== undefined) { cb(this.cache[key], this.cache[key] ? 'found' : 'none'); return; }
       cb(null, 'searching');
-      var self = this, my = ++this.seq;
       this.t = setTimeout(function () {
-        fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=lb&limit=3&accept-language=en&namedetails=1&q=' + encodeURIComponent(q))
-          .then(function (r) { return r.json(); })
-          .then(function (res) {
-            if (my !== self.seq) return;
-            var hit = null;
-            (res || []).some(function (x) { var la = +x.lat, lo = +x.lon; if (BlazeArt.inLebanon(la, lo)) { var nd = x.namedetails || {}, ar = nd['name:ar'] || (/[\u0600-\u06FF]/.test(nd.name || '') ? nd.name : ''); hit = { lat: la, lon: lo, label: (x.display_name || '').split(',').slice(0, 3).join(','), ar: ar || null }; return true; } return false; });
-            self.cache[key] = hit; ls('geo2', self.cache); cb(hit, hit ? 'found' : 'none');
-            if (hit && hit.ele == null) self.elev(hit.lat, hit.lon, function (e) { if (e == null) return; hit.ele = e; ls('geo2', self.cache); if (my === self.seq) cb(hit, 'found'); });
-          }).catch(function () { if (my === self.seq) cb(null, 'offline'); });
-      }, 650);
+        Places.load().then(function () {
+          if (my !== self.seq) return;
+          var hit = Places.match(q);
+          if (hit) { done(hit); return; }
+          if (q.length < 3) { done(null); return; }
+          // not in our list: OpenStreetMap, settlements only
+          fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=lb&featureType=settlement&limit=5&accept-language=en&namedetails=1&q=' + encodeURIComponent(q))
+            .then(function (r) { return r.json(); })
+            .then(function (res) {
+              var h = null;
+              (res || []).some(function (x) {
+                var la = +x.lat, lo = +x.lon, okType = (x.category === 'place' || x.category === 'boundary');
+                if (!okType || !BlazeArt.inLebanon(la, lo)) return false;
+                var nd = x.namedetails || {}, ar = nd['name:ar'] || (/[؀-ۿ]/.test(nd.name || '') ? nd.name : '');
+                var nm = nd['name:en'] || x.name || (x.display_name || '').split(',')[0];
+                h = { lat: la, lon: lo, label: nm, name: nm, ar: ar || null }; return true;
+              });
+              done(h);
+            }).catch(function () { if (my === self.seq) cb(null, 'offline'); });
+        });
+      }, 250);
     },
     // elevation at the pin (Open-Meteo, Copernicus 90 m DEM), rounded: under 100 m to 5 m, else to 10 m
     elev: function (lat, lon, cb) {
@@ -406,9 +517,10 @@
         self.eleC[k] = e; ls('ele', self.eleC); cb(e);
       }).catch(function () { cb(null); });
     },
-    status: function (hit, st) {
+    status: function (hit, st, forId, typed) {
+      var useBtn = (st === 'found' && forId && hit.name && pfold(hit.name) !== pfold(typed)) ? ' <button type="button" class="usename" data-usename="' + esc(hit.name) + '" data-for="' + forId + '">Use “' + esc(hit.name) + '”</button>' : '';
       return st === 'searching' ? '<span class="muted">Finding it on the map…</span>' :
-        st === 'found' ? '<span style="color:var(--green)">📍 ' + esc(hit.label) + (hit.ele != null ? ' · ' + hit.ele + ' m' : '') + '</span>' :
+        st === 'found' ? '<span style="color:var(--green)">📍 ' + esc(hit.label) + (hit.ar ? ' · ' + esc(hit.ar) : '') + (hit.ele != null ? ' · ' + hit.ele + ' m' : '') + '</span>' + useBtn :
         st === 'none' ? '<span class="muted">We couldn’t find it on the map — no problem, we’ll place the pin by hand.</span>' :
         st === 'offline' ? '<span class="muted">Map search is unavailable right now — we’ll place the pin by hand.</span>' : '';
     }
@@ -523,7 +635,7 @@
       var demoEle = {}; DEMO.forEach(function (d) { Geo.elev(d[1], d[2], function (e) { demoEle[d[0]] = e; }); });
       var di = 0, demoT = null, demo = function () { if (hi.value || !document.body.contains(hi)) return; var d = DEMO[di++ % DEMO.length]; live.set({ text: d[0], lat: d[1], lon: d[2], ar: d[3], ele: demoEle[d[0]] }); demoT = setTimeout(demo, 2600); };
       setTimeout(demo, 700);
-      hi.addEventListener('input', function () { clearTimeout(demoT); if (!hi.value) { hpos = null; hdraw(); $('#heroGeo').innerHTML = '<span class="muted">Type your village — the pin moves there.</span>'; demoT = setTimeout(demo, 2500); return; } hdraw(); Geo.find(hi.value, function (hit, st) { if (!document.body.contains(hi)) return; if (st !== 'searching') hpos = hit; hdraw(); $('#heroGeo').innerHTML = Geo.status(hit, st); }); });
+      hi.addEventListener('input', function () { clearTimeout(demoT); if (!hi.value) { hpos = null; hdraw(); $('#heroGeo').innerHTML = '<span class="muted">Type your village — the pin moves there.</span>'; demoT = setTimeout(demo, 2500); return; } hdraw(); Geo.find(hi.value, function (hit, st) { if (!document.body.contains(hi)) return; if (st !== 'searching') hpos = hit; hdraw(); $('#heroGeo').innerHTML = Geo.status(hit, st, 'heroInput', hi.value); }); });
       $('#heroGo').addEventListener('click', function () { ls('prefillVillage', hi.value); });
     }
     if (anchor) { var el = $('#sec-' + anchor); if (el) setTimeout(function () { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 30); }
@@ -615,7 +727,7 @@
     draw();
     $$('.sw').forEach(function (b) { b.onclick = function () { st.color = b.dataset.c; $$('.sw').forEach(function (x) { x.classList.toggle('on', x === b); }); draw(); }; });
     var isMap = (p.art || p.id) === 'my-village';
-    var geoLook = function () { Geo.find(st.text, function (hit, gs) { if (gs !== 'searching') st.geo = hit; draw(); var g = $('#pGeo'); if (g) g.innerHTML = Geo.status(hit, gs); }); };
+    var geoLook = function () { Geo.find(st.text, function (hit, gs) { if (gs !== 'searching') st.geo = hit; draw(); var g = $('#pGeo'); if (g) g.innerHTML = Geo.status(hit, gs, 'pText', st.text); }); };
     var ti = $('#pText'); if (ti) ti.oninput = function () { st.text = ti.value.trim(); $('#pErr').textContent = ''; if (isMap) geoLook(); else draw(); };
     if (isMap && ti) { ti.insertAdjacentHTML('afterend', '<div class="geo" id="pGeo"></div>'); if (st.text) geoLook(); }
     $$('[data-q]').forEach(function (b) { b.onclick = function () { st.qty = Math.max(1, Math.min(50, st.qty + +b.dataset.q)); $('#pQty').textContent = st.qty; }; });
@@ -829,10 +941,11 @@
     var inQueue = valid.filter(function (o) { return ['confirmed', 'printing'].indexOf(o.status) >= 0; }).length;
     var today = orders.filter(function (o) { return o.createdAt >= dayStart; }).length;
 
-    app.innerHTML = '<div class="wrap admin">' + (Store.live ? '' : '<div class="demo">Demo mode: orders are saved in this browser only. <button class="upl" id="clrDemo">Clear sample orders</button></div>') +
+    var rd = Store.ordersReady(), K = function (x) { return rd === true ? x : '…'; };
+    app.innerHTML = '<div class="wrap admin">' + (rd === 'error' ? '<div class="demo">Couldn’t load orders — check the internet and reload. Signed in as ' + esc((Store.user() || {}).email || '') + '.</div>' : rd ? '' : '<div class="demo">Loading orders…</div>') + (Store.live ? '' : '<div class="demo">Demo mode: orders are saved in this browser only. <button class="upl" id="clrDemo">Clear sample orders</button></div>') +
       '<div class="adm-top"><h1>Manager</h1><div class="tabs">' + [['orders', 'Orders' + (newCount ? ' (' + newCount + ')' : '')], ['customers', 'Customers'], ['queue', 'Print queue'], ['requests', 'Design requests' + (function () { var n = Store.requests().filter(function (r) { return r.status !== 'done'; }).length; return n ? ' (' + n + ')' : ''; })()], ['calc', 'Calculator'], ['products', 'Products'], ['settings', 'Settings']].map(function (t) { return '<button data-tab="' + t[0] + '" class="' + (adm.tab === t[0] ? 'on' : '') + '">' + t[1] + '</button>'; }).join('') +
       '</div><button class="btn sec" id="logout" style="min-height:42px;padding:8px 14px;font-size:14px">Log out</button></div>' +
-      '<div class="kpis"><div class="kpi live"><small><i class="dot"></i>On the site now</small><b id="liveNow">' + Presence.count() + '</b></div><div class="kpi o"><small>New orders</small><b>' + newCount + '</b></div><div class="kpi"><small>Orders today</small><b>' + today + '</b></div><div class="kpi g"><small>Sales · profit this month</small><b>' + money(revMonth) + ' · ' + money(profMonth) + '</b></div><div class="kpi"><small>To collect · in queue</small><b>' + money(toCollect) + ' · ' + inQueue + '</b></div></div>' +
+      '<div class="kpis"><div class="kpi live"><small><i class="dot"></i>On the site now</small><b id="liveNow">' + Presence.count() + '</b></div><div class="kpi o"><small>New orders</small><b>' + K(newCount) + '</b></div><div class="kpi"><small>Orders today</small><b>' + K(today) + '</b></div><div class="kpi g"><small>Sales · profit this month</small><b>' + K(money(revMonth) + ' · ' + money(profMonth)) + '</b></div><div class="kpi"><small>To collect · in queue</small><b>' + K(money(toCollect) + ' · ' + inQueue) + '</b></div></div>' +
       '<div id="admBody"></div></div>';
     $$('[data-tab]').forEach(function (b) { b.onclick = function () { adm.tab = b.dataset.tab; renderAdmin(); }; });
     $('#logout').onclick = function () { Store.logout(); viewAdmin(); };
@@ -862,7 +975,7 @@
           '<div class="it"><small>' + n + ' item' + (n > 1 ? 's' : '') + ' · ' + esc(o.items.map(function (i) { return i.name; }).join(', ')) + '</small></div>' +
           '<div class="pm"><small class="' + (o.paid ? 'paid' : 'unpaid') + '">' + (o.payment === 'whish' ? 'Whish' : 'Cash') + (o.paid ? ' ✓' : '') + '</small></div>' +
           '<div>' + statusBadge(o.status) + '</div><div class="tt">' + money(o.total) + '</div></div>';
-      }).join('') : '<div class="panel empty"><p class="muted">No orders here yet. Share the site on Instagram and they’ll show up live.</p></div>') + '</div>';
+      }).join('') : '<div class="panel empty"><p class="muted">' + (Store.ordersReady() === true ? 'No orders here yet. Share the site on Instagram and they’ll show up live.' : 'Loading orders…') + '</p></div>') + '</div>';
     $$('[data-f]').forEach(function (b) { b.onclick = function () { adm.filter = b.dataset.f; admOrders(); }; });
     var q = $('#oq'); q.oninput = function () { adm.q = q.value; var pos = q.selectionStart; admOrders(); var nq = $('#oq'); nq.focus(); nq.setSelectionRange(pos, pos); };
     $$('[data-o]').forEach(function (r) { r.onclick = function () { orderModal(r.dataset.o); }; });
