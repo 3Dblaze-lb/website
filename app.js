@@ -1482,6 +1482,7 @@
   })();
 
   function admCalc() {
+    if (!admCalc._fee) { admCalc._fee = 1; calcIn.delivery = +Store.settings().feeOther || 5; }
     var S = Store.settings(), c = calcIn;
     var num = function (id, label, val, step, extra) { return '<label class="field">' + label + '<input type="number" id="' + id + '" min="0" step="' + step + '" value="' + esc(val) + '"' + (extra || '') + '></label>'; };
     $('#admBody').innerHTML = '<div class="calc"><div style="display:grid;gap:16px"><div class="panel">' +
@@ -1491,7 +1492,7 @@
         '<label class="field">Product name<input id="c_name" value="' + esc(c.name) + '"></label>' + num('c_qty', 'Quantity', c.qty, 1, ' min="1"') +
         num('c_grams', 'Weight per piece (g)', c.grams, 1) +
         '<label class="field">Print time per piece<div class="grid2" style="gap:8px"><input type="number" id="c_hours" min="0" step="1" value="' + esc(c.hours) + '" aria-label="Hours" placeholder="h"><input type="number" id="c_mins" min="0" max="59" step="5" value="' + esc(c.mins) + '" aria-label="Minutes" placeholder="min"></div></label>' +
-        num('c_design', 'Design / personalization fee ($, whole order)', c.design, 1) + num('c_delivery', 'Delivery ($)', c.delivery, 0.5) +
+        num('c_design', 'Design / personalization fee ($, whole order)', c.design, 1) + num('c_delivery', 'Delivery ($, shop fee ' + money(+Store.settings().feeOther || 5) + ')', c.delivery, 0.5) +
       '</div><div class="toggles"><label class="tog"><input type="checkbox" id="c_rush"' + (c.rush ? ' checked' : '') + '> Rush (24 h) +25%</label><label class="tog"><input type="checkbox" id="c_pickup"' + (c.pickup ? ' checked' : '') + '> Free pickup</label><label class="tog"><input type="checkbox" id="c_bulk"' + (c.bulk ? ' checked' : '') + '> Quantity discount</label></div>' +
       '<p class="hint">Discount: 3+ pieces −15%, 10+ −25%, 20+ −35%. Weight and time come straight from Bambu Studio after slicing.</p></div>' +
       '<div class="panel"><button class="upl" id="c_tog" style="font-size:15px">' + (calcOpen ? '▾' : '▸') + ' Cost settings</button><div id="c_set"' + (calcOpen ? '' : ' class="hidden"') + ' style="margin-top:14px"><div class="grid3">' +
@@ -1740,7 +1741,7 @@
     var f = function (k, l, t, ph) { return '<label class="field">' + l + '<input name="' + k + '" type="' + (t || 'text') + '" value="' + esc(s[k]) + '" placeholder="' + esc(ph || '') + '"' + (t === 'number' ? ' min="0" step="0.5"' : '') + '></label>'; };
     $('#admBody').innerHTML = '<form class="panel" id="st" style="display:grid;gap:18px;max-width:760px">' +
       '<div><b style="font-family:var(--head)">Contact & payment</b><div class="grid2" style="margin-top:12px">' + f('whatsapp', 'WhatsApp number (orders go here)', 'tel', '70 123 456') + f('instagram', 'Instagram handle', 'text') + f('whish', 'Whish number', 'tel', '70 123 456') + f('whishName', 'Whish account name') + '</div></div>' +
-      '<div><b style="font-family:var(--head)">Delivery</b><div class="grid2" style="margin-top:12px">' + f('feeBeirut', 'Beirut fee $', 'number') + f('feeMount', 'Mount Lebanon fee $', 'number') + f('feeOther', 'Rest of Lebanon fee $', 'number') + f('freeOver', 'Free delivery over $ (0 = never)', 'number') + '</div>' +
+      '<div><b style="font-family:var(--head)">Delivery</b><div class="grid2" style="margin-top:12px">' + f('feeOther', 'Delivery fee $ (same everywhere in Lebanon)', 'number') + f('freeOver', 'Free delivery over $ (0 = never)', 'number') + '</div>' +
         '<label class="switch" style="margin-top:12px"><input type="checkbox" name="pickup"' + (s.pickup ? ' checked' : '') + '> Offer free pickup</label></div>' +
       '<div><b style="font-family:var(--head)">Shop</b><div style="display:grid;gap:12px;margin-top:12px">' + f('banner', 'Top banner text') + f('xmasCutoff', 'Christmas order cut-off', 'date') +
         '<label class="switch"><input type="checkbox" name="open"' + (s.open !== false ? ' checked' : '') + '> Shop open for orders</label></div></div>' +
@@ -1748,7 +1749,7 @@
     $('#st').onsubmit = function (e) {
       e.preventDefault(); var t = e.target, out = {};
       ['whatsapp', 'instagram', 'whish', 'whishName', 'banner', 'xmasCutoff'].forEach(function (k) { out[k] = t[k].value.trim(); });
-      ['feeBeirut', 'feeMount', 'feeOther', 'freeOver'].forEach(function (k) { out[k] = Math.max(0, +t[k].value || 0); });
+      ['feeOther', 'freeOver'].forEach(function (k) { out[k] = Math.max(0, +t[k].value || 0); }); out.feeBeirut = out.feeMount = out.feeOther;
       out.pickup = t.pickup.checked; out.open = t.open.checked; out.instagram = out.instagram.replace(/^@/, '');
       Store.saveSettings(out).then(function () { toast('Settings saved'); renderAdmin(); });
     };
