@@ -229,6 +229,13 @@
           ".validate": "false"
         }
       }
+    },
+    "photos": {
+      ".read": true,
+      "$ref": {
+        ".write": "(auth != null && auth.token.email === '3dbllaze@gmail.com' && auth.token.email_verified === true)",
+        ".validate": "newData.isString() && newData.val().beginsWith('data:image/') && newData.val().length < 1500000"
+      }
     }
   }
 }

@@ -188,7 +188,7 @@
   // ---------- data store: demo (this browser) or live (Firebase) ----------
   var Store = (function () {
     var cfg = window.BLAZE_FIREBASE, live = !!(cfg && cfg.apiKey);
-    var state = { overrides: {}, extra: {}, settings: Object.assign({}, DEFAULT_SETTINGS), orders: {}, requests: {}, user: null };
+    var state = { overrides: {}, extra: {}, photos: {}, settings: Object.assign({}, DEFAULT_SETTINGS), orders: {}, requests: {}, user: null };
     var subs = [], rev = 0, got = { products: false, extra: false, settings: false }, offline = false, cacheT = null;
     function emit() { subs.forEach(function (f) { f(); }); }
     // Shop data (products / extra products / settings) is cached on the device so returning visitors see the
@@ -202,6 +202,7 @@
     function useCache() {
       var c = ls('shopCache'); if (!c || !c.settings) return false;
       state.overrides = c.overrides || {}; state.extra = c.extra || {}; state.settings = Object.assign({}, DEFAULT_SETTINGS, c.settings);
+      state.photos = ls('photoCache') || {};
       got.products = got.extra = got.settings = true; rev++; return true;
     }
     var fb = null;
@@ -246,6 +247,8 @@
           fb.ref('products').on('value', function (s) { setShop('overrides', 'products', s.val() || {}); });
           fb.ref('extraProducts').on('value', function (s) { setShop('extra', 'extra', s.val() || {}); });
           fb.ref('settings').on('value', function (s) { setShop('settings', 'settings', Object.assign({}, DEFAULT_SETTINGS, s.val() || {})); });
+          // Photos live in their own node so names/prices arrive instantly; photos follow.
+          fb.ref('photos').on('value', function (s) { state.photos = s.val() || {}; rev++; try { localStorage.setItem('3db:photoCache', JSON.stringify(state.photos)); } catch (e) {} emit(); migratePhotos(); });
           var ordersRef = null;
           firebase.auth().onAuthStateChanged(function (u) {
             state.user = u ? { email: u.email, uid: u.uid } : null;
@@ -253,7 +256,7 @@
             clearInterval(pullT); pullT = null; ordersReady = false; sockOrders = false;
             if (u) { ordersRef = fb.ref('orders'); ordersRef.on('value', function (s) { sockOrders = true; ordersReady = true; clearInterval(pullT); state.orders = Clean.orders(s.val()); emit(); }, function () { state.orders = {}; ordersReady = 'error'; emit(); });
               fb.ref('requests').on('value', function (s) { state.requests = s.val() || {}; emit(); }, function () { state.requests = {}; emit(); });
-              if (window.BLAZE_ADMIN) { restPull(); pullT = setInterval(restPull, 20000); } }
+              if (window.BLAZE_ADMIN) { restPull(); pullT = setInterval(restPull, 20000); setTimeout(migratePhotos, 4000); } }
             emit();
           });
         })
@@ -268,7 +271,50 @@
     function products() {
       var list = CATALOG.map(function (p) { return Object.assign({}, p, state.overrides[p.id] || {}); });
       Object.keys(state.extra || {}).forEach(function (k) { var e = state.extra[k]; if (e && e.name) list.push(Object.assign({ id: k, col: 'lebanon', price: 0, specs: [] }, e, state.overrides[k] || {})); });
-      return list.filter(function (p) { return !p.removed; });
+      return list.filter(function (p) { return !p.removed; }).map(resolvePhotos);
+    }
+    function photoOf(v) { return typeof v === 'string' && v.charAt(0) === '@' ? (state.photos[v.slice(1)] || null) : v; }
+    function resolvePhotos(p) {
+      if (!p.photo && !p.options) return p;
+      var q = Object.assign({}, p);
+      if (q.photo) q.photo = photoOf(q.photo);
+      if (q.options) { var o = Array.isArray(q.options) ? q.options : Object.keys(q.options).map(function (k) { return q.options[k]; }); q.options = o.map(function (x) { return x && x.photo ? Object.assign({}, x, { photo: photoOf(x.photo) }) : x; }); }
+      return q;
+    }
+    function isData(v) { return typeof v === 'string' && v.indexOf('data:image/') === 0; }
+    // Move any inline photo in a patch to photos/<ref>; returns { patch, ok }. Reuses the ref of an identical photo.
+    function stashPhotos(patch) {
+      if (!live || !fb) return Promise.resolve({ patch: patch, ok: true });
+      var out = Object.assign({}, patch), jobs = [], fresh = {};
+      var put = function (url) {
+        var ref = Object.keys(state.photos).filter(function (k) { return state.photos[k] === url; })[0] || Object.keys(fresh).filter(function (k) { return fresh[k] === url; })[0];
+        if (ref) return '@' + ref;
+        ref = 'ph' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); fresh[ref] = url;
+        jobs.push(fb.ref('photos/' + ref).set(url)); return '@' + ref;
+      };
+      if (isData(out.photo)) out.photo = put(out.photo);
+      if (out.options) { var o = Array.isArray(out.options) ? out.options : Object.keys(out.options).map(function (k) { return out.options[k]; }); out.options = o.map(function (x) { return x && isData(x.photo) ? Object.assign({}, x, { photo: put(x.photo) }) : x; }); }
+      if (!jobs.length) return Promise.resolve({ patch: out, ok: true });
+      return Promise.all(jobs).then(function () { Object.keys(fresh).forEach(function (k) { state.photos[k] = fresh[k]; }); return { patch: out, ok: true }; }, function () { return { patch: patch, ok: false }; });
+    }
+    // One-time, manager only: move photos still stored inside products/extraProducts out to photos/.
+    var migrating = false;
+    function migratePhotos() {
+      if (migrating || !window.BLAZE_ADMIN || !live || !fb || !state.user || !(got.products && got.extra)) return;
+      var jobs = [];
+      [['products', state.overrides], ['extraProducts', state.extra]].forEach(function (nd) {
+        Object.keys(nd[1] || {}).forEach(function (id) {
+          var x = nd[1][id] || {}, opts = x.options ? (Array.isArray(x.options) ? x.options : Object.keys(x.options).map(function (k) { return x.options[k]; })) : null;
+          var patch = {};
+          if (isData(x.photo)) patch.photo = x.photo;
+          if (opts && opts.some(function (o) { return o && isData(o.photo); })) patch.options = opts;
+          if (Object.keys(patch).length) jobs.push({ path: nd[0] + '/' + id, patch: patch });
+        });
+      });
+      if (!jobs.length) return;
+      migrating = true;
+      jobs.reduce(function (pr, j) { return pr.then(function (okSoFar) { if (!okSoFar) return false; return stashPhotos(j.patch).then(function (r) { if (!r.ok) return false; return fb.ref(j.path).update(r.patch).then(function () { return true; }); }); }); }, Promise.resolve(true))
+        .then(function () {}, function () {});
     }
 
     return {
@@ -327,12 +373,12 @@
       },
       saveProduct: function (id, patch) {
         if (!live) { state.overrides[id] = Object.assign(state.overrides[id] || {}, patch); ls('overrides', state.overrides); emit(); return Promise.resolve(); }
-        return fb.ref('products/' + id).update(patch);
+        return stashPhotos(patch).then(function (r) { return fb.ref('products/' + id).update(r.patch); });
       },
       addProduct: function (p) {
         var id = 'p' + Date.now().toString(36);
         if (!live) { state.extra[id] = p; ls('extra', state.extra); emit(); return Promise.resolve(id); }
-        return fb.ref('extraProducts/' + id).set(p).then(function () { return id; });
+        return stashPhotos(p).then(function (r) { return fb.ref('extraProducts/' + id).set(r.patch); }).then(function () { return id; });
       },
       saveSettings: function (s) {
         if (!live) { state.settings = Object.assign({}, state.settings, s); ls('settings', state.settings); emit(); return Promise.resolve(); }
@@ -1204,9 +1250,10 @@
 
 
   // ---------- design requests (files Claude makes) ----------
-  function needsFile(o) { return o.items.some(function (i) { return i.id === 'my-village' || /holy-ornament/.test(i.id) || (i.text && i.id !== 'design'); }); }
+  function isOrn(i) { if (/holy-ornament/.test(i.id)) return true; var p = Store.product(i.id), pk = p && p.pack; if (!pk) return false; pk = Array.isArray(pk) ? pk : Object.keys(pk).map(function (k) { return pk[k]; }); return pk.some(function (x) { return x && /holy-ornament/.test(x.of); }); }
+  function needsFile(o) { return o.items.some(function (i) { return i.id === 'my-village' || isOrn(i) || (i.text && i.id !== 'design'); }); }
   function makeOrderRequest(o, done) {
-    var orn = o.items.filter(function (i) { return /holy-ornament/.test(i.id); }), data;
+    var orn = o.items.filter(isOrn), data;
     if (orn.length) {
       var names = []; orn.forEach(function (i) { var ps = i.picks ? (Array.isArray(i.picks) ? i.picks : Object.keys(i.picks).map(function (k) { return i.picks[k]; })) : [{ text: i.text }]; for (var q = 0; q < i.qty; q++) ps.forEach(function (pk) { if (pk.text) names.push(pk.text); }); });
       data = { type: 'ornament', title: 'Holy Night Ornament × ' + names.length, names: names, order: o.code, status: 'sent', createdAt: Date.now() };
@@ -1230,7 +1277,7 @@
           '\nBase text: ' + r.title.toUpperCase() + (g.ele != null ? ' ' + g.ele + ' m' : ' ### m') + (g.ar ? ' ' + g.ar : '') : '\n(not found on the map — find the location)') +
         (r.place ? '\nWhere: ' + r.place : '') + '\nColours: black plate, white map, black borders, green pin, black base, white name';
     }
-    else if (r.type === 'ornament') t += 'Product: Holy Night Ornament (3DBlaze original) — one .3mf per name\nTemplate: Christmass\\3DBlaze Holy Night Ornament - Gabriel - sample.3mf (made with the 3DBlaze ornament tool)\nNames: ' + (r.names || []).join(', ') + '\n3 mm thick, red ornament, name in white set flush (top 0.8 mm)';
+    else if (r.type === 'ornament') t += 'Product: Holy Night Ornament (3DBlaze original) — one .3mf per name\nTemplate: Christmass\\3DBlaze Holy Night Ornament - Gabriel - sample.3mf (made with the 3DBlaze ornament tool)\nNames: ' + (r.names || []).join(', ') + '\n3 mm red ornament, name in white Pacifico RAISED 0.8 mm on the banner (3.8 mm at the letters)';
     else t += 'Product: custom design (.3mf for Bambu Studio)\nWhat: ' + r.title;
     if (r.size) t += '\nSize: ' + r.size;
     if (r.notes) t += '\nNotes: ' + r.notes;
@@ -1304,11 +1351,10 @@
 
 
   // ---------- price calculator (owner only) ----------
-  var PRESETS = [
-    { n: 'Name keychain', g: 6, m: 24, p: 4 }, { n: 'Cedar keychain', g: 7, m: 30, p: 4 }, { n: 'Christmas ornament', g: 10, m: 36, p: 6 },
-    { n: 'Phone stand', g: 35, m: 78, p: 9 }, { n: 'Desk name plate', g: 45, m: 108, p: 12 }, { n: 'Centerpiece', g: 60, m: 150, p: 14 },
-    { n: 'Scout woggle', g: 5, m: 15, p: 2.5 }, { n: 'Troop keychain', g: 6, m: 18, p: 2 }, { n: 'Custom print', g: 20, m: 60, p: null }
-  ];
+  function presets() {
+    return Store.products().filter(function (p) { return +p.printMin > 0; }).map(function (p) { return { n: p.name, g: +p.grams || 0, m: +p.printMin, p: +p.price }; })
+      .concat([{ n: 'Custom print', g: 20, m: 60, p: null }]);
+  }
   var calcIn = Object.assign({ preset: 'Custom print', name: 'Custom print', qty: 1, grams: 20, hours: 1, mins: 0, design: 0, delivery: 3, rush: false, pickup: false, bulk: true, fixed: null }, ls('calc') || {});
   var calcOpen = false, lastQuote = null;
 
@@ -1432,7 +1478,7 @@
     var num = function (id, label, val, step, extra) { return '<label class="field">' + label + '<input type="number" id="' + id + '" min="0" step="' + step + '" value="' + esc(val) + '"' + (extra || '') + '></label>'; };
     $('#admBody').innerHTML = '<div class="calc"><div style="display:grid;gap:16px"><div class="panel">' +
       '<h3>1 · Drop your file</h3><label class="drop" id="c_drop"><input type="file" id="c_file" accept=".stl,.3mf,.gcode,.obj" hidden><b>Drop a file here or tap to choose</b><span>Best: the sliced <b>.gcode.3mf</b> from Bambu Studio (File → Export → Export plate sliced file) gives the exact weight and time. STL / 3MF also work as an estimate.</span></label><div id="c_fileinfo"></div>' +
-      '<h3 style="margin-top:22px">…or pick a product</h3><div class="presets">' + PRESETS.map(function (p) { return '<button class="preset' + (c.preset === p.n ? ' on' : '') + '" data-pr="' + esc(p.n) + '">' + esc(p.n) + '</button>'; }).join('') + '</div>' +
+      '<h3 style="margin-top:22px">…or pick a product</h3><div class="presets">' + presets().map(function (p) { return '<button class="preset' + (c.preset === p.n ? ' on' : '') + '" data-pr="' + esc(p.n) + '">' + esc(p.n) + '</button>'; }).join('') + '</div>' +
       '<h3>2 · Print details</h3><div class="grid2">' +
         '<label class="field">Product name<input id="c_name" value="' + esc(c.name) + '"></label>' + num('c_qty', 'Quantity', c.qty, 1, ' min="1"') +
         num('c_grams', 'Weight per piece (g)', c.grams, 1) +
@@ -1490,7 +1536,7 @@
     bind('c_name', 'name', 'text'); ['qty', 'grams', 'hours', 'mins', 'design', 'delivery'].forEach(function (k) { bind('c_' + k, k); });
     ['rush', 'pickup', 'bulk'].forEach(function (k) { bind('c_' + k, k, 'check'); });
     $$('[data-pr]').forEach(function (b) { b.onclick = function () {
-      var p = PRESETS.filter(function (x) { return x.n === b.dataset.pr; })[0];
+      var p = presets().filter(function (x) { return x.n === b.dataset.pr; })[0];
       Object.assign(calcIn, { preset: p.n, name: p.n, grams: p.g, hours: Math.floor(p.m / 60), mins: p.m % 60, fixed: p.p, fileInfo: null }); save(); admCalc();
     }; });
     var st;
