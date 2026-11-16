@@ -206,7 +206,7 @@ Safra|صفرا||34.0372|35.6382|v
 Bouar|بوار||34.0480|35.6407|v
 Sarba|صربا||33.9774|35.6185|t
 Daraoun|درعون|Daraaoun|33.9763|35.6603|v
-Harissa|حريصا||33.9821|35.6506|v
+Harissa|حريصا|Harisa;Harrissa;Our Lady of Lebanon|33.9821|35.6506|v
 Chtoura|شتورا|Chtaura|33.8120|35.8553|t
 Ras Baalbek|رأس بعلبك|Râs Baalbek|34.2598|36.4200|v
 Fakeha|الفاكهه|Fakiha;Fekeheh;Fakehe|34.2450|36.4030|v
@@ -1714,3 +1714,16 @@ Tariq El Jdideh|طريق الجديدة|Tarik El Jdideh|33.8700|35.4960|s
 Ain El Mreisseh|عين المريسة|Ain Mreisseh|33.9010|35.4880|s
 Raouche|الروشة|Rawcheh|33.8890|35.4730|s
 Ouzai|الأوزاعي|Ouzaii|33.8490|35.4880|s
+Koura|الكورة|Al Koura;El Koura;Kura;Koura District|34.3001|35.8167|d
+Metn|المتن|Matn;El Metn;Maten;Metn District|33.8922|35.5704|d
+Keserwan|كسروان|Kesrouan;Kesrwan;Kisrawan;Keserouan;Kesrwen|33.9742|35.6201|d
+Chouf|الشوف|Shouf;El Chouf;Al Shouf;Chouf District|33.6942|35.5812|d
+Akkar|عكار|Akar;Aakkar;Akkar District|34.5450|36.0780|d
+Danniyeh|الضنية|Dinniyeh;Denniyeh;Donniyeh;Minieh-Danniyeh|34.3842|36.0273|d
+Bekaa|البقاع|Beqaa;Bekaa Valley;Biqa|33.8477|35.9025|d
+West Bekaa|البقاع الغربي|Western Bekaa;Bekaa Gharbi|33.6263|35.7840|d
+Iqlim al-Kharroub|إقليم الخروب|Iqlim el Kharroub;Iklim el Kharroub;Iqlim Kharroub|33.6448|35.4330|d
+Bint Jbeil|بنت جبيل|Bint Jbail;Bent Jbeil;Bint Jubayl|33.1203|35.4336|t
+Bkerke|بكركي|Bkirki;Bkerki|33.9496|35.6293|v
+Beddawi|البداوي|Baddawi;Bedawi|34.4467|35.8650|t
+Abu Samra|أبو سمرا|Abou Samra|34.4300|35.8450|s

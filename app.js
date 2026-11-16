@@ -452,7 +452,7 @@
     load: function () {
       if (this.p) return this.p;
       var self = this;
-      this.p = fetch('places.txt?v=94772107').then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); }).then(function (t) {
+      this.p = fetch('places.txt?v=94812629').then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); }).then(function (t) {
         self.list = t.trim().split('\n').map(function (l) {
           var a = l.split('|'), names = [a[0]].concat(a[2] ? a[2].split(';') : []).filter(Boolean);
           var v = names.map(function (n) { var k = pfold(n); return { n: n, k: k, s: pskel(k) }; });
@@ -465,29 +465,29 @@
     },
     match: function (q) {
       var qk = pfold(q), qs = pskel(qk); if (qk.length < 2 || !this.list) return null;
-      var tol = qk.length <= 4 ? 1 : qk.length <= 7 ? 2 : 3, bonus = { c: 6, t: 4, v: 2, s: 1, h: 0 }, best = null;
+      var tol = qk.length <= 5 ? 1 : qk.length <= 8 ? 2 : 3, bonus = { d: 7, c: 6, t: 4, v: 2, s: 1, h: 0 }, best = null;
       this.list.forEach(function (pl) {
         pl.v.forEach(function (v) {
           var sc = 0, d;
           if (v.k === qk) sc = 100;
           else {
-            if (v.s === qs && qs.length >= 2) sc = 80 - 4 * Math.min(plev(v.k, qk, 6), 6);
+            if (v.s === qs && qs.length >= 2) { d = plev(v.k, qk, 3); if (d <= 3) sc = 80 - 4 * d; }
             d = plev(v.k, qk, tol); if (d <= tol) sc = Math.max(sc, 78 - 8 * d);
             if (qk.length >= 3 && v.k.indexOf(qk) === 0) sc = Math.max(sc, 66 + 14 * qk.length / v.k.length);
             if (!sc && qs.length >= 3 && plev(v.s, qs, 1) <= 1) sc = 52;
           }
           if (!sc) return;
-          sc += bonus[pl.t] || 0;
+          sc += (bonus[pl.t] || 0) + (sc < 100 && v.k.length >= qk.length ? 0.5 : 0);
           if (!best || sc > best.sc) best = { sc: sc, pl: pl, v: v };
         });
       });
-      if (!best || best.sc < 56) return null;
+      if (!best || best.sc < 60) return null;
       var pl = best.pl, name = (best.sc >= 100 && !best.v.ar) ? best.v.n : pl.en;
       return { lat: pl.lat, lon: pl.lon, label: name + (name !== pl.en ? ' (' + pl.en + ')' : ''), name: name, ar: pl.ar || null, exact: best.sc >= 100 };
     }
   };
   var Geo = {
-    cache: ls('geo3') || {}, t: null, seq: 0, eleC: ls('ele') || {},
+    cache: ls('geo4') || {}, t: null, seq: 0, eleC: ls('ele') || {},
     find: function (q, cb) {
       q = (q || '').trim(); var key = q.toLowerCase();
       clearTimeout(this.t);
@@ -495,8 +495,8 @@
       var self = this, my = ++this.seq;
       var done = function (hit) {
         if (my !== self.seq) return;
-        self.cache[key] = hit; ls('geo3', self.cache); cb(hit, hit ? 'found' : 'none');
-        if (hit && hit.ele == null) self.elev(hit.lat, hit.lon, function (e) { if (e == null) return; hit.ele = e; ls('geo3', self.cache); if (my === self.seq) cb(hit, 'found'); });
+        self.cache[key] = hit; ls('geo4', self.cache); cb(hit, hit ? 'found' : 'none');
+        if (hit && hit.ele == null) self.elev(hit.lat, hit.lon, function (e) { if (e == null) return; hit.ele = e; ls('geo4', self.cache); if (my === self.seq) cb(hit, 'found'); });
       };
       if (this.cache[key] !== undefined) { cb(this.cache[key], this.cache[key] ? 'found' : 'none'); return; }
       cb(null, 'searching');
@@ -536,7 +536,7 @@
     status: function (hit, st, forId, typed) {
       var useBtn = (st === 'found' && forId && hit.name && pfold(hit.name) !== pfold(typed)) ? ' <button type="button" class="usename" data-usename="' + esc(hit.name) + '" data-for="' + forId + '">Use “' + esc(hit.name) + '”</button>' : '';
       return st === 'searching' ? '<span class="muted">Finding it on the map…</span>' :
-        st === 'found' ? '<span style="color:var(--green)">📍 ' + esc(hit.label) + (hit.ar ? ' · ' + esc(hit.ar) : '') + (hit.ele != null ? ' · ' + hit.ele + ' m' : '') + '</span>' + useBtn :
+        st === 'found' ? '<span style="color:var(--green)">📍 ' + (hit.exact === false ? 'Closest match: ' : '') + esc(hit.label) + (hit.ar ? ' · ' + esc(hit.ar) : '') + (hit.ele != null ? ' · ' + hit.ele + ' m' : '') + '</span>' + useBtn :
         st === 'none' ? '<span class="muted">We couldn’t find it on the map — no problem, we’ll place the pin by hand.</span>' :
         st === 'offline' ? '<span class="muted">Map search is unavailable right now — we’ll place the pin by hand.</span>' : '';
     }
