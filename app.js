@@ -258,7 +258,18 @@
         window.addEventListener('storage', function () { state.orders = Clean.orders(ls('orders')); emit(); });
         return Promise.resolve();
       }
-      if (!window.BLAZE_ADMIN) { useCache(); restBoot(); }
+      if (!window.BLAZE_ADMIN) {
+        // Customers never hold a live connection (free plan = 100 at once). Shop data comes over HTTPS,
+        // re-checked when the page opens, when the tab comes back, and every 60 s.
+        useCache(); loadPhotoKeys();
+        var lastBoot = 0, boot = function (force) { var n = Date.now(); if (!force && n - lastBoot < 15000) return Promise.resolve(); lastBoot = n; return restBoot(); };
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) boot(); });
+        window.addEventListener('focus', function () { boot(); });
+        setInterval(function () { if (!document.hidden) boot(true); }, 60000);
+        return boot(true).then(function (ok) {
+          if (!ok && !(got.products && got.extra && got.settings)) { offline = true; got.products = got.extra = got.settings = true; rev++; emit(); }
+        });
+      }
       loadPhotoKeys();
       var v = '10.12.2', base = 'https://www.gstatic.com/firebasejs/' + v + '/';
       return loadScript(base + 'firebase-app-compat.js')
@@ -304,11 +315,15 @@
     // ---- shop data straight over HTTPS (≈4 KB) so the page shows before the Firebase library has even loaded ----
     function restBoot() {
       var b = cfg.databaseURL.replace(/\/$/, '');
-      [['products', 'overrides', 'products'], ['extraProducts', 'extra', 'extra'], ['settings', 'settings', 'settings']].forEach(function (x) {
-        fetch(b + '/' + x[0] + '.json', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : Promise.reject(); }).then(function (v) {
-          setShop(x[1], x[2], x[0] === 'settings' ? Object.assign({}, DEFAULT_SETTINGS, v || {}) : (v || {}));
-        }).catch(function () {});
-      });
+      return Promise.all([['products', 'overrides', 'products'], ['extraProducts', 'extra', 'extra'], ['settings', 'settings', 'settings']].map(function (x) {
+        return fetch(b + '/' + x[0] + '.json', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : Promise.reject(); }).then(function (v) {
+          setShop(x[1], x[2], x[0] === 'settings' ? Object.assign({}, DEFAULT_SETTINGS, v || {}) : (v || {})); return true;
+        }).catch(function () { return false; });
+      })).then(function (r) { if (r.every(Boolean)) offline = false; return r.every(Boolean); });
+    }
+    function rest(method, path, body) {
+      return fetch(cfg.databaseURL.replace(/\/$/, '') + '/' + path + '.json', { method: method, body: body == null ? undefined : JSON.stringify(body), cache: 'no-store' })
+        .then(function (r) { if (!r.ok) throw new Error('save failed ' + r.status); return r.json(); });
     }
     // ---- photos: fetched one by one, only the ones on screen, smaller "_m" copies for the shop, kept on the phone ----
     var GIF = 'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', photoKeys = null, photoWant = {}, photoKeysP = null;
@@ -425,6 +440,7 @@
       get offline() { return offline; },
       ordersReady: function () { return !live || ordersReady; },
       rev: function () { return rev; },
+      rest: function (m, p, b) { return rest(m, p, b); },
       init: init, on: function (f) { subs.push(f); },
       products: products,
       product: function (id) { return products().filter(function (p) { return p.id === id; })[0]; },
@@ -450,6 +466,7 @@
           state.orders[o.code] = o; ls('orders', state.orders);
           var tr = ls('tracking') || {}; tr[o.code] = track; ls('tracking', tr); emit(); return Promise.resolve(o);
         }
+        if (!window.BLAZE_ADMIN) return rest('PUT', 'orders/' + o.code, o).then(function () { return rest('PUT', 'tracking/' + o.code, track).catch(function () {}); }).then(function () { return o; });
         if (offline || !fb) return Promise.reject(new Error('offline'));
         if (window.BLAZE_ADMIN && !sockOrders && state.user) { state.orders[o.code] = o; emit(); return restWrite('PUT', 'orders/' + o.code, o).then(function () { return restWrite('PUT', 'tracking/' + o.code, track); }).then(function () { return o; }); }
         return fb.ref('orders/' + o.code).set(o).then(function () { return fb.ref('tracking/' + o.code).set(track).catch(function () {}); }).then(function () { return o; });
@@ -457,6 +474,7 @@
       track: function (code) {
         if (!live) { var tr = ls('tracking') || {}; return Promise.resolve(Clean.track(tr[code])); }
         if (!/^[A-Z0-9-]{3,20}$/.test(code)) return Promise.resolve(null);
+        if (!fb) return rest('GET', 'tracking/' + code).then(Clean.track);
         return fb.ref('tracking/' + code).once('value').then(function (s) { return Clean.track(s.val()); });
       },
       updateOrder: function (code, patch) {
@@ -1165,6 +1183,7 @@
     function emit() { subs.forEach(function (f) { f(count); }); }
     function isStaff() { return !!window.BLAZE_ADMIN; }
     function liveOk() { return Store.live && window.firebase && firebase.apps && firebase.apps.length; }
+    function beat() { if (document.hidden) return; Store.rest('PUT', 'presence/' + id, { t: { '.sv': 'timestamp' }, page: (location.hash || '#home').slice(1).slice(0, 40) }).catch(function () {}); }
     function demoBeat() {
       var m = ls('presence') || {}, now = Date.now();
       Object.keys(m).forEach(function (k) { if (now - m[k] > 15000) delete m[k]; });
@@ -1185,10 +1204,12 @@
       me.set({ t: firebase.database.ServerValue.TIMESTAMP, page: (location.hash || '#home').slice(1).slice(0, 40) });
     }
     function start() {
-      if (liveOk()) {
-        if (isStaff()) return;
-        firebase.database().ref('.info/connected').on('value', function (s) { if (s.val()) liveSync(); });
-        window.addEventListener('hashchange', function () { if (me) liveSync(); });
+      if (Store.live && !isStaff()) {
+        beat(); setInterval(beat, 60000);
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) beat(); });
+        window.addEventListener('pagehide', function () { try { Store.rest('DELETE', 'presence/' + id).catch(function () {}); } catch (e) {} });
+      } else if (liveOk()) {
+        return;
       } else {
         demoBeat(); setInterval(demoBeat, 5000);
         window.addEventListener('storage', function (e) { if (e.key === '3db:presence') recount(); });
@@ -1197,7 +1218,16 @@
     }
     function watch() {
       if (watching) return; watching = true;
-      if (liveOk()) firebase.database().ref('presence').on('value', function (s) { count = s.numChildren(); emit(); }, function () { count = 0; emit(); });
+      if (liveOk()) {
+        var all = {}, now0 = 0, cleaned = false;
+        var calc = function () { var n = Date.now() - 150000; var c = Object.keys(all).filter(function (k) { return all[k] && +all[k].t > n; }).length; if (c !== count) { count = c; emit(); } };
+        firebase.database().ref('.info/serverTimeOffset').once('value').then(function (s) { now0 = +s.val() || 0; });
+        firebase.database().ref('presence').on('value', function (s) {
+          all = s.val() || {}; calc();
+          if (!cleaned) { cleaned = true; var old = Date.now() - 86400000, up = {}; Object.keys(all).forEach(function (k) { if (!all[k] || +all[k].t < old) up[k] = null; }); if (Object.keys(up).length) firebase.database().ref('presence').update(up).catch(function () {}); }
+        }, function () { count = 0; emit(); });
+        setInterval(calc, 20000);
+      }
       else recount();
     }
     return { start: start, watch: watch, count: function () { return count; }, on: function (f) { subs.push(f); } };
