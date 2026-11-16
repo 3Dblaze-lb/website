@@ -2,6 +2,8 @@
 (function () {
   'use strict';
 
+  // fonts load in the background (no blank page while they download), then switch on
+  (function () { var g = document.getElementById('gfonts'); if (g) g.media = 'all'; })();
   // ---------- self-update: never leave a visitor on an old version ----------
   // Checks the live page on load, when the tab comes back to the front, and every 5 min.
   // If a newer version is live, reloads (or, during checkout, shows a "tap to update" bar so nothing typed is lost).
@@ -67,15 +69,15 @@
       blurb: 'Three ornaments, three names.',
       desc: 'Three Holy Night ornaments, each with its own name. Perfect for the family tree or as gifts.',
       specs: ['3 ornaments, 9 cm each', 'A different name on each one', 'Red with white names'] },
-    { id: 'woggle-white', col: 'woggles', name: 'Woggle — white', price: 3, img: 'img/woggle-white.webp', model: 'woggle-plain', modelColors: ['white', 'white'], printMin: 45, grams: 5.4,
+    { id: 'woggle-white', col: 'woggles', name: 'Woggle — white', price: 4, img: 'img/woggle-white.webp', model: 'woggle-plain', modelColors: ['white', 'white'], printMin: 40, grams: 4.1,
       blurb: 'The classic braided woggle, all white.',
       desc: 'A braided scout woggle in white. Turn it around in 3D before you order.',
-      specs: ['About 3.4 cm wide, 1.7 cm tall', 'White', 'Fits a standard scout scarf'] },
-    { id: 'woggle', col: 'woggles', name: 'Woggle — your colours', price: 5, img: 'img/woggle-plain.webp', model: 'woggle-plain', parts: ['Cord A', 'Cord B'],
-      colors: ['red', 'black', 'green', 'white', 'orange'], printMin: 45, grams: 5.4,
+      specs: ['About 3.1 cm wide, 1.5 cm tall', 'White', 'Fits a standard scout scarf'] },
+    { id: 'woggle', col: 'woggles', name: 'Woggle — your colours', price: 5, priceSame: 4, img: 'img/woggle-plain.webp', model: 'woggle-plain', parts: ['Cord A', 'Cord B'],
+      colors: ['red', 'black', 'green', 'white', 'orange'], printMin: 40, grams: 4.1,
       blurb: 'Two braided cords — you pick each colour.',
       desc: 'A braided scout woggle made of two cords. Pick the colour of each cord and turn it around in 3D before you order.',
-      specs: ['About 3.4 cm wide, 1.7 cm tall', 'Two cords, each in the colour you choose', 'Fits a standard scout scarf'] },
+      specs: ['About 3.1 cm wide, 1.5 cm tall', 'Two cords, each in the colour you choose', 'Fits a standard scout scarf'] },
     { id: 'woggle-custom', col: 'woggles', name: 'Custom woggle — on request', price: 0, priceText: 'On request', contactOnly: true, img: 'img/woggle-custom.webp',
       examples: [{ n: 'Aigle', model: 'woggle-aigle', parts: ['Head', 'Cord A', 'Cord B'], fixed: { 0: 'black', 1: 'black', 2: 'green' }, pick: [] },
                  { n: 'Koudou', model: 'woggle-koudou', white: true }, { n: 'Impeesa', model: 'woggle-impeesa', white: true }],
@@ -213,13 +215,14 @@
     function setShop(field, key, val) {
       var same = got[key] && JSON.stringify(state[field]) === JSON.stringify(val);
       state[field] = val; got[key] = true; if (!same) rev++;
+      if (window.BLAZE_ADMIN) setTimeout(function () { migratePhotos(); makeMediums(); }, 1500);
       clearTimeout(cacheT); cacheT = setTimeout(function () { if (got.products && got.extra && got.settings) ls('shopCache', { overrides: state.overrides, extra: state.extra, settings: state.settings }); }, 400);
       emit();
     }
     function useCache() {
       var c = ls('shopCache'); if (!c || !c.settings) return false;
       state.overrides = c.overrides || {}; state.extra = c.extra || {}; state.settings = Object.assign({}, DEFAULT_SETTINGS, c.settings);
-      state.photos = ls('photoCache') || {};
+      try { localStorage.removeItem('3db:photoCache'); } catch (e) {}
       got.products = got.extra = got.settings = true; rev++; return true;
     }
     var fb = null;
@@ -255,18 +258,19 @@
         window.addEventListener('storage', function () { state.orders = Clean.orders(ls('orders')); emit(); });
         return Promise.resolve();
       }
-      if (!window.BLAZE_ADMIN) useCache();
+      if (!window.BLAZE_ADMIN) { useCache(); restBoot(); }
+      loadPhotoKeys();
       var v = '10.12.2', base = 'https://www.gstatic.com/firebasejs/' + v + '/';
       return loadScript(base + 'firebase-app-compat.js')
-        .then(function () { return Promise.all([loadScript(base + 'firebase-database-compat.js'), loadScript(base + 'firebase-auth-compat.js')]); })
+        .then(function () { return Promise.all([loadScript(base + 'firebase-database-compat.js')].concat(window.BLAZE_ADMIN ? [loadScript(base + 'firebase-auth-compat.js')] : [])); })
         .then(function () {
           firebase.initializeApp(cfg); fb = firebase.database();
           fb.ref('products').on('value', function (s) { setShop('overrides', 'products', s.val() || {}); });
           fb.ref('extraProducts').on('value', function (s) { setShop('extra', 'extra', s.val() || {}); });
           fb.ref('settings').on('value', function (s) { setShop('settings', 'settings', Object.assign({}, DEFAULT_SETTINGS, s.val() || {})); });
           // Photos live in their own node so names/prices arrive instantly; photos follow.
-          fb.ref('photos').on('value', function (s) { state.photos = s.val() || {}; rev++; try { localStorage.setItem('3db:photoCache', JSON.stringify(state.photos)); } catch (e) {} emit(); migratePhotos(); });
           var ordersRef = null;
+          if (!firebase.auth) { state.user = null; emit(); return; }
           firebase.auth().onAuthStateChanged(function (u) {
             state.user = u ? { email: u.email, uid: u.uid } : null;
             if (ordersRef) { ordersRef.off(); ordersRef = null; state.orders = {}; fb.ref('requests').off(); state.requests = {}; }
@@ -297,7 +301,52 @@
       if (pk.length > 1 && pk.every(function (x) { return x && x.of === 'holy-ornament'; })) return Object.assign({}, p, { art: 'holy-ornament-' + pk.length });
       return p;
     }
-    function photoOf(v) { return typeof v === 'string' && v.charAt(0) === '@' ? (state.photos[v.slice(1)] || null) : v; }
+    // ---- shop data straight over HTTPS (≈4 KB) so the page shows before the Firebase library has even loaded ----
+    function restBoot() {
+      var b = cfg.databaseURL.replace(/\/$/, '');
+      [['products', 'overrides', 'products'], ['extraProducts', 'extra', 'extra'], ['settings', 'settings', 'settings']].forEach(function (x) {
+        fetch(b + '/' + x[0] + '.json', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : Promise.reject(); }).then(function (v) {
+          setShop(x[1], x[2], x[0] === 'settings' ? Object.assign({}, DEFAULT_SETTINGS, v || {}) : (v || {}));
+        }).catch(function () {});
+      });
+    }
+    // ---- photos: fetched one by one, only the ones on screen, smaller "_m" copies for the shop, kept on the phone ----
+    var GIF = 'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', photoKeys = null, photoWant = {}, photoKeysP = null;
+    function pend(ref) { return 'data:image/gif;ph=' + ref + ';base64,' + GIF; }
+    function lsGet(k) { try { return localStorage.getItem('3db:' + k); } catch (e) { return null; } }
+    function lsSet(k, v) { try { localStorage.setItem('3db:' + k, v); } catch (e) { try { Object.keys(localStorage).filter(function (x) { return x.indexOf('3db:ph:') === 0; }).forEach(function (x) { localStorage.removeItem(x); }); localStorage.setItem('3db:' + k, v); } catch (e2) {} } }
+    function loadPhotoKeys() {
+      if (!live || photoKeysP) return photoKeysP;
+      photoKeysP = fetch(cfg.databaseURL.replace(/\/$/, '') + '/photos.json?shallow=true', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : {}; }).then(function (k) { photoKeys = k || {}; Object.keys(photoWant).forEach(fetchPhoto); }, function () { photoKeys = {}; Object.keys(photoWant).forEach(fetchPhoto); });
+      return photoKeysP;
+    }
+    function gotPhoto(ref, url) {
+      state.photos[ref] = url;
+      var sel = 'img[src*=";ph=' + ref + ';"]';
+      try { [].forEach.call(document.querySelectorAll(sel), function (im) { im.src = url; }); } catch (e) {}
+      if (window.BLAZE_ADMIN) { rev++; emit(); }
+    }
+    function fetchPhoto(ref) {
+      if (state.photos[ref]) return;
+      var key = !window.BLAZE_ADMIN && photoKeys && photoKeys[ref + '_m'] ? ref + '_m' : ref;
+      var c = lsGet('ph:' + key); if (c) { gotPhoto(ref, c); return; }
+      if (!photoKeys) return;
+      fetch(cfg.databaseURL.replace(/\/$/, '') + '/photos/' + key + '.json').then(function (r) { return r.json(); }).then(function (u) {
+        if (typeof u === 'string' && u.indexOf('data:image/') === 0) { lsSet('ph:' + key, u); gotPhoto(ref, u); }
+      }).catch(function () { photoWant[ref] = 0; });
+    }
+    function needPhoto(ref) {
+      if (photoWant[ref]) return; photoWant[ref] = 1;
+      var c = !window.BLAZE_ADMIN && lsGet('ph:' + ref + '_m') || lsGet('ph:' + ref);
+      if (c) { state.photos[ref] = c; return; }
+      if (photoKeys) setTimeout(function () { fetchPhoto(ref); }, 0); else loadPhotoKeys();
+    }
+    function photoOf(v) {
+      if (typeof v !== 'string' || v.charAt(0) !== '@') return v;
+      var ref = v.slice(1); if (state.photos[ref]) return state.photos[ref];
+      if (!live) return null;
+      needPhoto(ref); return state.photos[ref] || pend(ref);
+    }
     function resolvePhotos(p) {
       if (!p.photo && !p.options) return p;
       var q = Object.assign({}, p);
@@ -305,12 +354,13 @@
       if (q.options) { var o = Array.isArray(q.options) ? q.options : Object.keys(q.options).map(function (k) { return q.options[k]; }); q.options = o.map(function (x) { return x && x.photo ? Object.assign({}, x, { photo: photoOf(x.photo) }) : x; }); }
       return q;
     }
-    function isData(v) { return typeof v === 'string' && v.indexOf('data:image/') === 0; }
+    function isData(v) { return typeof v === 'string' && v.indexOf('data:image/') === 0 && v.indexOf(';ph=') < 0; }
     // Move any inline photo in a patch to photos/<ref>; returns { patch, ok }. Reuses the ref of an identical photo.
     function stashPhotos(patch) {
       if (!live || !fb) return Promise.resolve({ patch: patch, ok: true });
       var out = Object.assign({}, patch), jobs = [], fresh = {};
       var put = function (url) {
+        var pm = /;ph=([^;]+);/.exec(url); if (pm) return '@' + pm[1];
         var ref = Object.keys(state.photos).filter(function (k) { return state.photos[k] === url; })[0] || Object.keys(fresh).filter(function (k) { return fresh[k] === url; })[0];
         if (ref) return '@' + ref;
         ref = 'ph' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); fresh[ref] = url;
@@ -320,6 +370,34 @@
       if (out.options) { var o = Array.isArray(out.options) ? out.options : Object.keys(out.options).map(function (k) { return out.options[k]; }); out.options = o.map(function (x) { return x && isData(x.photo) ? Object.assign({}, x, { photo: put(x.photo) }) : x; }); }
       if (!jobs.length) return Promise.resolve({ patch: out, ok: true });
       return Promise.all(jobs).then(function () { Object.keys(fresh).forEach(function (k) { state.photos[k] = fresh[k]; }); return { patch: out, ok: true }; }, function () { return { patch: patch, ok: false }; });
+    }
+    // Manager only: make a light 640 px copy (photos/<ref>_m) of every photo in use, for phones.
+    var mediumBusy = false;
+    function makeMediums() {
+      if (mediumBusy || !window.BLAZE_ADMIN || !live || !fb || !state.user) return;
+      loadPhotoKeys().then(function () {
+        var refs = {};
+        [state.overrides, state.extra].forEach(function (m) { Object.keys(m || {}).forEach(function (id) { var x = m[id] || {}; [x.photo].concat((x.options ? (Array.isArray(x.options) ? x.options : Object.keys(x.options).map(function (k) { return x.options[k]; })) : []).map(function (o) { return o && o.photo; })).forEach(function (v) { if (typeof v === 'string' && v.charAt(0) === '@') refs[v.slice(1)] = 1; }); }); });
+        var todo = Object.keys(refs).filter(function (r) { return !photoKeys[r + '_m']; });
+        if (!todo.length) return;
+        mediumBusy = true;
+        todo.reduce(function (pr, ref) {
+          return pr.then(function () {
+            return fetch(cfg.databaseURL.replace(/\/$/, '') + '/photos/' + ref + '.json').then(function (r) { return r.json(); }).then(function (u) {
+              if (typeof u !== 'string') return;
+              return new Promise(function (res) {
+                var im = new Image(); im.onload = function () {
+                  var k = Math.min(1, 640 / Math.max(im.width, im.height)), c = document.createElement('canvas'); c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+                  c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+                  var m = c.toDataURL('image/webp', 0.82); if (m.indexOf('data:image/webp') !== 0 || m.length > u.length) m = c.toDataURL('image/jpeg', 0.82);
+                  if (m.length >= u.length) { res(); return; }
+                  fb.ref('photos/' + ref + '_m').set(m).then(function () { photoKeys[ref + '_m'] = true; res(); }, function () { res(); });
+                }; im.onerror = function () { res(); }; im.src = u;
+              });
+            }).catch(function () {});
+          });
+        }, Promise.resolve()).then(function () { mediumBusy = false; });
+      });
     }
     // One-time, manager only: move photos still stored inside products/extraProducts out to photos/.
     var migrating = false;
@@ -437,6 +515,11 @@
   })();
 
   // ---------- cart ----------
+  // price of one unit: a product can be cheaper when every part is the same colour (e.g. woggle in one colour)
+  function unitPrice(p, it) {
+    if (p && p.priceSame != null && it && it.picks) { var pk = Array.isArray(it.picks) ? it.picks : Object.keys(it.picks).map(function (k) { return it.picks[k]; }); var c = pk.map(function (x) { return x && x.color; }); if (c.length > 1 && c[0] && c.every(function (x) { return x === c[0]; })) return +p.priceSame; }
+    return +p.price;
+  }
   var Cart = {
     items: ls('cart') || [],
     save: function () { ls('cart', this.items); var cc = $('#cartCount'); if (cc) cc.textContent = this.count(); },
@@ -449,7 +532,7 @@
       this.save();
     },
     lines: function () {
-      return this.items.map(function (i) { var p = Store.product(i.id); return p ? Object.assign({}, i, { p: p, total: p.price * i.qty }) : null; }).filter(Boolean);
+      return this.items.map(function (i) { var p = Store.product(i.id); return p ? Object.assign({}, i, { p: p, unit: unitPrice(p, i), total: unitPrice(p, i) * i.qty }) : null; }).filter(Boolean);
     },
     subtotal: function () { return this.lines().reduce(function (n, l) { return n + l.total; }, 0); },
     clear: function () { this.items = []; this.save(); }
@@ -884,7 +967,7 @@
     app.innerHTML = '<div class="wrap"><a class="back" href="#' + colHash(p) + '">← Back</a><div class="ppage">' +
       '<div class="big" id="pArt"></div><div>' +
       '<div class="eyebrow">' + colLabel(p) + '</div>' +
-      '<h1>' + esc(p.name) + '</h1><div class="price">' + money(p.price) + (p.was ? '<s>' + money(p.was) + '</s>' : '') + '</div>' +
+      '<h1>' + esc(p.name) + '</h1><div class="price" id="pPrice">' + money(p.price) + (p.was ? '<s>' + money(p.was) + '</s>' : '') + '</div>' + (p.priceSame != null ? '<div class="muted" style="font-size:14px;margin-top:4px">' + money(p.priceSame) + ' if both cords are the same colour</div>' : '') +
       '<p style="color:#3A4352;font-size:17px;margin:16px 0 0">' + esc(p.desc || p.blurb || '') + '</p>' +
       (slots.length ? packHTML : ol.length ? '<div class="opt"><span class="lab">' + esc(p.optLabel || 'Colour') + '</span><div class="swatches">' + ol.map(function (o) { return swatch(o, o.name === st.color); }).join('') + '</div></div>' :
        p.colors && p.colors.length > 1 ? '<div class="opt"><span class="lab">Colour</span><div class="swatches">' + p.colors.map(function (c) { return '<button class="sw' + (c === st.color ? ' on' : '') + '" data-c="' + c + '"><i style="background:' + (COLOR_HEX[c] || c) + '"></i>' + c + '</button>'; }).join('') + '</div></div>' : '') +
@@ -911,6 +994,7 @@
     if (p.model && window.Blaze3D) { $('#pArt').classList.add('w3dbox'); v3 = Blaze3D.mount($('#pArt'), { src: 'models/' + p.model + '.bin?v=94858834', colors: slots.length ? st.picks.map(function (k) { return col3d(k.color); }) : (p.modelColors || ['white']).map(col3d), pitch: -50, poster: p.img }); }
     var draw = function () {
       if (!document.getElementById('pArt')) return;   // customer already left this page (late map search)
+      if (p.priceSame != null && $('#pPrice')) $('#pPrice').textContent = money(unitPrice(p, { picks: st.picks }));
       if (v3) { if (slots.length) v3.setColors(st.picks.map(function (k) { return col3d(k.color); })); return; }
       if (mlive) { if ($('#pLive').classList.contains('hidden') && st.text) $('[data-v=live]').click(); mlive.set({ text: st.text || 'Your village', ar: st.geo && st.geo.ar, ele: st.geo && st.geo.ele, lat: st.geo && st.geo.lat, lon: st.geo && st.geo.lon }); return; }
       if (slots.length && window.BlazeArt && BlazeArt.has(p.art || p.id)) { artBox(thumb(p, { texts: st.picks.map(function (k, i) { return k.text || ((window.BlazeArt && BlazeArt.ornNames) || ['Gabriel', 'Maria', 'Elie'])[i % 10]; }) })); return; }
@@ -1015,7 +1099,7 @@
       ls('customer', cust);
       var order = {
         code: newCode(), createdAt: now, status: 'new', paid: false, payment: f.payment.value, method: method, customer: cust,
-        items: Cart.lines().map(function (l) { var it = { id: l.id, name: l.p.name, price: l.p.price, qty: l.qty, color: l.color, text: l.text }; if (l.geo) it.geo = l.geo; if (l.picks) it.picks = l.picks; if (l.p.grams != null) { it.unitCost = pieceCost(l.p.grams, l.p.printMin); it.printMin = l.p.printMin; } return it; }),
+        items: Cart.lines().map(function (l) { var it = { id: l.id, name: l.p.name, price: l.unit, qty: l.qty, color: l.color, text: l.text }; if (l.geo) it.geo = l.geo; if (l.picks) it.picks = l.picks; if (l.p.grams != null) { it.unitCost = pieceCost(l.p.grams, l.p.printMin); it.printMin = l.p.printMin; } return it; }),
         subtotal: c.sub, delivery: c.del, total: c.sub + c.del, history: [{ s: 'new', t: now }]
       };
       $('#coBtn').disabled = true; $('#coBtn').textContent = 'Placing order…';
@@ -1277,8 +1361,9 @@
     o.items.forEach(function (i) {
       var p = Store.product(i.id);
       if (!p) { bad.push('unknown product “' + i.name + '”'); return; }
-      if (Math.abs(p.price - i.price) > 0.001) bad.push(p.name + ' sent at ' + money(i.price) + ' (real ' + money(p.price) + ')');
-      sub += p.price * i.qty;
+      var up = unitPrice(p, i);
+      if (Math.abs(up - i.price) > 0.001) bad.push(p.name + ' sent at ' + money(i.price) + ' (real ' + money(up) + ')');
+      sub += up * i.qty;
     });
     var s = Store.settings(), fees = [0, +s.feeBeirut, +s.feeMount, +s.feeOther];
     if (Math.abs(sub - o.subtotal) > 0.001) bad.push('items should be ' + money(sub) + ', order says ' + money(o.subtotal));
@@ -1850,16 +1935,21 @@
   window.addEventListener('hashchange', route);
   Cart.save();
   Presence.on(function (n) { var el = document.getElementById('liveNow'); if (el) el.textContent = n; });
-  Store.init().then(function () {
+  // Draw as soon as shop data is there (device copy or the quick HTTPS fetch) — don't wait for the Firebase library.
+  var drawnRev = -1, firstFull = false, redrawT = null;
+  var initP = Store.init();
+  if (!window.BLAZE_ADMIN && Store.ready()) { drawnRev = Store.rev(); firstFull = true; route(); }
+  else if (!window.BLAZE_ADMIN) app.innerHTML = '<div class="wrap page" style="min-height:60vh;display:flex;align-items:center;justify-content:center"><div class="muted" style="font-size:15px">Loading the shop…</div></div>';
+  initP.then(function () {
     Presence.start();
-    if (Store.ready() || window.BLAZE_ADMIN) route();
-    else {
-      app.innerHTML = '<div class="wrap page" style="min-height:60vh;display:flex;align-items:center;justify-content:center"><div class="muted" style="font-size:15px">Loading the shop…</div></div>';
-      setTimeout(function () { if (!Store.ready()) route(); }, 4000);
+    if (!firstFull) {
+      if (Store.ready() || window.BLAZE_ADMIN) { if (Store.ready()) { drawnRev = Store.rev(); firstFull = true; } route(); }
+      else setTimeout(function () { if (!firstFull) route(); }, 4000);
     }
+  });
+  (function () {
     // Re-draw the shop whenever products / settings arrive or change, so photos, prices and stock are always current.
     // Pages where the customer is typing (checkout, product page after first draw) are not redrawn under them.
-    var drawnRev = Store.ready() ? Store.rev() : -1, firstFull = Store.ready(), redrawT = null;
     Store.on(function () {
       var cc = $('#cartCount'); if (cc) cc.textContent = Cart.count();
       if (window.BLAZE_ADMIN) { if (Store.user() && !document.querySelector('.modal')) renderAdmin(); return; }
@@ -1877,5 +1967,5 @@
         if (!first) { try { window.scrollTo({ top: y, behavior: 'instant' }); } catch (e) { window.scrollTo(0, y); } }
       }, 120);
     });
-  });
+  })();
 })();
