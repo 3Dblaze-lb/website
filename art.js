@@ -291,11 +291,27 @@
     var d = ['Gabriel', 'Maria', 'Elie'], n = o.texts || (o.text ? String(o.text).split(' · ') : d); n = [n[0] || d[0], n[1] || d[1], n[2] || d[2]];
     return '<svg viewBox="-99 -40 198 76" class="orn" role="img" aria-label="Three Holy Night ornaments">' + ornament({ text: n[0] }, 'translate(-64 0) scale(.64)') + ornament({ text: n[1] }, 'translate(0 0) scale(.64)') + ornament({ text: n[2] }, 'translate(64 0) scale(.64)') + '</svg>';
   };
+  // Any pack of Holy Night ornaments (e.g. 5 = "4 get 1 free"): rows of up to 3, same look as the 1 and the 3.
+  var ORN_NAMES = ['Gabriel', 'Maria', 'Elie', 'Rita', 'Joseph', 'Sara', 'Charbel', 'Nour', 'Jad', 'Lea'];
+  function ornPack(n) {
+    return function (o) {
+      var t = o.texts || (o.text ? String(o.text).split(' · ') : []), rows = Math.ceil(n / 3), sc = .64, gx = 64, gy = 70;
+      var top = -((rows - 1) * gy) / 2, out = '';
+      for (var i = 0; i < n; i++) {
+        var r = Math.floor(i / 3), inRow = Math.min(3, n - r * 3), c = i - r * 3;
+        var x = (c - (inRow - 1) / 2) * gx, y = top + r * gy;
+        out += ornament({ text: t[i] || ORN_NAMES[i % ORN_NAMES.length] }, 'translate(' + x + ' ' + y + ') scale(' + sc + ')');
+      }
+      var h = (rows - 1) * gy + 76;
+      return '<svg viewBox="-99 ' + (top - 38) + ' 198 ' + h + '" class="orn" role="img" aria-label="' + n + ' Holy Night ornaments">' + out + '</svg>';
+    };
+  }
+  function packArt(id) { var m = /^holy-ornament-(\d+)$/.exec(id || ''); if (m && !ART[id] && +m[1] > 1 && +m[1] <= 12) ART[id] = ornPack(+m[1]); return !!ART[id]; }
   g.BlazeArt = {
     village: villageLive, villagePin: vpinmm,
     inLebanon: function (lat, lon) { var x = lon, y = lat, inside = false; for (var i = 0, j = LB.length - 1; i < LB.length; j = i++) { var a = LB[i], b = LB[j]; if ((a[1] > y) !== (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]) inside = !inside; } return inside; },
-    draw: function (id, opts) { return (ART[id] || ART.placeholder)(opts || {}); },
-    has: function (id) { return !!ART[id]; },
+    draw: function (id, opts) { packArt(id); return (ART[id] || ART.placeholder)(opts || {}); },
+    has: function (id) { return packArt(id) || !!ART[id]; }, ornNames: ORN_NAMES,
     cedarPath: cedarPath, lebanonPath: lebanonPath, starPath: starPath, colors: C
   };
 })(window);

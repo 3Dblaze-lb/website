@@ -68,6 +68,7 @@
       desc: 'Three Holy Night ornaments, each with its own name. Perfect for the family tree or as gifts.',
       specs: ['3 ornaments, 9 cm each', 'A different name on each one', 'Red with white names'] }
   ];
+  var BLAZE_ART_IDS = ['holy-ornament-3'];
   var COLOR_HEX = { black: '#30343B', white: '#F2F3F5', red: '#E2262B', green: '#1FA14E', orange: '#FF6A1F' };
   var STATUSES = [
     { k: 'new', l: 'New' }, { k: 'confirmed', l: 'Confirmed' }, { k: 'printing', l: 'Printing' },
@@ -271,7 +272,14 @@
     function products() {
       var list = CATALOG.map(function (p) { return Object.assign({}, p, state.overrides[p.id] || {}); });
       Object.keys(state.extra || {}).forEach(function (k) { var e = state.extra[k]; if (e && e.name) list.push(Object.assign({ id: k, col: 'lebanon', price: 0, specs: [] }, e, state.overrides[k] || {})); });
-      return list.filter(function (p) { return !p.removed; }).map(resolvePhotos);
+      return list.filter(function (p) { return !p.removed; }).map(resolvePhotos).map(packArtOf);
+    }
+    // a pack made only of Holy Night ornaments is drawn like the 1 and the 3 (N ornaments)
+    function packArtOf(p) {
+      if (p.art || !p.pack || BLAZE_ART_IDS.indexOf(p.id) >= 0) return p;
+      var pk = Array.isArray(p.pack) ? p.pack : Object.keys(p.pack).map(function (k) { return p.pack[k]; });
+      if (pk.length > 1 && pk.every(function (x) { return x && x.of === 'holy-ornament'; })) return Object.assign({}, p, { art: 'holy-ornament-' + pk.length });
+      return p;
     }
     function photoOf(v) { return typeof v === 'string' && v.charAt(0) === '@' ? (state.photos[v.slice(1)] || null) : v; }
     function resolvePhotos(p) {
@@ -698,7 +706,7 @@
         '<div class="cdline" id="countdown"></div>' +
       '</div></section>' +
 
-      '<section class="blk2" id="sec-christmas"><div class="wrap"><div class="shead"><h2>Christmas collection</h2><span class="soonlbl">' + (xm.length ? 'Order by ' + new Date(s.xmasCutoff).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }) : 'Coming soon') + '</span></div>' +
+      '<section class="blk2" id="sec-christmas"><div class="wrap"><div class="shead"><h2>Christmas collection <small class="custhint">Click to customize yours</small></h2><span class="soonlbl">' + (xm.length ? 'Order by ' + new Date(s.xmasCutoff).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }) : 'Coming soon') + '</span></div>' +
         (xm.length ? '<div class="xrow" role="list">' + xm.map(function (p) { return '<a class="xc" role="listitem" href="#p-' + p.id + '"><div class="xc-img">' + thumb(p) + '</div><b>' + esc(p.name) + '</b><span>' + money(p.price) + '</span></a>'; }).join('') + '</div>'
           : '<div class="xempty"><b>New Christmas pieces are on the way.</b><span class="muted">Personalized gifts with your name on them — follow <a href="https://instagram.com/3dblaze.lb" target="_blank" rel="noopener">@3dblaze.lb</a> to see them first.</span></div>') + '</div></section>' +
 
@@ -833,7 +841,7 @@
     var draw = function () {
       if (!document.getElementById('pArt')) return;   // customer already left this page (late map search)
       if (mlive) { if ($('#pLive').classList.contains('hidden') && st.text) $('[data-v=live]').click(); mlive.set({ text: st.text || 'Your village', ar: st.geo && st.geo.ar, ele: st.geo && st.geo.ele, lat: st.geo && st.geo.lat, lon: st.geo && st.geo.lon }); return; }
-      if (slots.length && window.BlazeArt && BlazeArt.has(p.art || p.id)) { artBox(thumb(p, { texts: st.picks.map(function (k, i) { return k.text || ['Gabriel', 'Maria', 'Elie'][i % 3]; }) })); return; }
+      if (slots.length && window.BlazeArt && BlazeArt.has(p.art || p.id)) { artBox(thumb(p, { texts: st.picks.map(function (k, i) { return k.text || ((window.BlazeArt && BlazeArt.ornNames) || ['Gabriel', 'Maria', 'Elie'])[i % 10]; }) })); return; }
       if (slots.length && st.focus != null) { var fx = slots[st.focus], pk = st.picks[st.focus]; artBox(thumb(fx.p, { color: pk.color, text: pk.text || undefined })); return; }
       artBox(thumb(p, { color: st.color, text: st.text || undefined, lat: st.geo && st.geo.lat, lon: st.geo && st.geo.lon }));
     };
