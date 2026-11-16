@@ -61,7 +61,7 @@
       text: { label: 'Name on the ornament', max: 14, ph: 'e.g. Gabriel', required: true },
       blurb: 'The star of Christmas, the Holy Family, and a name.',
       desc: 'Our own design: the star of Bethlehem shining over Mary, Joseph and baby Jesus in the manger, with the name of your choice in white on the banner. Type the name and see it on the ornament before you order. One for every person in the family.',
-      specs: ['9 cm round, 3 mm thick', 'Red with the name in white, set flush into the ornament', 'Name up to 14 letters', 'Hanging loop for string or ribbon'] },
+      specs: ['9 cm round, 3 mm thick (name raised 0.8 mm)', 'Red, with the name in white raised on the banner', 'Name up to 14 letters', 'Hanging loop for string or ribbon'] },
     { id: 'holy-ornament-3', col: 'xmas', name: 'Holy Night Ornament — 3 for $10', price: 10, was: 12, tag: 'Save $2', printMin: 150, grams: 27,
       pack: [{ of: 'holy-ornament' }, { of: 'holy-ornament' }, { of: 'holy-ornament' }],
       blurb: 'Three ornaments, three names.',
