@@ -271,9 +271,9 @@
   }
   function ornament(o, gx) {
     var nm = ornName(o.text || 'Gabriel'), L = ornLayout(nm);
-    return '<g' + (gx ? ' transform="' + gx + '"' : '') + '><image href="img/holy-ornament.webp" x="-46" y="-54" width="92" height="100"/>' +
-      (L ? '<text class="ornname" data-n="' + esc2(nm) + '" ' + ornTextAttrs(L) + ' font-family="' + OFONT + ', Pacifico, cursive" fill="#7E1A12" stroke="#7E1A12" stroke-linejoin="round" transform="translate(.35 .45)" opacity=".55">' + esc2(nm) + '</text>' +
-        '<text class="ornname" data-n="' + esc2(nm) + '" ' + ornTextAttrs(L) + ' font-family="' + OFONT + ', Pacifico, cursive" fill="#F7F5F0" stroke="#F7F5F0" stroke-linejoin="round">' + esc2(nm) + '</text>' : '') + '</g>';
+    return '<g' + (gx ? ' transform="' + gx + '"' : '') + '><image href="img/holy-ornament.webp?v=94852778" x="-46" y="-54" width="92" height="100"/>' +
+      (L ? '<text class="ornname" data-n="' + esc2(nm) + '" ' + ornTextAttrs(L) + ' font-family="' + OFONT + ', Pacifico, cursive" fill="#7A0402" stroke="#7A0402" stroke-linejoin="round" transform="translate(.35 .45)" opacity=".55">' + esc2(nm) + '</text>' +
+        '<text class="ornname" data-n="' + esc2(nm) + '" ' + ornTextAttrs(L) + ' font-family="' + OFONT + ', Pacifico, cursive" fill="#FFFFFF" stroke="#FFFFFF" stroke-linejoin="round">' + esc2(nm) + '</text>' : '') + '</g>';
   }
   // once Pacifico has loaded, re-fit any name drawn with the fallback metrics
   function ornRefit() {
