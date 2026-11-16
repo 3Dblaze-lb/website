@@ -56,7 +56,7 @@
       colors: ['black'], text: { label: 'Your village or town', max: 18, ph: 'e.g. Hadchit', required: true },
       blurb: 'Lebanon in 3D, with your village on it.',
       desc: 'A raised map of Lebanon standing on a base with your village name printed in. We place a green pin where your village is. A desk piece that starts conversations.',
-      specs: ['About 15 cm tall', 'Your village name in English and Arabic, with its elevation, on the base', 'Green pin placed on your village', 'Black base, white map'] },
+      specs: ['About 17 cm tall, 15 cm wide', 'Real Lebanon outline with light relief and district borders', 'Your village name in English and Arabic, with its elevation, on the base', 'Green pin placed on your village', 'Black base, white map'] },
 
     { id: 'name-ornament', col: 'xmas', name: 'Personalized Name Ornament', price: 7, tag: 'Personalized', printMin: 40,
       colors: ['red', 'green', 'white'], text: { label: 'Name on the ornament', max: 10, ph: 'e.g. Maria', required: true },
@@ -740,7 +740,7 @@
     var isMapP = (p.art || p.id) === 'my-village', mlive = null;
     if (isMapP) {
       $('#pArt').classList.add('mapbig');
-      $('#pArt').innerHTML = '<div class="mapart live" id="pLive"></div><img class="realph hidden" src="img/my-village.jpg" alt="Real printed My Village map"><div class="viewsw" role="group" aria-label="View"><button type="button" class="on" data-v="live">Your preview</button><button type="button" data-v="photo">Real photo</button></div>';
+      $('#pArt').innerHTML = '<div class="mapart live" id="pLive"></div><img class="realph hidden" src="' + (p.photo || 'img/my-village.jpg') + '" alt="Real printed My Village map"><div class="viewsw" role="group" aria-label="View"><button type="button" class="on" data-v="live">Your preview</button><button type="button" data-v="photo">Real photo</button></div>';
       mlive = BlazeArt.village($('#pLive'), { text: st.text || 'Your village' });
       $$('[data-v]').forEach(function (b) { b.onclick = function () { var ph = b.dataset.v === 'photo'; $$('[data-v]').forEach(function (x) { x.classList.toggle('on', x === b); }); $('#pLive').classList.toggle('hidden', ph); $('.realph').classList.toggle('hidden', !ph); }; });
     }
