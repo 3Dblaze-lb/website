@@ -89,7 +89,7 @@
   ];
   var DEFAULT_SETTINGS = {
     whatsapp: '96178801186', whish: '', whishName: '3DBlaze', instagram: '3dblaze.lb',
-    feeBeirut: 3, feeMount: 3, feeOther: 5, freeOver: 40, pickup: true, open: true,
+    feeBeirut: 5, feeMount: 5, feeOther: 5, freeOver: 40, pickup: true, open: true,
     banner: '🇱🇧 Independence Day drop is live — order by 19 Nov for delivery before the 22nd',
     xmasCutoff: '2026-12-18',
     calcPla: 25, calcMachine: 0.35, calcPack: 0.25, calcFail: 10, calcMarkup: 3, calcMin: 5, calcInfill: 15, calcGph: 15
@@ -683,7 +683,7 @@
     var s = Store.settings(), all = Store.products();
     var leb = all.filter(function (p) { return p.col === 'lebanon'; }), xm = all.filter(function (p) { return p.col === 'xmas'; });
     var vp = leb.filter(function (p) { return (p.art || p.id) === 'my-village'; })[0], others = leb.filter(function (p) { return p !== vp; });
-    var fee = (s.feeMount === s.feeBeirut ? money(s.feeBeirut) + ' in Beirut &amp; Mount Lebanon' : money(s.feeBeirut) + ' in Beirut, ' + money(s.feeMount) + ' in Mount Lebanon') + ', ' + money(s.feeOther) + ' elsewhere' + (s.freeOver ? ', free over ' + money(s.freeOver) : '');
+    var fee = (+s.feeBeirut === +s.feeMount && +s.feeMount === +s.feeOther) ? money(s.feeOther) + ' anywhere in Lebanon' + (s.freeOver ? ', free over ' + money(s.freeOver) : '') : (s.feeMount === s.feeBeirut ? money(s.feeBeirut) + ' in Beirut &amp; Mount Lebanon' : money(s.feeBeirut) + ' in Beirut, ' + money(s.feeMount) + ' in Mount Lebanon') + ', ' + money(s.feeOther) + ' elsewhere' + (s.freeOver ? ', free over ' + money(s.freeOver) : '');
     app.innerHTML =
       '<section class="hero2"><div class="wrap">' +
         '<h1>Ideas you can <span class="bl">hold</span>.</h1>' +
@@ -881,7 +881,7 @@
     if (!lines.length) { app.innerHTML = '<div class="wrap page empty"><h1>Your cart is empty</h1><p class="muted">The Lebanon drop and the Christmas collection are waiting.</p><a class="btn pri" href="#shop">Start shopping</a></div>'; return; }
     var s = Store.settings(), sub = Cart.subtotal();
     app.innerHTML = '<div class="wrap page"><h1>Your cart</h1><div class="two"><div class="panel">' + lines.map(function (l) { return lineHTML(l, true); }).join('') + '</div>' +
-      '<div class="panel"><h3>Summary</h3><div class="sum"><div><span>Items</span><b>' + money(sub) + '</b></div><div><span class="muted">Delivery</span><span class="muted">from ' + money(Math.min(s.feeBeirut, s.feeMount)) + '</span></div>' +
+      '<div class="panel"><h3>Summary</h3><div class="sum"><div><span>Items</span><b>' + money(sub) + '</b></div><div><span class="muted">Delivery</span><span class="muted">' + (+s.feeBeirut === +s.feeMount && +s.feeMount === +s.feeOther ? '' : 'from ') + money(Math.min(s.feeBeirut, s.feeMount, s.feeOther)) + '</span></div>' +
       (s.freeOver && sub < s.freeOver ? '<div class="muted" style="font-size:13px">Add ' + money(s.freeOver - sub) + ' more for free delivery</div>' : s.freeOver ? '<div style="color:var(--green);font-size:13px">Free delivery unlocked ✓</div>' : '') +
       '</div><a class="btn pri full" style="margin-top:20px" href="#checkout">Checkout</a><a class="btn sec full" style="margin-top:10px" href="#shop">Keep shopping</a></div></div></div>';
     $$('[data-d]').forEach(function (b) { b.onclick = function () { var i = Cart.items.filter(function (x) { return x.key === b.dataset.k; })[0]; i.qty = Math.max(1, i.qty + +b.dataset.d); Cart.save(); viewCart(); }; });
@@ -1355,7 +1355,7 @@
     return Store.products().filter(function (p) { return +p.printMin > 0; }).map(function (p) { return { n: p.name, g: +p.grams || 0, m: +p.printMin, p: +p.price }; })
       .concat([{ n: 'Custom print', g: 20, m: 60, p: null }]);
   }
-  var calcIn = Object.assign({ preset: 'Custom print', name: 'Custom print', qty: 1, grams: 20, hours: 1, mins: 0, design: 0, delivery: 3, rush: false, pickup: false, bulk: true, fixed: null }, ls('calc') || {});
+  var calcIn = Object.assign({ preset: 'Custom print', name: 'Custom print', qty: 1, grams: 20, hours: 1, mins: 0, design: 0, delivery: 5, rush: false, pickup: false, bulk: true, fixed: null }, ls('calc') || {});
   var calcOpen = false, lastQuote = null;
 
   function calcRun() {
