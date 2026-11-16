@@ -6,38 +6,228 @@
     },
     "products": {
       ".read": true,
-      ".write": "auth != null && auth.token.email === '3dbllaze@gmail.com' && auth.token.email_verified === true"
+      ".write": "(auth != null && auth.token.email === '3dbllaze@gmail.com' && auth.token.email_verified === true)"
     },
     "extraProducts": {
       ".read": true,
-      ".write": "auth != null && auth.token.email === '3dbllaze@gmail.com' && auth.token.email_verified === true"
+      ".write": "(auth != null && auth.token.email === '3dbllaze@gmail.com' && auth.token.email_verified === true)"
     },
     "settings": {
       ".read": true,
-      ".write": "auth != null && auth.token.email === '3dbllaze@gmail.com' && auth.token.email_verified === true"
+      ".write": "(auth != null && auth.token.email === '3dbllaze@gmail.com' && auth.token.email_verified === true)"
     },
     "orders": {
-      ".read": "auth != null && auth.token.email === '3dbllaze@gmail.com' && auth.token.email_verified === true",
+      ".read": "(auth != null && auth.token.email === '3dbllaze@gmail.com' && auth.token.email_verified === true)",
       "$code": {
-        ".write": "(!data.exists() && newData.child('code').val() === $code) || (auth != null && auth.token.email === '3dbllaze@gmail.com' && auth.token.email_verified === true)",
-        ".validate": "newData.hasChildren(['code', 'items', 'total', 'customer', 'createdAt'])"
+        ".write": "(!data.exists() && newData.hasChildren(['code', 'items', 'total', 'subtotal', 'delivery', 'customer', 'createdAt', 'status', 'payment', 'method', 'history']) && $code.matches(/^3DB-[A-Z2-9]{5}$/) && newData.child('status').val() === 'new' && newData.child('paid').val() === false && !newData.child('source').exists() && !newData.child('note').exists() && newData.child('createdAt').val() >= now - 172800000 && newData.child('createdAt').val() <= now + 172800000 && newData.child('total').val() === newData.child('subtotal').val() + newData.child('delivery').val()) || (auth != null && auth.token.email === '3dbllaze@gmail.com' && auth.token.email_verified === true)",
+        ".validate": "newData.hasChildren(['code', 'items', 'total', 'customer', 'createdAt']) && newData.child('code').val() === $code",
+        "code": {
+          ".validate": "newData.isString()"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 9000000000000.0"
+        },
+        "updatedAt": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 9000000000000.0"
+        },
+        "status": {
+          ".validate": "newData.isString() && (newData.val() === 'new' || newData.val() === 'confirmed' || newData.val() === 'printing' || newData.val() === 'ready' || newData.val() === 'out' || newData.val() === 'delivered' || newData.val() === 'cancelled')"
+        },
+        "paid": {
+          ".validate": "newData.isBoolean()"
+        },
+        "payment": {
+          ".validate": "newData.val() === 'cash' || newData.val() === 'whish'"
+        },
+        "method": {
+          ".validate": "newData.val() === 'delivery' || newData.val() === 'pickup'"
+        },
+        "source": {
+          ".validate": "newData.val() === 'manual'"
+        },
+        "subtotal": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000000"
+        },
+        "delivery": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000"
+        },
+        "total": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000000"
+        },
+        "note": {
+          ".validate": "newData.isString() && newData.val().length <= 500"
+        },
+        "customer": {
+          ".validate": "newData.hasChildren(['name', 'phone'])",
+          "name": {
+            ".validate": "newData.isString() && newData.val().length <= 60"
+          },
+          "phone": {
+            ".validate": "newData.isString() && (newData.val().matches(/^[+]?[0-9]{7,20}$/) || ((auth != null && auth.token.email === '3dbllaze@gmail.com' && auth.token.email_verified === true) && newData.val().length <= 20))"
+          },
+          "region": {
+            ".validate": "newData.isString() && newData.val().length <= 30"
+          },
+          "town": {
+            ".validate": "newData.isString() && newData.val().length <= 60"
+          },
+          "address": {
+            ".validate": "newData.isString() && newData.val().length <= 200"
+          },
+          "notes": {
+            ".validate": "newData.isString() && newData.val().length <= 300"
+          },
+          "$other": {
+            ".validate": "false"
+          }
+        },
+        "items": {
+          "$i": {
+            ".validate": "$i.matches(/^[0-9]{1,2}$/) && newData.hasChildren(['id', 'name', 'price', 'qty'])",
+            "id": {
+              ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9_-]{1,40}$/)"
+            },
+            "name": {
+              ".validate": "newData.isString() && newData.val().length <= 120"
+            },
+            "price": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100000"
+            },
+            "qty": {
+              ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 999"
+            },
+            "color": {
+              ".validate": "newData.isString() && newData.val().length <= 40"
+            },
+            "text": {
+              ".validate": "newData.isString() && newData.val().length <= 60"
+            },
+            "unitCost": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100000"
+            },
+            "printMin": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100000"
+            },
+            "geo": {
+              ".validate": "newData.hasChildren(['lat', 'lon'])",
+              "lat": {
+                ".validate": "newData.isNumber() && newData.val() >= -90 && newData.val() <= 90"
+              },
+              "lon": {
+                ".validate": "newData.isNumber() && newData.val() >= -180 && newData.val() <= 180"
+              },
+              "label": {
+                ".validate": "newData.isString() && newData.val().length <= 200"
+              },
+              "name": {
+                ".validate": "newData.isString() && newData.val().length <= 200"
+              },
+              "ar": {
+                ".validate": "newData.isString() && newData.val().length <= 200"
+              },
+              "ele": {
+                ".validate": "newData.isNumber() && newData.val() >= -500 && newData.val() <= 9000"
+              },
+              "exact": {
+                ".validate": "newData.isBoolean()"
+              },
+              "$other": {
+                ".validate": "false"
+              }
+            },
+            "picks": {
+              "$p": {
+                ".validate": "$p.matches(/^[0-9]{1,2}$/)",
+                "id": {
+                  ".validate": "newData.isString() && newData.val().length <= 40"
+                },
+                "name": {
+                  ".validate": "newData.isString() && newData.val().length <= 120"
+                },
+                "color": {
+                  ".validate": "newData.isString() && newData.val().length <= 40"
+                },
+                "text": {
+                  ".validate": "newData.isString() && newData.val().length <= 60"
+                },
+                "$other": {
+                  ".validate": "false"
+                }
+              }
+            },
+            "$other": {
+              ".validate": "false"
+            }
+          }
+        },
+        "history": {
+          "$h": {
+            ".validate": "$h.matches(/^[0-9]{1,3}$/) && newData.hasChildren(['s', 't'])",
+            "s": {
+              ".validate": "newData.isString() && (newData.val() === 'new' || newData.val() === 'confirmed' || newData.val() === 'printing' || newData.val() === 'ready' || newData.val() === 'out' || newData.val() === 'delivered' || newData.val() === 'cancelled')"
+            },
+            "t": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 9000000000000.0"
+            },
+            "$other": {
+              ".validate": "false"
+            }
+          }
+        },
+        "$other": {
+          ".validate": "false"
+        }
       }
     },
     "tracking": {
       "$code": {
         ".read": true,
-        ".write": "!data.exists() || (auth != null && auth.token.email === '3dbllaze@gmail.com' && auth.token.email_verified === true)"
+        ".write": "(!data.exists() && newData.exists() && root.child('orders').child($code).exists() && newData.child('status').val() === 'new' && newData.child('paid').val() === false && newData.child('total').val() === root.child('orders').child($code).child('total').val()) || (auth != null && auth.token.email === '3dbllaze@gmail.com' && auth.token.email_verified === true)",
+        ".validate": "newData.hasChildren(['status', 'updatedAt'])",
+        "status": {
+          ".validate": "newData.isString() && (newData.val() === 'new' || newData.val() === 'confirmed' || newData.val() === 'printing' || newData.val() === 'ready' || newData.val() === 'out' || newData.val() === 'delivered' || newData.val() === 'cancelled')"
+        },
+        "total": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000000"
+        },
+        "paid": {
+          ".validate": "newData.isBoolean()"
+        },
+        "payment": {
+          ".validate": "newData.val() === 'cash' || newData.val() === 'whish'"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 9000000000000.0"
+        },
+        "updatedAt": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 9000000000000.0"
+        },
+        "items": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100000"
+        },
+        "$other": {
+          ".validate": "false"
+        }
       }
     },
     "requests": {
-      ".read": "auth != null && auth.token.email === '3dbllaze@gmail.com' && auth.token.email_verified === true",
-      ".write": "auth != null && auth.token.email === '3dbllaze@gmail.com' && auth.token.email_verified === true"
+      ".read": "(auth != null && auth.token.email === '3dbllaze@gmail.com' && auth.token.email_verified === true)",
+      ".write": "(auth != null && auth.token.email === '3dbllaze@gmail.com' && auth.token.email_verified === true)"
     },
     "presence": {
-      ".read": "auth != null && auth.token.email === '3dbllaze@gmail.com' && auth.token.email_verified === true",
+      ".read": "(auth != null && auth.token.email === '3dbllaze@gmail.com' && auth.token.email_verified === true)",
       "$id": {
-        ".write": true,
-        ".validate": "!newData.exists() || (newData.hasChildren(['t']) && (!newData.child('page').exists() || (newData.child('page').isString() && newData.child('page').val().length <= 40)))"
+        ".write": "$id.matches(/^v[a-z0-9]{6,24}$/)",
+        ".validate": "newData.hasChildren(['t'])",
+        "t": {
+          ".validate": "newData.val() === now"
+        },
+        "page": {
+          ".validate": "newData.isString() && newData.val().length <= 40"
+        },
+        "$other": {
+          ".validate": "false"
+        }
       }
     }
   }

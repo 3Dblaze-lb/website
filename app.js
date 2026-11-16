@@ -98,6 +98,47 @@
   // ---------- utils ----------
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  // Security: never run inside another site's frame (clickjacking)
+  if (window.top !== window.self) { try { window.top.location = window.self.location.href; } catch (e) { document.documentElement.style.display = 'none'; throw new Error('framed'); } }
+  /* Security: anything that comes from the database is untrusted (anyone can submit an order).
+     Force every record into the exact shape the app expects before it is shown anywhere. */
+  var Clean = (function () {
+    function str(v, n) { return v == null || typeof v === 'object' ? null : String(v).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').slice(0, n || 120); }
+    function num(v, lo, hi) { v = Number(v); if (!isFinite(v)) v = 0; return Math.min(hi == null ? 1e7 : hi, Math.max(lo == null ? -1e7 : lo, v)); }
+    function arr(v) { return Array.isArray(v) ? v : v && typeof v === 'object' ? Object.keys(v).map(function (k) { return v[k]; }) : []; }
+    function oneOf(v, list, d) { return list.indexOf(v) >= 0 ? v : d; }
+    var ST = ['new', 'confirmed', 'printing', 'ready', 'out', 'delivered', 'cancelled'];
+    function geo(g) { if (!g || typeof g !== 'object') return null; return { lat: num(g.lat, -90, 90), lon: num(g.lon, -180, 180), label: str(g.label, 80), name: str(g.name, 80), ar: str(g.ar, 80), ele: g.ele == null ? null : num(g.ele, -500, 9000), exact: g.exact === true }; }
+    function pick(k) { if (!k || typeof k !== 'object') return null; return { id: str(k.id, 40), name: str(k.name, 80), color: str(k.color, 40), text: str(k.text, 60) }; }
+    function item(i) {
+      if (!i || typeof i !== 'object') return null;
+      var o = { id: str(i.id, 40) || 'item', name: str(i.name, 80) || 'Item', price: num(i.price, 0, 100000), qty: Math.round(num(i.qty, 1, 999)) || 1, color: str(i.color, 40), text: str(i.text, 60) };
+      if (i.geo) o.geo = geo(i.geo);
+      if (i.picks) o.picks = arr(i.picks).slice(0, 30).map(pick).filter(Boolean);
+      if (i.unitCost != null) o.unitCost = num(i.unitCost, 0, 100000);
+      if (i.printMin != null) o.printMin = num(i.printMin, 0, 100000);
+      return o;
+    }
+    function order(o, key) {
+      if (!o || typeof o !== 'object') return null;
+      var c = o.customer && typeof o.customer === 'object' ? o.customer : {};
+      var r = {
+        code: str(key || o.code, 20) || '?', createdAt: num(o.createdAt, 0, 9e12), updatedAt: o.updatedAt == null ? undefined : num(o.updatedAt, 0, 9e12),
+        status: oneOf(o.status, ST, 'new'), paid: o.paid === true, payment: oneOf(o.payment, ['cash', 'whish'], 'cash'),
+        method: oneOf(o.method, ['delivery', 'pickup'], 'delivery'), source: o.source === 'manual' ? 'manual' : undefined, demo: o.demo === true || undefined,
+        customer: { name: str(c.name, 60) || '?', phone: (str(c.phone, 20) || '').replace(/[^\d+]/g, ''), region: str(c.region, 30) || '', town: str(c.town, 60) || '', address: str(c.address, 200) || '', notes: str(c.notes, 300) || '' },
+        items: arr(o.items).slice(0, 50).map(item).filter(Boolean),
+        subtotal: num(o.subtotal, 0, 1e6), delivery: num(o.delivery, 0, 1e4), total: num(o.total, 0, 1e6),
+        history: arr(o.history).slice(0, 50).filter(function (h) { return h && typeof h === 'object'; }).map(function (h) { return { s: oneOf(h.s, ST, 'new'), t: num(h.t, 0, 9e12) }; }),
+        note: str(o.note, 500) || undefined
+      };
+      Object.keys(r).forEach(function (k) { if (r[k] === undefined) delete r[k]; });
+      return r;
+    }
+    function orders(m) { var out = {}; if (!m || typeof m !== 'object') return out; Object.keys(m).forEach(function (k) { if (!/^[A-Za-z0-9-]{3,20}$/.test(k)) return; var o = order(m[k], k); if (o) out[k] = o; }); return out; }
+    function track(t) { if (!t || typeof t !== 'object') return null; return { status: oneOf(t.status, ST, 'new'), total: num(t.total, 0, 1e6), paid: t.paid === true, payment: oneOf(t.payment, ['cash', 'whish'], 'cash'), createdAt: num(t.createdAt, 0, 9e12), updatedAt: num(t.updatedAt || t.createdAt, 0, 9e12), items: Math.round(num(t.items, 0, 9999)) }; }
+    return { order: order, orders: orders, track: track, str: str };
+  })();
   function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function money(v) { v = Math.round((+v || 0) * 100) / 100; return '$' + (v % 1 === 0 ? v : v.toFixed(2)); }
   function ls(k, v) {
@@ -175,7 +216,7 @@
         return Promise.all(['orders', 'requests'].map(function (p) { return fetch(dbUrl(p, t), { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }); }));
       }).then(function (a) {
         if (sockOrders || !state.user) return;
-        state.orders = a[0] || {}; state.requests = a[1] || {}; ordersReady = true; emit();
+        state.orders = Clean.orders(a[0]); state.requests = a[1] || {}; ordersReady = true; emit();
       }).catch(function () { if (!ordersReady && state.user) { ordersReady = 'error'; emit(); } });
     }
     function restWrite(method, path, body) {
@@ -190,10 +231,10 @@
       if (!live) {
         state.overrides = ls('overrides') || {}; state.extra = ls('extra') || {};
         state.settings = Object.assign({}, DEFAULT_SETTINGS, ls('settings') || {});
-        state.orders = ls('orders') || {};
+        state.orders = Clean.orders(ls('orders'));
         state.requests = ls('requests') || {};
         state.user = ls('demoAdmin') ? { email: 'demo' } : null;
-        window.addEventListener('storage', function () { state.orders = ls('orders') || {}; emit(); });
+        window.addEventListener('storage', function () { state.orders = Clean.orders(ls('orders')); emit(); });
         return Promise.resolve();
       }
       if (!window.BLAZE_ADMIN) useCache();
@@ -210,7 +251,7 @@
             state.user = u ? { email: u.email, uid: u.uid } : null;
             if (ordersRef) { ordersRef.off(); ordersRef = null; state.orders = {}; fb.ref('requests').off(); state.requests = {}; }
             clearInterval(pullT); pullT = null; ordersReady = false; sockOrders = false;
-            if (u) { ordersRef = fb.ref('orders'); ordersRef.on('value', function (s) { sockOrders = true; ordersReady = true; clearInterval(pullT); state.orders = s.val() || {}; emit(); }, function () { state.orders = {}; ordersReady = 'error'; emit(); });
+            if (u) { ordersRef = fb.ref('orders'); ordersRef.on('value', function (s) { sockOrders = true; ordersReady = true; clearInterval(pullT); state.orders = Clean.orders(s.val()); emit(); }, function () { state.orders = {}; ordersReady = 'error'; emit(); });
               fb.ref('requests').on('value', function (s) { state.requests = s.val() || {}; emit(); }, function () { state.requests = {}; emit(); });
               if (window.BLAZE_ADMIN) { restPull(); pullT = setInterval(restPull, 20000); } }
             emit();
@@ -263,11 +304,12 @@
         }
         if (offline || !fb) return Promise.reject(new Error('offline'));
         if (window.BLAZE_ADMIN && !sockOrders && state.user) { state.orders[o.code] = o; emit(); return restWrite('PUT', 'orders/' + o.code, o).then(function () { return restWrite('PUT', 'tracking/' + o.code, track); }).then(function () { return o; }); }
-        return fb.ref('orders/' + o.code).set(o).then(function () { return fb.ref('tracking/' + o.code).set(track); }).then(function () { return o; });
+        return fb.ref('orders/' + o.code).set(o).then(function () { return fb.ref('tracking/' + o.code).set(track).catch(function () {}); }).then(function () { return o; });
       },
       track: function (code) {
-        if (!live) { var tr = ls('tracking') || {}; return Promise.resolve(tr[code] || null); }
-        return fb.ref('tracking/' + code).once('value').then(function (s) { return s.val(); });
+        if (!live) { var tr = ls('tracking') || {}; return Promise.resolve(Clean.track(tr[code])); }
+        if (!/^[A-Z0-9-]{3,20}$/.test(code)) return Promise.resolve(null);
+        return fb.ref('tracking/' + code).once('value').then(function (s) { return Clean.track(s.val()); });
       },
       updateOrder: function (code, patch) {
         var o = state.orders[code]; if (!o) return Promise.reject();
@@ -794,15 +836,15 @@
     var saved = ls('customer') || {};
     app.innerHTML = '<div class="wrap page"><h1>Checkout</h1><form class="two" id="co" novalidate><div style="display:grid;gap:18px">' +
       '<div class="panel"><h3>Your details</h3><div class="grid2">' +
-        '<label class="field">Full name<input name="name" autocomplete="name" required value="' + esc(saved.name) + '"></label>' +
-        '<label class="field">Phone (WhatsApp)<input name="phone" type="tel" autocomplete="tel" placeholder="70 123 456" required value="' + esc(saved.phone) + '"></label>' +
+        '<label class="field">Full name<input name="name" autocomplete="name" maxlength="60" required value="' + esc(saved.name) + '"></label>' +
+        '<label class="field">Phone (WhatsApp)<input name="phone" type="tel" autocomplete="tel" maxlength="20" placeholder="70 123 456" required value="' + esc(saved.phone) + '"></label>' +
       '</div></div>' +
       '<div class="panel"><h3>Delivery</h3><div class="paysel" style="margin-bottom:14px"><label class="on"><input type="radio" name="method" value="delivery" checked><span><b>Delivery</b><small>Anywhere in Lebanon</small></span></label>' +
         (s.pickup ? '<label><input type="radio" name="method" value="pickup"><span><b>Pickup</b><small>Free · we send the location</small></span></label>' : '') + '</div>' +
         '<div class="grid2" id="addr"><label class="field">Area<select name="region">' + REGIONS.map(function (r) { return '<option' + (saved.region === r[0] ? ' selected' : '') + '>' + esc(r[0]) + '</option>'; }).join('') + '</select></label>' +
-        '<label class="field">Town / village<input name="town" required value="' + esc(saved.town) + '"></label>' +
-        '<label class="field wide">Address details<input name="address" placeholder="Street, building, floor, landmark" required value="' + esc(saved.address) + '"></label></div>' +
-        '<label class="field" style="margin-top:14px">Notes (optional)<textarea name="notes" placeholder="Gift message, best time to call…"></textarea></label></div>' +
+        '<label class="field">Town / village<input name="town" maxlength="60" required value="' + esc(saved.town) + '"></label>' +
+        '<label class="field wide">Address details<input name="address" placeholder="Street, building, floor, landmark" maxlength="200" required value="' + esc(saved.address) + '"></label></div>' +
+        '<label class="field" style="margin-top:14px">Notes (optional)<textarea name="notes" maxlength="300" placeholder="Gift message, best time to call…"></textarea></label></div>' +
       '<div class="panel"><h3>Payment</h3><div class="paysel"><label class="on"><input type="radio" name="payment" value="cash" checked><span><b>Cash on delivery</b><small>Pay the driver</small></span></label>' +
         '<label><input type="radio" name="payment" value="whish"><span><b>Whish Money</b><small>Send to our Whish number</small></span></label></div>' +
         '<div class="note hidden" id="whishNote">After you place the order you’ll see our Whish number and your order code. Send the total with the code as the note — we start printing once it arrives.</div></div>' +
@@ -837,6 +879,7 @@
         subtotal: c.sub, delivery: c.del, total: c.sub + c.del, history: [{ s: 'new', t: now }]
       };
       $('#coBtn').disabled = true; $('#coBtn').textContent = 'Placing order…';
+      order = Clean.order(order);
       Store.placeOrder(order).then(function () { Cart.clear(); ls('lastOrder', order); var mine = (ls('myOrders') || []).filter(function (c) { return c !== order.code; }); mine.unshift(order.code); ls('myOrders', mine.slice(0, 10)); location.hash = 'order-' + order.code; })
         .catch(function () { $('#coBtn').disabled = false; $('#coBtn').textContent = 'Place order'; $('#coErr').innerHTML = 'We couldn’t reach our server, so your order was <b>not</b> placed. Check your connection and try again, or <a href="' + waLink(Store.settings().whatsapp, orderText(order)) + '" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">send it to us on WhatsApp</a>.'; });
     });
@@ -994,7 +1037,7 @@
       '<input class="search" id="oq" placeholder="Search name, phone, code, town" value="' + esc(adm.q) + '"><button class="btn pri" id="newO" style="min-height:42px;padding:8px 14px;font-size:14px">+ New order</button><button class="btn sec" id="csv" style="min-height:42px;padding:8px 14px;font-size:14px">Copy as CSV</button></div>' +
       '<div class="olist">' + (list.length ? list.map(function (o) {
         var n = o.items.reduce(function (a, i) { return a + i.qty; }, 0);
-        return '<div class="orow" data-o="' + esc(o.code) + '"><div><div class="c">' + esc(o.code) + '</div><small class="muted">' + fmtDate(o.createdAt) + '</small></div>' +
+        return '<div class="orow" data-o="' + esc(o.code) + '"><div><div class="c">' + esc(o.code) + (priceCheck(o) ? ' <span title="Price doesn’t match" style="color:#C8102E">⚠</span>' : '') + '</div><small class="muted">' + fmtDate(o.createdAt) + '</small></div>' +
           '<div class="n"><b>' + esc(o.customer.name) + '</b><small>' + esc(o.method === 'pickup' ? 'Pickup' : [o.customer.town, o.customer.region].filter(Boolean).join(' · ')) + '</small><small class="ph">' + esc(fmtPhone(o.customer.phone)) + '</small></div>' +
           '<div class="it"><small>' + n + ' item' + (n > 1 ? 's' : '') + ' · ' + esc(o.items.map(function (i) { return i.name; }).join(', ')) + '</small></div>' +
           '<div class="pm"><small class="' + (o.paid ? 'paid' : 'unpaid') + '">' + (o.payment === 'whish' ? 'Whish' : 'Cash') + (o.paid ? ' ✓' : '') + '</small></div>' +
@@ -1087,11 +1130,29 @@
       });
   }
 
+  // Security: the price a customer submits can be faked — recompute it from the real catalogue.
+  function priceCheck(o) {
+    if (o.source === 'manual' || o.demo) return '';
+    var bad = [], sub = 0;
+    o.items.forEach(function (i) {
+      var p = Store.product(i.id);
+      if (!p) { bad.push('unknown product “' + i.name + '”'); return; }
+      if (Math.abs(p.price - i.price) > 0.001) bad.push(p.name + ' sent at ' + money(i.price) + ' (real ' + money(p.price) + ')');
+      sub += p.price * i.qty;
+    });
+    var s = Store.settings(), fees = [0, +s.feeBeirut, +s.feeMount, +s.feeOther];
+    if (Math.abs(sub - o.subtotal) > 0.001) bad.push('items should be ' + money(sub) + ', order says ' + money(o.subtotal));
+    if (fees.indexOf(o.delivery) < 0) bad.push('delivery fee ' + money(o.delivery) + ' isn’t one of yours');
+    if (o.delivery === 0 && o.method !== 'pickup' && !(s.freeOver && sub >= s.freeOver)) bad.push('free delivery but under ' + money(s.freeOver || 0));
+    if (Math.abs(o.subtotal + o.delivery - o.total) > 0.001) bad.push('total doesn’t add up');
+    return bad.join(' · ');
+  }
   function orderModal(code) {
     var o = Store.orders().filter(function (x) { return x.code === code; })[0]; if (!o) return;
     var c = o.customer;
     modal('<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-right:44px"><h3 style="font-size:22px">' + esc(o.code) + '</h3>' + statusBadge(o.status) + (o.demo ? '<span class="badge s-cancelled">sample</span>' : '') + '</div>' +
       '<p class="muted" style="margin:4px 0 16px;font-size:14px">' + fmtDate(o.createdAt) + '</p>' +
+      (function () { var w = priceCheck(o); return w ? '<div class="panel" style="border:2px solid #E5484D;background:#FFF5F5;margin-bottom:14px;padding:12px 16px"><b style="color:#C8102E">⚠ Price doesn’t match the shop — possible fake order</b><div style="font-size:14px;margin-top:4px">' + esc(w) + '</div><div class="muted" style="font-size:13px;margin-top:4px">Call the customer before printing. Charge the real price.</div></div>' : ''; })() +
       '<div class="lab muted" style="font-size:13px">Move to</div><div class="stepper">' + STATUSES.map(function (s) { return '<button data-s="' + s.k + '" class="' + (o.status === s.k ? 'on' : '') + '">' + s.l + '</button>'; }).join('') + '</div>' +
       '<div class="panel" style="padding:16px 18px;background:var(--card2)">' + o.items.map(function (i) { var p = Store.product(i.id) || { id: i.id, name: i.name }; return '<div class="line" style="grid-template-columns:56px 1fr auto"><div class="th" style="width:56px;height:56px">' + thumb(p, { color: i.color, text: i.text, lat: i.geo && i.geo.lat, lon: i.geo && i.geo.lon, ar: i.geo && i.geo.ar, ele: i.geo && i.geo.ele }) + '</div><div><div class="nm">' + esc(i.name) + ' × ' + i.qty + '</div><div class="meta">' + esc([i.color, i.text ? '“' + i.text + '”' : ''].filter(Boolean).join(' · ')) + '</div></div><b>' + money(i.price * i.qty) + '</b></div>'; }).join('') +
       '<div class="sum" style="margin-top:10px">' + (function () { var c = orderCost(o); return c == null ? '<div class="muted" style="font-size:13px"><span>Profit</span><span>add the Bambu file to each product to see it</span></div>' : '<div><span>Cost · profit</span><b style="color:var(--green)">' + money(c) + ' · ' + money((o.subtotal || 0) - c) + '</b></div>'; })() + '<div><span>Delivery</span><b>' + (o.delivery ? money(o.delivery) : 'Free') + '</b></div><div class="tot" style="font-size:18px"><span>Total</span><span>' + money(o.total) + '</span></div></div></div>' +
