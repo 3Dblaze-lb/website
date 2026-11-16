@@ -967,7 +967,7 @@
 
     var rd = Store.ordersReady(), K = function (x) { return rd === true ? x : '…'; };
     app.innerHTML = '<div class="wrap admin">' + (rd === 'error' ? '<div class="demo">Couldn’t load orders — check the internet and reload. Signed in as ' + esc((Store.user() || {}).email || '') + '.</div>' : rd ? '' : '<div class="demo">Loading orders…</div>') + (Store.live ? '' : '<div class="demo">Demo mode: orders are saved in this browser only. <button class="upl" id="clrDemo">Clear sample orders</button></div>') +
-      '<div class="adm-top"><h1>Manager</h1><div class="tabs">' + [['orders', 'Orders' + (newCount ? ' (' + newCount + ')' : '')], ['customers', 'Customers'], ['queue', 'Print queue'], ['requests', 'Design requests' + (function () { var n = Store.requests().filter(function (r) { return r.status !== 'done'; }).length; return n ? ' (' + n + ')' : ''; })()], ['calc', 'Calculator'], ['offers', 'Offers'], ['products', 'Products'], ['settings', 'Settings']].map(function (t) { return '<button data-tab="' + t[0] + '" class="' + (adm.tab === t[0] ? 'on' : '') + '">' + t[1] + '</button>'; }).join('') +
+      '<div class="adm-top"><h1>Manager</h1><div class="tabs">' + [['orders', 'Orders' + (newCount ? ' (' + newCount + ')' : '')], ['customers', 'Customers'], ['queue', 'Print queue'], ['requests', 'Design requests' + (function () { var rq = Store.requests(), w = Store.orders().filter(function (o) { return o.status !== 'cancelled' && o.status !== 'delivered' && !o.demo && needsFile(o) && !rq.some(function (r) { return r.order === o.code; }); }).length; return w ? ' (' + w + ' waiting)' : ''; })()], ['calc', 'Calculator'], ['offers', 'Offers'], ['products', 'Products'], ['settings', 'Settings']].map(function (t) { return '<button data-tab="' + t[0] + '" class="' + (adm.tab === t[0] ? 'on' : '') + '">' + t[1] + '</button>'; }).join('') +
       '</div><button class="btn sec" id="logout" style="min-height:42px;padding:8px 14px;font-size:14px">Log out</button></div>' +
       '<div class="kpis"><div class="kpi live"><small><i class="dot"></i>On the site now</small><b id="liveNow">' + Presence.count() + '</b></div><div class="kpi o"><small>New orders</small><b>' + K(newCount) + '</b></div><div class="kpi"><small>Orders today</small><b>' + K(today) + '</b></div><div class="kpi g"><small>Sales · profit this month</small><b>' + K(money(revMonth) + ' · ' + money(profMonth)) + '</b></div><div class="kpi"><small>To collect · in queue</small><b>' + K(money(toCollect) + ' · ' + inQueue) + '</b></div></div>' +
       '<div id="admBody"></div></div>';
@@ -1106,7 +1106,7 @@
       '<div class="kv">' +
       '<span>Payment</span><b>' + (o.payment === 'whish' ? 'Whish' : 'Cash on delivery') + ' · <label class="switch" style="display:inline-flex"><input type="checkbox" id="mPaid"' + (o.paid ? ' checked' : '') + '> paid</label></b>' +
       '<span>Internal note</span><input id="mNote" class="search" style="min-width:0" placeholder="Only you see this" value="' + esc(o.note || '') + '"></div>' +
-      '<div class="actions">' + (o.items.some(function (i) { return i.id === 'my-village' || (i.text && i.id !== 'design'); }) ? '<button class="btn pri" id="mReq">Request 3MF</button>' : '') + '<a class="btn wa" id="mWa" target="_blank" rel="noopener">WhatsApp customer</a><button class="btn sec" id="mCpMsg">Copy message</button></div>' +
+      '<div class="actions">' + (needsFile(o) ? '<button class="btn pri" id="mReq">Request 3MF</button>' : '') + '<a class="btn wa" id="mWa" target="_blank" rel="noopener">WhatsApp customer</a><button class="btn sec" id="mCpMsg">Copy message</button></div>' +
       '<p class="muted" style="font-size:13px;margin:12px 0 0" id="mMsgPrev"></p>', function (box, close) {
         var setWa = function () { var msg = CUSTOMER_MSG[o.status](o); box.querySelector('#mWa').href = waLink(c.phone, msg); box.querySelector('#mMsgPrev').textContent = 'Message for “' + (STATUSES.filter(function (s) { return s.k === o.status; })[0].l) + '”: ' + msg; return msg; };
         setWa();
@@ -1118,18 +1118,7 @@
         });
         box.querySelector('#mPaid').onchange = function (e) { Store.updateOrder(o.code, { paid: e.target.checked }).then(function () { o.paid = e.target.checked; renderAdmin(); toast(e.target.checked ? 'Marked paid' : 'Marked unpaid'); }); };
         var nt; box.querySelector('#mNote').oninput = function (e) { clearTimeout(nt); nt = setTimeout(function () { Store.updateOrder(o.code, { note: e.target.value }); }, 600); };
-        var rqb = box.querySelector('#mReq'); if (rqb) rqb.onclick = function () {
-          var orn = o.items.filter(function (i) { return /holy-ornament/.test(i.id); });
-          if (orn.length) {
-            var names = []; orn.forEach(function (i) { var ps = i.picks ? (Array.isArray(i.picks) ? i.picks : Object.keys(i.picks).map(function (k) { return i.picks[k]; })) : [{ text: i.text }]; for (var q = 0; q < i.qty; q++) ps.forEach(function (pk) { if (pk.text) names.push(pk.text); }); });
-            var od = { type: 'ornament', title: 'Holy Night Ornament × ' + names.length, names: names, order: o.code, status: 'sent', createdAt: Date.now() };
-            Store.saveRequest(null, od).then(function (id) { od.id = id; copy(requestText(od), 'Copied — paste it in your Claude chat'); close(); adm.tab = 'requests'; renderAdmin(); });
-            return;
-          }
-          var it = o.items.filter(function (i) { return i.id === 'my-village'; })[0] || o.items.filter(function (i) { return i.text; })[0];
-          var data = { type: it.id === 'my-village' ? 'map' : 'custom', geo: it.geo || null, title: it.id === 'my-village' ? (it.text || '') : it.name + (it.text ? ' with “' + it.text + '”' : ''), base: it.id === 'my-village' ? 'black' : (it.color === 'white' ? 'white' : 'black'), mapc: it.id === 'my-village' ? 'white' : (it.color === 'white' ? 'green' : 'white'), place: o.customer.region || '', notes: '', size: '', order: o.code, status: 'sent', createdAt: Date.now() };
-          Store.saveRequest(null, data).then(function (id) { data.id = id; copy(requestText(data), 'Copied — paste it in your Claude chat'); close(); adm.tab = 'requests'; renderAdmin(); });
-        };
+        var rqb = box.querySelector('#mReq'); if (rqb) rqb.onclick = function () { makeOrderRequest(o, function () { close(); adm.tab = 'requests'; renderAdmin(); }); };
         box.querySelector('#mCpMsg').onclick = function () { copy(setWa(), 'Message copied'); };
         var setDrv = function () { box.querySelector('#mDrv').href = 'https://wa.me/?text=' + encodeURIComponent(driverText(o)); };
         setDrv();
@@ -1140,6 +1129,18 @@
 
 
   // ---------- design requests (files Claude makes) ----------
+  function needsFile(o) { return o.items.some(function (i) { return i.id === 'my-village' || /holy-ornament/.test(i.id) || (i.text && i.id !== 'design'); }); }
+  function makeOrderRequest(o, done) {
+    var orn = o.items.filter(function (i) { return /holy-ornament/.test(i.id); }), data;
+    if (orn.length) {
+      var names = []; orn.forEach(function (i) { var ps = i.picks ? (Array.isArray(i.picks) ? i.picks : Object.keys(i.picks).map(function (k) { return i.picks[k]; })) : [{ text: i.text }]; for (var q = 0; q < i.qty; q++) ps.forEach(function (pk) { if (pk.text) names.push(pk.text); }); });
+      data = { type: 'ornament', title: 'Holy Night Ornament × ' + names.length, names: names, order: o.code, status: 'sent', createdAt: Date.now() };
+    } else {
+      var it = o.items.filter(function (i) { return i.id === 'my-village'; })[0] || o.items.filter(function (i) { return i.text; })[0];
+      data = { type: it.id === 'my-village' ? 'map' : 'custom', geo: it.geo || null, title: it.id === 'my-village' ? (it.text || '') : it.name + (it.text ? ' with “' + it.text + '”' : ''), base: 'black', mapc: 'white', place: o.customer.region || '', notes: '', size: '', order: o.code, status: 'sent', createdAt: Date.now() };
+    }
+    Store.saveRequest(null, data).then(function (id) { data.id = id; copy(requestText(data), 'Copied — paste it in your Claude chat'); if (done) done(); });
+  }
   var REQ_STATUS = [['new', 'New'], ['sent', 'Sent to Claude'], ['ready', 'File ready'], ['done', 'Printed']];
   function requestText(r) {
     var t = '3DBlaze design request ' + r.id + '\n';
@@ -1163,7 +1164,10 @@
   }
   function admRequests() {
     var list = Store.requests();
-    $('#admBody').innerHTML = '<div class="calc"><form class="panel" id="rq" style="display:grid;gap:12px;align-self:start">' +
+    var pend = Store.orders().filter(function (o) { return o.status !== 'cancelled' && o.status !== 'delivered' && !o.demo && needsFile(o) && !list.some(function (r) { return r.order === o.code; }); });
+    $('#admBody').innerHTML = (pend.length ? '<div class="panel" style="margin-bottom:14px;border:2px solid #1A8CFF"><b style="font-family:var(--head)">Orders waiting for a file (' + pend.length + ')</b><div class="muted" style="font-size:14px;margin-bottom:8px">Personalized orders without a design request yet. Tap one: it’s saved here and copied — paste it in your Claude chat.</div>' +
+      pend.map(function (o) { return '<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 0;border-top:1px solid #EEF0F3"><div><b>' + esc(o.code) + '</b> · ' + esc(o.customer.name) + '<div class="muted" style="font-size:13px">' + esc(o.items.filter(function (i) { return i.text || i.id === 'my-village'; }).map(function (i) { return i.name + (i.text ? ' — ' + i.text : ''); }).join(' · ')) + '</div></div><button class="btn pri" data-mkr="' + o.code + '" style="min-height:40px;padding:8px 14px;font-size:14px;flex:none">Copy for Claude</button></div>'; }).join('') + '</div>' : '') +
+      '<div class="calc"><form class="panel" id="rq" style="display:grid;gap:12px;align-self:start">' +
       '<h3 style="margin:0">New design request</h3><p class="muted" style="margin:0;font-size:14px">Write what you need, press <b>Copy for Claude</b>, and paste it in your Claude chat. Claude makes the .3mf for Bambu Studio and sends it back.</p>' +
       '<div class="paysel"><label class="on"><input type="radio" name="type" value="map" checked><span><b>Village map</b><small>Lebanon + pin + name</small></span></label><label><input type="radio" name="type" value="custom"><span><b>Custom</b><small>Anything else</small></span></label></div>' +
       '<label class="field" id="rqT">Village / name on it<input name="title" id="rqTitle" placeholder="e.g. Hadchit" autocomplete="off" required></label>' +
@@ -1196,6 +1200,7 @@
       if (data.type === 'map' && rgeo) data.geo = { lat: rgeo.lat, lon: rgeo.lon, label: rgeo.label, ar: rgeo.ar || null, ele: rgeo.ele != null ? rgeo.ele : null };
       Store.saveRequest(null, data).then(function (id) { data.id = id; copy(requestText(data), 'Copied — paste it in your Claude chat'); admRequests(); });
     };
+    $$('[data-mkr]').forEach(function (b) { b.onclick = function () { var o = Store.orders().filter(function (x) { return x.code === b.dataset.mkr; })[0]; if (o) makeOrderRequest(o, admRequests); }; });
     $$('[data-rc]').forEach(function (b) { b.onclick = function () { var r = list.filter(function (x) { return x.id === b.dataset.rc; })[0]; copy(requestText(r), 'Copied — paste it in your Claude chat'); if (r.status === 'new') Store.saveRequest(r.id, { status: 'sent' }); }; });
     $$('[data-rs]').forEach(function (s) { s.onchange = function () { Store.saveRequest(s.dataset.rs, { status: s.value }).then(function () { toast('Updated'); }); }; });
     $$('[data-rd]').forEach(function (b) { b.onclick = function () { confirmBox('Delete this request?', 'Delete', function () { Store.deleteRequest(b.dataset.rd).then(admRequests); }); }; });
