@@ -408,10 +408,17 @@
     return sl.some(function (x) { var bp = x.p; return bp.removed || bp.soldOut || bp.available === false || allOptsOut(bp); });
   }
   function isOut(p) { return p.soldOut || p.available === false || allOptsOut(p) || packOut(p); }
+  // personalised products drawn live (e.g. Holy Night ornament): the preview always comes first,
+  // an uploaded photo is the second view ("Real picture") on the product page. My Village keeps its own setup.
+  function livePreview(p) {
+    var a = p.art || p.id;
+    if (a === 'my-village' || !window.BlazeArt || !BlazeArt.has(a)) return false;
+    return !!(p.text || packSlots(p).some(function (x) { return x.p && x.p.text; }));
+  }
   function thumb(p, opts) {
     var so = opts && opts.color ? optFor(p, opts.color) : null;
     if (so && so.photo) return '<img src="' + so.photo + '" alt="' + esc(p.name + ' — ' + so.name) + '">';
-    if (p.photo) return '<img src="' + p.photo + '" alt="' + esc(p.name) + '">';
+    if (p.photo && !livePreview(p)) return '<img src="' + p.photo + '" alt="' + esc(p.name) + '">';
     var fo = (p.art || p.id) === 'my-village' ? null : optList(p).filter(function (o) { return o.photo; })[0];
     if (fo) return '<img src="' + fo.photo + '" alt="' + esc(p.name) + '">';
     if ((p.art || p.id) === 'my-village' && (!opts || !opts.text)) return '<img src="img/my-village.jpg" alt="' + esc(p.name) + ' — real printed piece">';
@@ -766,16 +773,23 @@
     var isMapP = (p.art || p.id) === 'my-village', mlive = null;
     if (isMapP) {
       $('#pArt').classList.add('mapbig');
-      $('#pArt').innerHTML = '<div class="mapart live" id="pLive"></div><img class="realph hidden" src="' + (p.photo || 'img/my-village.jpg') + '" alt="Real printed My Village map"><div class="viewsw" role="group" aria-label="View"><button type="button" class="on" data-v="live">Your preview</button><button type="button" data-v="photo">Real photo</button></div>';
+      $('#pArt').innerHTML = '<div class="mapart live" id="pLive"></div><img class="realph hidden" src="' + (p.photo || 'img/my-village.jpg') + '" alt="Real printed My Village map"><div class="viewsw" role="group" aria-label="View"><button type="button" class="on" data-v="live">Your preview</button><button type="button" data-v="photo">Real picture</button></div>';
       mlive = BlazeArt.village($('#pLive'), { text: st.text || 'Your village' });
       $$('[data-v]').forEach(function (b) { b.onclick = function () { var ph = b.dataset.v === 'photo'; $$('[data-v]').forEach(function (x) { x.classList.toggle('on', x === b); }); $('#pLive').classList.toggle('hidden', ph); $('.realph').classList.toggle('hidden', !ph); }; });
     }
+    var hasReal = !isMapP && !!p.photo && livePreview(p);
+    if (hasReal) {
+      $('#pArt').classList.add('realbig');
+      $('#pArt').innerHTML = '<div class="livebox" id="pLive"></div><img class="realph hidden" src="' + p.photo + '" alt="' + esc('Real picture of the ' + p.name) + '"><div class="viewsw" role="group" aria-label="View"><button type="button" class="on" data-v="live">Your preview</button><button type="button" data-v="photo">Real picture</button></div>';
+      $$('[data-v]').forEach(function (b) { b.onclick = function () { var ph = b.dataset.v === 'photo'; $$('[data-v]').forEach(function (x) { x.classList.toggle('on', x === b); }); $('#pLive').classList.toggle('hidden', ph); $('.realph').classList.toggle('hidden', !ph); }; });
+    }
+    var artBox = function (h) { if (!hasReal) { $('#pArt').innerHTML = h; return; } if ($('#pLive').classList.contains('hidden')) $('[data-v=live]').click(); $('#pLive').innerHTML = h; };
     var draw = function () {
       if (!document.getElementById('pArt')) return;   // customer already left this page (late map search)
       if (mlive) { if ($('#pLive').classList.contains('hidden') && st.text) $('[data-v=live]').click(); mlive.set({ text: st.text || 'Your village', ar: st.geo && st.geo.ar, ele: st.geo && st.geo.ele, lat: st.geo && st.geo.lat, lon: st.geo && st.geo.lon }); return; }
-      if (slots.length && window.BlazeArt && BlazeArt.has(p.art || p.id)) { $('#pArt').innerHTML = thumb(p, { texts: st.picks.map(function (k, i) { return k.text || ['Gabriel', 'Maria', 'Elie'][i % 3]; }) }); return; }
-      if (slots.length && st.focus != null) { var fx = slots[st.focus], pk = st.picks[st.focus]; $('#pArt').innerHTML = thumb(fx.p, { color: pk.color, text: pk.text || undefined }); return; }
-      $('#pArt').innerHTML = thumb(p, { color: st.color, text: st.text || undefined, lat: st.geo && st.geo.lat, lon: st.geo && st.geo.lon });
+      if (slots.length && window.BlazeArt && BlazeArt.has(p.art || p.id)) { artBox(thumb(p, { texts: st.picks.map(function (k, i) { return k.text || ['Gabriel', 'Maria', 'Elie'][i % 3]; }) })); return; }
+      if (slots.length && st.focus != null) { var fx = slots[st.focus], pk = st.picks[st.focus]; artBox(thumb(fx.p, { color: pk.color, text: pk.text || undefined })); return; }
+      artBox(thumb(p, { color: st.color, text: st.text || undefined, lat: st.geo && st.geo.lat, lon: st.geo && st.geo.lon }));
     };
     draw();
     if (slots.length) {
@@ -1512,7 +1526,7 @@
         var pc = p.grams != null ? pieceCost(p.grams, p.printMin) : null;
         var costLine = pc == null ? '<div class="muted" style="font-size:12px;margin-top:3px">No print file yet — add one to see cost & profit</div>' :
           '<div style="font-size:12px;margin-top:3px;color:#2C3443">' + (Math.round(p.grams * 10) / 10) + ' g · ' + Math.floor(p.printMin / 60) + 'h ' + Math.round(p.printMin % 60) + 'm' + (p.printFile ? ' · ' + esc(p.printFile) : '') + (p.printExact ? ' ✓' : ' (estimate)') + '<br>Cost ' + money(pc) + ' · <b style="color:' + (p.price - pc > 0 ? 'var(--green)' : 'var(--red)') + '">profit ' + money(p.price - pc) + ' (' + (p.price > 0 ? Math.round((p.price - pc) / p.price * 100) : 0) + '%)</b> per piece</div>';
-        return '<div class="prow" data-p="' + p.id + '"><div class="th">' + thumb(p) + '</div><div><b>' + esc(p.name) + '</b><div class="muted" style="font-size:13px">' + (p.col === 'xmas' ? 'Christmas' : 'Lebanon drop') + ' · <button class="upl" data-ed="' + p.id + '">Edit</button> · <button class="upl" data-bf="' + p.id + '">' + (p.grams != null ? 'Replace Bambu file' : '+ Bambu file') + '</button> · <button class="upl" data-up="' + p.id + '">' + (p.photo ? 'Change photo' : 'Upload photo') + '</button> · ' + (packSlots(p).length ? '<button class="upl" data-offer="' + p.id + '">Edit offer (' + packSlots(p).length + ' pieces)</button>' : '<button class="upl" data-opt="' + p.id + '">Colours & photos' + (optList(p).length ? ' (' + optList(p).length + ')' : '') + '</button>') + ' · <button class="upl" data-del="' + p.id + '">Remove</button></div>' + costLine + '</div>' +
+        return '<div class="prow" data-p="' + p.id + '"><div class="th">' + (p.photo && livePreview(p) ? '<img src="' + p.photo + '" alt="' + esc(p.name) + '" title="Real picture (2nd view in the shop)">' : thumb(p)) + '</div><div><b>' + esc(p.name) + '</b><div class="muted" style="font-size:13px">' + (p.col === 'xmas' ? 'Christmas' : 'Lebanon drop') + ' · <button class="upl" data-ed="' + p.id + '">Edit</button> · <button class="upl" data-bf="' + p.id + '">' + (p.grams != null ? 'Replace Bambu file' : '+ Bambu file') + '</button> · <button class="upl" data-up="' + p.id + '">' + (p.photo ? 'Change photo' : 'Upload photo') + '</button> · ' + (packSlots(p).length ? '<button class="upl" data-offer="' + p.id + '">Edit offer (' + packSlots(p).length + ' pieces)</button>' : '<button class="upl" data-opt="' + p.id + '">Colours & photos' + (optList(p).length ? ' (' + optList(p).length + ')' : '') + '</button>') + ' · <button class="upl" data-del="' + p.id + '">Remove</button></div>' + costLine + '</div>' +
           '<label class="field" style="font-size:12px">Price $<input type="number" min="0" step="0.5" value="' + p.price + '" data-price="' + p.id + '"></label>' +
           '<label class="switch"><input type="checkbox" data-av="' + p.id + '"' + (p.available === false ? '' : ' checked') + '> On sale</label>' +
           '<label class="switch"><input type="checkbox" data-so="' + p.id + '"' + (p.soldOut ? ' checked' : '') + '> Sold out</label></div>';
