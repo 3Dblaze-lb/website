@@ -247,7 +247,7 @@
     var x = 0, xs0 = 1e9, xs1 = -1e9, y0 = 1e9, y1 = -1e9;
     for (var i = 0; i < name.length; i++) { var m = OM[name[i]] || OM.H; if (name[i] !== ' ') { xs0 = Math.min(xs0, x + m[1]); xs1 = Math.max(xs1, x + m[2]); y0 = Math.min(y0, m[3]); y1 = Math.max(y1, m[4]); } x += m[0]; }
     if (xs1 < xs0) return null;
-    var w = xs1 - xs0, h = y1 - y0, size = Math.max(Math.min(48 / w, 8 / h, 10.5 / 0.73), 5.6 / 0.73);
+    var w = xs1 - xs0, h = y1 - y0, size = Math.min(50 / w, 8 / h, 10.5 / 0.73);
     return { size: size, dx: -(xs0 * size + w * size / 2), dy: 24.5 - (y0 * size + h * size / 2) };
   }
   function ornament(o, gx) {
