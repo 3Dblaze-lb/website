@@ -56,35 +56,7 @@
       colors: ['black'], text: { label: 'Your village or town', max: 18, ph: 'e.g. Hadchit', required: true },
       blurb: 'Lebanon in 3D, with your village on it.',
       desc: 'A raised map of Lebanon standing on a base with your village name printed in. We place a green pin where your village is. A desk piece that starts conversations.',
-      specs: ['About 17 cm tall, 15 cm wide', 'Real Lebanon outline with light relief and district borders', 'Your village name in English and Arabic, with its elevation, on the base', 'Green pin placed on your village', 'Black base, white map'] },
-
-    { id: 'name-ornament', col: 'xmas', name: 'Personalized Name Ornament', price: 7, tag: 'Personalized', printMin: 40,
-      colors: ['red', 'green', 'white'], text: { label: 'Name on the ornament', max: 10, ph: 'e.g. Maria', required: true },
-      blurb: 'A name for every branch of the tree.',
-      desc: 'A round ornament with a name and the year, printed in two colours. Order one for each person in the family.',
-      specs: ['About 7 cm across', 'Name up to 10 letters + “2026”', 'Gold string included'] },
-    { id: 'cedar-ornament', col: 'xmas', name: 'Cedar Tree Ornament', price: 6, tag: 'New', printMin: 36,
-      colors: ['green', 'red', 'white'],
-      blurb: 'The cedar, hanging on your Christmas tree.',
-      desc: 'Our own cedar design, made to hang. A little Lebanon on the tree this year.',
-      specs: ['About 8 cm tall', 'Choose green, red or white', 'Gold string included'] },
-    { id: 'snowflake-set', col: 'xmas', name: 'Snowflake Set of 3', price: 9, printMin: 60,
-      blurb: 'Three different flakes, light as anything.',
-      desc: 'Three snowflake ornaments in three sizes. Hang them on the tree, a window or the gift wrap.',
-      specs: ['3 pieces: 6, 7 and 8 cm', 'White PLA', 'Strings included'] },
-    { id: 'star-topper', col: 'xmas', name: 'Blaze Star Tree Topper', price: 14, printMin: 180,
-      blurb: 'The top of the tree, with a spark.',
-      desc: 'A bold red star with our lightning bolt, on a spring that grips the top of the tree.',
-      specs: ['About 15 cm wide', 'Fits most tree tops', 'Red + white'] },
-    { id: 'mini-nativity', col: 'xmas', name: 'Mini Nativity Scene', price: 22, tag: 'Limited', printMin: 300,
-      blurb: 'The crib, small enough for a shelf.',
-      desc: 'A simple, modern nativity: stable, Mary, Joseph and the Child under the star. Pieces stand on their own.',
-      specs: ['Stable about 12 cm wide', '5 pieces', 'Limited number before Christmas'] },
-    { id: 'gift-bundle', col: 'xmas', name: 'Christmas Gift Bundle', price: 15, was: 17, tag: 'Save $2', printMin: 100,
-      pack: [{ of: 'flag-keychain' }, { of: 'cedar-ornament' }, { of: 'name-ornament' }],
-      blurb: 'Flag keychain + cedar ornament + name ornament, boxed.',
-      desc: 'Our three favourites in one gift box: a Lebanese flag keychain, a cedar ornament and a personalized name ornament.',
-      specs: ['3 pieces in a gift box', 'Name on the ornament up to 10 letters', 'Ready to give'] }
+      specs: ['About 17 cm tall, 15 cm wide', 'Real Lebanon outline with light relief and district borders', 'Your village name in English and Arabic, with its elevation, on the base', 'Green pin placed on your village', 'Black base, white map'] }
   ];
   var COLOR_HEX = { black: '#30343B', white: '#F2F3F5', red: '#E2262B', green: '#1FA14E', orange: '#FF6A1F' };
   var STATUSES = [
@@ -332,7 +304,7 @@
         var it = function (id, qty, color, text) { var p = CATALOG.filter(function (x) { return x.id === id; })[0]; return { id: id, name: p.name, price: p.price, qty: qty, color: color || null, text: text || null }; };
         [
           mk('3DB-DEMO1', 1, 'Rita K.', '70123456', 'Metn', 'Jdeideh', [it('my-village', 1, 'black', 'Bikfaya'), it('flag-keychain', 2)], 'whish', 'new', false),
-          mk('3DB-DEMO2', 5, 'Georges H.', '03987654', 'Keserwan', 'Jounieh', [it('name-ornament', 4, 'red', 'Elie'), it('cedar-ornament', 2, 'green')], 'cash', 'confirmed', false),
+          mk('3DB-DEMO2', 5, 'Georges H.', '03987654', 'Keserwan', 'Jounieh', [it('flag-keychain', 4, null, null), it('flag-3pack', 1, null, null)], 'cash', 'confirmed', false),
           mk('3DB-DEMO3', 26, 'Maya S.', '76111222', 'Beirut', 'Achrafieh', [it('flag-3pack', 1)], 'cash', 'printing', false),
           mk('3DB-DEMO4', 50, 'Charbel A.', '71333444', 'North (Tripoli, Batroun, Koura, Zgharta)', 'Batroun', [it('my-village', 1, 'black', 'Hadchit')], 'whish', 'delivered', true)
         ].forEach(function (o) { state.orders[o.code] = o; });
@@ -536,7 +508,7 @@
     status: function (hit, st, forId, typed) {
       var useBtn = (st === 'found' && forId && hit.name && pfold(hit.name) !== pfold(typed)) ? ' <button type="button" class="usename" data-usename="' + esc(hit.name) + '" data-for="' + forId + '">Use “' + esc(hit.name) + '”</button>' : '';
       return st === 'searching' ? '<span class="muted">Finding it on the map…</span>' :
-        st === 'found' ? '<span style="color:var(--green)">📍 ' + (hit.exact === false ? 'Closest match: ' : '') + esc(hit.label) + (hit.ar ? ' · ' + esc(hit.ar) : '') + (hit.ele != null ? ' · ' + hit.ele + ' m' : '') + '</span>' + useBtn :
+        st === 'found' ? '<span style="color:var(--green)">📍 ' + (hit.exact === false ? 'Closest match: ' : '') + esc(hit.label) + (hit.ar ? ' · <bdi>' + esc(hit.ar) + '</bdi>' : '') + (hit.ele != null ? ' · ' + hit.ele + ' m' : '') + '</span>' + useBtn :
         st === 'none' ? '<span class="muted">We couldn’t find it on the map — no problem, we’ll place the pin by hand.</span>' :
         st === 'offline' ? '<span class="muted">Map search is unavailable right now — we’ll place the pin by hand.</span>' : '';
     }
@@ -620,8 +592,9 @@
         '<div class="cdline" id="countdown"></div>' +
       '</div></section>' +
 
-      (xm.length ? '<section class="blk2" id="sec-christmas"><div class="wrap"><div class="shead"><h2>Christmas collection</h2><span class="soonlbl">Coming soon</span></div>' +
-        '<div class="xrow" role="list">' + xm.map(function (p) { return '<a class="xc" role="listitem" href="#p-' + p.id + '"><div class="xc-img">' + thumb(p) + '</div><b>' + esc(p.name) + '</b><span>' + money(p.price) + '</span></a>'; }).join('') + '</div></div></section>' : '') +
+      '<section class="blk2" id="sec-christmas"><div class="wrap"><div class="shead"><h2>Christmas collection</h2><span class="soonlbl">Coming soon</span></div>' +
+        (xm.length ? '<div class="xrow" role="list">' + xm.map(function (p) { return '<a class="xc" role="listitem" href="#p-' + p.id + '"><div class="xc-img">' + thumb(p) + '</div><b>' + esc(p.name) + '</b><span>' + money(p.price) + '</span></a>'; }).join('') + '</div>'
+          : '<div class="xempty"><b>New Christmas pieces are on the way.</b><span class="muted">Personalized gifts with your name on them — follow <a href="https://instagram.com/3dblaze.lb" target="_blank" rel="noopener">@3dblaze.lb</a> to see them first.</span></div>') + '</div></section>' +
 
       '<section class="blk2" id="sec-how"><div class="wrap"><div class="shead"><h2>How it works</h2></div><div class="steps2">' +
         step2(1, 'Pick', 'A piece and a colour') + step2(2, 'Confirm', 'We WhatsApp you') + step2(3, 'Print', 'Ready in 2–4 days') + step2(4, 'Deliver', 'Cash or Whish') +
@@ -1151,7 +1124,17 @@
   var REQ_STATUS = [['new', 'New'], ['sent', 'Sent to Claude'], ['ready', 'File ready'], ['done', 'Printed']];
   function requestText(r) {
     var t = '3DBlaze design request ' + r.id + '\n';
-    if (r.type === 'map') t += 'Product: "My Village" map (.3mf for Bambu Studio)\nVillage / name on it: ' + r.title + (r.geo ? '\nPin (from the customer’s search): ' + r.geo.lat.toFixed(5) + ', ' + r.geo.lon.toFixed(5) + ' — ' + r.geo.label + (r.geo.ar ? '\nArabic name (OpenStreetMap): ' + r.geo.ar : '') + (r.geo.ele != null ? '\nElevation at pin (Open-Meteo DEM, shown to customer): ' + r.geo.ele + ' m — verify before printing' : '') : '') + (r.place ? '\nWhere: ' + r.place : '') + '\nColours: black base, white map, white name, green pin (black only)';
+    if (r.type === 'map') {
+      var g = r.geo, pm = g && g.lat != null && window.BlazeArt && BlazeArt.villagePin ? BlazeArt.villagePin(g.lat, g.lon) : null;
+      t += 'Product: "My Village" relief map (.3mf for Bambu Studio)\nTemplate: "3DBlaze My Village - Hadchit relief sample.3mf" — keep plate, map, relief and borders identical; change only the pin and the name' +
+        '\nVillage / name on it: ' + r.title +
+        (g ? '\nFound on the map: ' + g.label + ' — ' + g.lat.toFixed(5) + ', ' + g.lon.toFixed(5) +
+          (pm ? '\nPin tip in the template (mm, map object frame; Hadchit = 71.359, 123.616): ' + pm[0].toFixed(2) + ', ' + pm[1].toFixed(2) : '') +
+          (g.ar ? '\nArabic name: ' + g.ar : '') +
+          (g.ele != null ? '\nElevation at the pin (Copernicus satellite, preview): ' + g.ele + ' m — verify with a second trusted source before printing' : '') +
+          '\nBase text: ' + r.title.toUpperCase() + (g.ele != null ? ' ' + g.ele + ' m' : ' ### m') + (g.ar ? ' ' + g.ar : '') : '\n(not found on the map — find the location)') +
+        (r.place ? '\nWhere: ' + r.place : '') + '\nColours: black plate, white map, black borders, green pin, black base, white name';
+    }
     else t += 'Product: custom design (.3mf for Bambu Studio)\nWhat: ' + r.title;
     if (r.size) t += '\nSize: ' + r.size;
     if (r.notes) t += '\nNotes: ' + r.notes;
@@ -1163,10 +1146,11 @@
     $('#admBody').innerHTML = '<div class="calc"><form class="panel" id="rq" style="display:grid;gap:12px;align-self:start">' +
       '<h3 style="margin:0">New design request</h3><p class="muted" style="margin:0;font-size:14px">Write what you need, press <b>Copy for Claude</b>, and paste it in your Claude chat. Claude makes the .3mf for Bambu Studio and sends it back.</p>' +
       '<div class="paysel"><label class="on"><input type="radio" name="type" value="map" checked><span><b>Village map</b><small>Lebanon + pin + name</small></span></label><label><input type="radio" name="type" value="custom"><span><b>Custom</b><small>Anything else</small></span></label></div>' +
-      '<label class="field" id="rqT">Village / name on it<input name="title" placeholder="e.g. Hadchit" required></label>' +
-      '<label class="field" id="rqP">Where is it? (district, optional)<input name="place" placeholder="e.g. Bsharri district"></label>' +
-      '<div class="muted" id="rqC" style="font-size:14px">Colours: black base, white map, white name, green pin (black only).</div>' +
-      '<label class="field">Size (optional)<input name="size" placeholder="Standard is 9 × 15 cm"></label>' +
+      '<label class="field" id="rqT">Village / name on it<input name="title" id="rqTitle" placeholder="e.g. Hadchit" autocomplete="off" required></label>' +
+      '<div id="rqMap"><div id="rqGeo" style="font-size:14px;min-height:20px"></div><div class="mapart live vmap" id="rqArt" style="height:320px;border-radius:16px;margin-top:8px;background:#F4F5F7"></div></div>' +
+      '<label class="field" id="rqP">Where is it? (district, optional)<input name="place" placeholder="e.g. Koura"></label>' +
+      '<div class="muted" id="rqC" style="font-size:14px">Colours: black plate, white map, black borders, green pin, black base, white name.</div>' +
+      '<label class="field">Size (optional)<input name="size" placeholder="Standard: plate 12.4 × 16.8 cm, about 17 cm tall"></label>' +
       '<label class="field">Notes<textarea name="notes" placeholder="Anything special…"></textarea></label>' +
       '<label class="field">Order code (optional)<input name="order" placeholder="3DB-XXXXX"></label>' +
       '<div class="err" id="rqErr"></div><button class="btn pri">Save & copy for Claude</button></form>' +
@@ -1177,11 +1161,19 @@
           '<div class="actions" style="margin-top:12px"><button class="btn sec" data-rc="' + r.id + '">Copy for Claude</button><button class="btn sec" data-rd="' + r.id + '">Delete</button></div></div>';
       }).join('') : '<div class="panel empty"><p class="muted">No requests yet. When a “My Village” order comes in, open it and press “Request 3MF”.</p></div>') + '</div></div>';
     var f = $('#rq');
-    var sync = function () { var m = f.type.value === 'map'; $('#rqP').style.display = m ? '' : 'none'; $('#rqC').style.display = m ? '' : 'none'; $('#rqT').firstChild.textContent = m ? 'Village / name on it' : 'What should Claude design?'; $$('.paysel label', f).forEach(function (l) { l.classList.toggle('on', l.querySelector('input').checked); }); };
+    var rgeo = null, rlive = BlazeArt.village($('#rqArt'), { text: 'Your village' });
+    var rdraw = function () { rlive.set({ text: f.title.value || 'Your village', lat: rgeo && rgeo.lat, lon: rgeo && rgeo.lon, ar: rgeo && rgeo.ar, ele: rgeo && rgeo.ele }); };
+    f.title.addEventListener('input', function () {
+      if (f.type.value !== 'map') return;
+      rgeo = null; rdraw();
+      Geo.find(f.title.value, function (hit, st) { rgeo = hit; rdraw(); $('#rqGeo').innerHTML = Geo.status(hit, st, 'rqTitle', f.title.value); });
+    });
+    var sync = function () { var m = f.type.value === 'map'; $('#rqP').style.display = m ? '' : 'none'; $('#rqMap').style.display = m ? '' : 'none'; $('#rqC').style.display = m ? '' : 'none'; $('#rqT').firstChild.textContent = m ? 'Village / name on it' : 'What should Claude design?'; $$('.paysel label', f).forEach(function (l) { l.classList.toggle('on', l.querySelector('input').checked); }); };
     f.addEventListener('change', sync); sync();
     f.onsubmit = function (e) {
       e.preventDefault(); if (!f.title.value.trim()) { $('#rqErr').textContent = 'Write the village or what you need.'; return; }
       var data = { type: f.type.value, title: f.title.value.trim(), place: f.place.value.trim(), base: 'black', mapc: 'white', size: f.size.value.trim(), notes: f.notes.value.trim(), order: f.order.value.trim().toUpperCase(), status: 'sent', createdAt: Date.now() };
+      if (data.type === 'map' && rgeo) data.geo = { lat: rgeo.lat, lon: rgeo.lon, label: rgeo.label, ar: rgeo.ar || null, ele: rgeo.ele != null ? rgeo.ele : null };
       Store.saveRequest(null, data).then(function (id) { data.id = id; copy(requestText(data), 'Copied — paste it in your Claude chat'); admRequests(); });
     };
     $$('[data-rc]').forEach(function (b) { b.onclick = function () { var r = list.filter(function (x) { return x.id === b.dataset.rc; })[0]; copy(requestText(r), 'Copied — paste it in your Claude chat'); if (r.status === 'new') Store.saveRequest(r.id, { status: 'sent' }); }; });
