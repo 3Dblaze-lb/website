@@ -67,18 +67,21 @@
       blurb: 'Three ornaments, three names.',
       desc: 'Three Holy Night ornaments, each with its own name. Perfect for the family tree or as gifts.',
       specs: ['3 ornaments, 9 cm each', 'A different name on each one', 'Red with white names'] },
-    { id: 'woggle', col: 'woggles', name: 'Woggle — your colours', price: 3, img: 'img/woggle-plain.webp', model: 'woggle-plain', parts: ['Cord A', 'Cord B'],
+    { id: 'woggle-white', col: 'woggles', name: 'Woggle — white', price: 3, img: 'img/woggle-white.webp', model: 'woggle-plain', modelColors: ['white', 'white'], printMin: 45, grams: 5.4,
+      blurb: 'The classic braided woggle, all white.',
+      desc: 'A braided scout woggle in white. Turn it around in 3D before you order.',
+      specs: ['About 3.4 cm wide, 1.7 cm tall', 'White', 'Fits a standard scout scarf'] },
+    { id: 'woggle', col: 'woggles', name: 'Woggle — your colours', price: 5, img: 'img/woggle-plain.webp', model: 'woggle-plain', parts: ['Cord A', 'Cord B'],
       colors: ['red', 'black', 'green', 'white', 'orange'], printMin: 45, grams: 5.4,
       blurb: 'Two braided cords — you pick each colour.',
       desc: 'A braided scout woggle made of two cords. Pick the colour of each cord and turn it around in 3D before you order.',
       specs: ['About 3.4 cm wide, 1.7 cm tall', 'Two cords, each in the colour you choose', 'Fits a standard scout scarf'] },
-    { id: 'woggle-custom', col: 'woggles', name: 'Custom woggle — your totem', price: 5, priceText: '$5 – $10', contactOnly: true, img: 'img/woggle-custom.webp',
-      colors: ['red', 'black', 'green', 'white', 'orange'],
-      examples: [{ n: 'Aigle', model: 'woggle-aigle', parts: ['Head', 'Cord A', 'Cord B'], fixed: { 0: 'black' }, pick: [1, 2], def: ['black', 'green'] },
+    { id: 'woggle-custom', col: 'woggles', name: 'Custom woggle — on request', price: 0, priceText: 'On request', contactOnly: true, img: 'img/woggle-custom.webp',
+      examples: [{ n: 'Aigle', model: 'woggle-aigle', parts: ['Head', 'Cord A', 'Cord B'], fixed: { 0: 'black', 1: 'black', 2: 'green' }, pick: [] },
                  { n: 'Koudou', model: 'woggle-koudou', white: true }, { n: 'Impeesa', model: 'woggle-impeesa', white: true }],
       blurb: 'Your patrol animal, a name, or anything you want on it.',
-      desc: 'Send us your patrol’s totem animal, a name, or anything you want, and we’ll put it on your woggle. Turn the examples around to see them up close. The price depends on the design.',
-      specs: ['From $5 to $10, depending on the design', 'Totem animal, name or logo on the front', 'Cord colours of your choice'] }
+      desc: 'Tell us what you want on your woggle — your patrol’s totem animal, a name, a logo. We’ll tell you if we can make it and how much it costs. Turn the examples around to see what we’ve made.',
+      specs: ['Price on request', 'Totem animal, name or logo on the front', 'We confirm if it can be made before anything is printed'] }
   ];
   var BLAZE_ART_IDS = ['holy-ornament-3'];
   var COLOR_HEX = { black: '#30343B', white: '#F2F3F5', red: '#E2262B', green: '#1FA14E', orange: '#FF6A1F', blue: '#1A8CFF', yellow: '#FFD23F', grey: '#9AA1AB', gray: '#9AA1AB', purple: '#7A4CC2', pink: '#F47FB0', brown: '#7A4A2A', gold: '#C9A13B', silver: '#C3C7CE', navy: '#1D2B53' };
@@ -828,6 +831,7 @@
     };
     var swatches = function (e) {
       if (e.white) return '<div class="wnote">Printed full white.</div>';
+      if (!(e.pick || []).length) return '';
       return (e.pick || []).map(function (pi, j) {
         var curc = (pick[e.n] || e.def || [])[j];
         return '<div class="pslot"><div class="pslot-h"><b class="n">' + (j + 1) + '</b><span>' + esc(e.parts[pi]) + '</span></div><div class="swatches">' + cols.map(function (o) { return '<button type="button" class="sw osw' + (String(o.name).toLowerCase() === String(curc).toLowerCase() ? ' on' : '') + '" data-j="' + j + '" data-c="' + esc(o.name) + '"><i style="background:' + (COLOR_HEX[String(o.name).toLowerCase()] || '#D9DDE3') + '"></i>' + esc(o.name) + '</button>'; }).join('') + '</div></div>';
@@ -839,11 +843,11 @@
       '<h1>' + esc(p.name) + '</h1><div class="price">' + (p.priceText ? esc(p.priceText) : money(p.price)) + '</div>' +
       '<p style="color:#3A4352;font-size:17px;margin:16px 0 0">' + esc(p.desc || p.blurb || '') + '</p>' +
       '<div class="opt packopts"><span class="lab">Example: <b id="exName"></b></span><div id="exOpts"></div></div>' +
-      '<div class="opt"><label class="field">What should we put on your woggle?<input id="cText" maxlength="60" placeholder="e.g. our patrol animal, the Eagle"></label></div>' +
+      '<div class="opt"><label class="field">Describe what you want on your woggle<textarea id="cText" maxlength="300" rows="3" placeholder="e.g. our patrol animal, an eagle head, in green and black"></textarea></label></div>' +
       '<div class="buyrow"><a class="btn pri" id="cWa" target="_blank" rel="noopener">Ask us on WhatsApp</a><a class="btn sec" href="tel:+' + esc(String(s.whatsapp || '').replace(/\D/g, '')) + '">Call ' + esc(fmtLocal(s.whatsapp)) + '</a></div>' +
-      '<div class="specs">' + (p.specs || []).map(function (x) { return '<div>' + esc(x) + '</div>'; }).join('') + '<div>Made to order · we confirm the price with you first</div></div>' +
+      '<div class="specs">' + (p.specs || []).map(function (x) { return '<div>' + esc(x) + '</div>'; }).join('') + '<div>On request · we reply with the price first</div></div>' +
       '</div></div></div>';
-    var waMsg = function () { var e = ex[cur] || {}, t = $('#cText').value.trim(); return 'Hi 3DBlaze! I would like a custom woggle.' + (t ? '\nOn it: ' + t : '') + (e.n ? '\nLike the ' + e.n + ' example' + (e.white ? ' (full white)' : pick[e.n] || e.def ? ' — cords: ' + (pick[e.n] || e.def).join(' + ') : '') : ''); };
+    var waMsg = function () { var e = ex[cur] || {}, t = $('#cText').value.trim(); return 'Hi 3DBlaze! I would like a custom woggle. Can you make it, and how much would it cost?' + (t ? '\nWhat I want: ' + t : '') + (e.n ? '\n(I saw the ' + e.n + ' example.)' : ''); };
     var updWa = function () { $('#cWa').href = waLink(s.whatsapp, waMsg()); };
     var show = function (i) {
       cur = i; var e = ex[i]; $('#exName').textContent = e.n; $('#exOpts').innerHTML = swatches(e);
@@ -904,10 +908,10 @@
     }
     var artBox = function (h) { if (!hasReal) { $('#pArt').innerHTML = h; return; } if ($('#pLive').classList.contains('hidden')) $('[data-v=live]').click(); $('#pLive').innerHTML = h; };
     var v3 = null;
-    if (p.model && window.Blaze3D) { $('#pArt').classList.add('w3dbox'); v3 = Blaze3D.mount($('#pArt'), { src: 'models/' + p.model + '.bin?v=94858834', colors: st.picks.map(function (k) { return col3d(k.color); }), pitch: -50, poster: p.img }); }
+    if (p.model && window.Blaze3D) { $('#pArt').classList.add('w3dbox'); v3 = Blaze3D.mount($('#pArt'), { src: 'models/' + p.model + '.bin?v=94858834', colors: slots.length ? st.picks.map(function (k) { return col3d(k.color); }) : (p.modelColors || ['white']).map(col3d), pitch: -50, poster: p.img }); }
     var draw = function () {
       if (!document.getElementById('pArt')) return;   // customer already left this page (late map search)
-      if (v3) { v3.setColors(st.picks.map(function (k) { return col3d(k.color); })); return; }
+      if (v3) { if (slots.length) v3.setColors(st.picks.map(function (k) { return col3d(k.color); })); return; }
       if (mlive) { if ($('#pLive').classList.contains('hidden') && st.text) $('[data-v=live]').click(); mlive.set({ text: st.text || 'Your village', ar: st.geo && st.geo.ar, ele: st.geo && st.geo.ele, lat: st.geo && st.geo.lat, lon: st.geo && st.geo.lon }); return; }
       if (slots.length && window.BlazeArt && BlazeArt.has(p.art || p.id)) { artBox(thumb(p, { texts: st.picks.map(function (k, i) { return k.text || ((window.BlazeArt && BlazeArt.ornNames) || ['Gabriel', 'Maria', 'Elie'])[i % 10]; }) })); return; }
       if (slots.length && st.focus != null) { var fx = slots[st.focus], pk = st.picks[st.focus]; artBox(thumb(fx.p, { color: pk.color, text: pk.text || undefined })); return; }
