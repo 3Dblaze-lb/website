@@ -66,10 +66,23 @@
       pack: [{ of: 'holy-ornament' }, { of: 'holy-ornament' }, { of: 'holy-ornament' }],
       blurb: 'Three ornaments, three names.',
       desc: 'Three Holy Night ornaments, each with its own name. Perfect for the family tree or as gifts.',
-      specs: ['3 ornaments, 9 cm each', 'A different name on each one', 'Red with white names'] }
+      specs: ['3 ornaments, 9 cm each', 'A different name on each one', 'Red with white names'] },
+    { id: 'woggle', col: 'woggles', name: 'Woggle — your colours', price: 3, img: 'img/woggle-plain.webp', model: 'woggle-plain', parts: ['Cord A', 'Cord B'],
+      colors: ['red', 'black', 'green', 'white', 'orange'], printMin: 45, grams: 5.4,
+      blurb: 'Two braided cords — you pick each colour.',
+      desc: 'A braided scout woggle made of two cords. Pick the colour of each cord and turn it around in 3D before you order.',
+      specs: ['About 3.4 cm wide, 1.7 cm tall', 'Two cords, each in the colour you choose', 'Fits a standard scout scarf'] },
+    { id: 'woggle-custom', col: 'woggles', name: 'Custom woggle — your totem', price: 5, priceText: '$5 – $10', contactOnly: true, img: 'img/woggle-custom.webp',
+      colors: ['red', 'black', 'green', 'white', 'orange'],
+      examples: [{ n: 'Aigle', model: 'woggle-aigle', parts: ['Head', 'Cord A', 'Cord B'], fixed: { 0: 'black' }, pick: [1, 2], def: ['black', 'green'] },
+                 { n: 'Koudou', model: 'woggle-koudou', white: true }, { n: 'Impeesa', model: 'woggle-impeesa', white: true }],
+      blurb: 'Your patrol animal, a name, or anything you want on it.',
+      desc: 'Send us your patrol’s totem animal, a name, or anything you want, and we’ll put it on your woggle. Turn the examples around to see them up close. The price depends on the design.',
+      specs: ['From $5 to $10, depending on the design', 'Totem animal, name or logo on the front', 'Cord colours of your choice'] }
   ];
   var BLAZE_ART_IDS = ['holy-ornament-3'];
-  var COLOR_HEX = { black: '#30343B', white: '#F2F3F5', red: '#E2262B', green: '#1FA14E', orange: '#FF6A1F' };
+  var COLOR_HEX = { black: '#30343B', white: '#F2F3F5', red: '#E2262B', green: '#1FA14E', orange: '#FF6A1F', blue: '#1A8CFF', yellow: '#FFD23F', grey: '#9AA1AB', gray: '#9AA1AB', purple: '#7A4CC2', pink: '#F47FB0', brown: '#7A4A2A', gold: '#C9A13B', silver: '#C3C7CE', navy: '#1D2B53' };
+  function col3d(name) { var k = String(name || '').toLowerCase(); return k === 'black' ? '#23262C' : k === 'white' ? '#F4F5F7' : (COLOR_HEX[k] || '#C9CDD3'); }
   var STATUSES = [
     { k: 'new', l: 'New' }, { k: 'confirmed', l: 'Confirmed' }, { k: 'printing', l: 'Printing' },
     { k: 'ready', l: 'Ready' }, { k: 'out', l: 'Out for delivery' }, { k: 'delivered', l: 'Delivered' }, { k: 'cancelled', l: 'Cancelled' }
@@ -449,6 +462,7 @@
   function allOptsOut(p) { var l = optList(p); return l.length > 0 && l.every(function (o) { return o.out; }); }
   // offers / packs: a product made of pieces of other products; the customer picks each piece's colour
   function packSlots(p) {
+    if (p && p.parts && p.parts.length) return p.parts.map(function (lbl) { return { of: p.id, p: Object.assign({}, p, { name: lbl, text: null, parts: null }), part: true }; });
     var s = p && p.pack; if (!s) return [];
     if (!Array.isArray(s)) s = Object.keys(s).sort(function (a, b) { return a - b; }).map(function (k) { return s[k]; });
     return s.filter(function (x) { return x && x.of; }).map(function (x) { return { of: x.of, p: Store.product(x.of) }; }).filter(function (x) { return x.p; });
@@ -475,6 +489,7 @@
     if (p.photo && !livePreview(p)) return '<img src="' + p.photo + '" alt="' + esc(p.name) + '">';
     var fo = (p.art || p.id) === 'my-village' ? null : optList(p).filter(function (o) { return o.photo; })[0];
     if (fo) return '<img src="' + fo.photo + '" alt="' + esc(p.name) + '">';
+    if (p.img) return '<img src="' + p.img + '" alt="' + esc(p.name) + '">';
     if ((p.art || p.id) === 'my-village' && (!opts || !opts.text)) return '<img src="img/my-village.jpg" alt="' + esc(p.name) + ' — real printed piece">';
     if ((p.art || p.id) === 'my-village' && window.BlazeArt) return '<div class="mapart">' + BlazeArt.draw('my-village', opts) + '</div>';
     if (window.BlazeArt && BlazeArt.has(p.art || p.id) && /ornament/.test(p.art || p.id)) return '<div class="ornart">' + BlazeArt.draw(p.art || p.id, opts || {}) + '</div>';
@@ -653,7 +668,7 @@
     // floating section tabs
     var bar = document.createElement('nav');
     bar.className = 'sectabs'; bar.setAttribute('aria-label', 'Sections');
-    bar.innerHTML = [['shop', 'Lebanon drop'], ['christmas', 'Christmas'], ['how', 'How it works'], ['faq', 'FAQ']].map(function (t) { return '<a href="#' + (t[0] === 'how' ? 'home' : t[0]) + '" data-sec="' + t[0] + '">' + t[1] + '</a>'; }).join('');
+    bar.innerHTML = [['shop', 'Lebanon drop'], ['christmas', 'Christmas'], ['woggles', 'Woggles'], ['how', 'How it works'], ['faq', 'FAQ']].map(function (t) { return '<a href="#' + (t[0] === 'how' ? 'home' : t[0]) + '" data-sec="' + t[0] + '">' + t[1] + '</a>'; }).join('');
     if (!window.BLAZE_ADMIN) document.body.appendChild(bar);
     $$('a', bar).forEach(function (a) { a.addEventListener('click', function (e) { var el = $('#sec-' + a.dataset.sec); if (el) { e.preventDefault(); el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' }); } }); });
     var head = $('header.top'), prog = document.createElement('div'); prog.className = 'scrollprog'; document.body.appendChild(prog);
@@ -670,7 +685,7 @@
       prog.style.transform = 'scaleX(' + (max > 0 ? Math.min(1, y / max) : 0) + ')';
       if (home) {
         var cur = null;
-        ['shop', 'christmas', 'how', 'faq'].forEach(function (k) { var el = $('#sec-' + k); if (el && el.getBoundingClientRect().top < 160) cur = k; });
+        ['shop', 'christmas', 'woggles', 'how', 'faq'].forEach(function (k) { var el = $('#sec-' + k); if (el && el.getBoundingClientRect().top < 160) cur = k; });
         $$('a', bar).forEach(function (a) { a.classList.toggle('on', a.dataset.sec === cur); });
       }
     }
@@ -684,12 +699,12 @@
     return '<a class="pcard" href="#p-' + p.id + '"><div class="art">' + thumb(p) +
       (out ? '<span class="tag out">Sold out</span>' : p.tag ? '<span class="tag">' + esc(p.tag) + '</span>' : '') +
       '</div><div class="info"><h3>' + esc(p.name) + '</h3><div class="muted" style="font-size:14px">' + esc(p.blurb || '') + '</div>' +
-      '<div class="row"><span class="price">' + money(p.price) + (p.was ? '<s>' + money(p.was) + '</s>' : '') + '</span><span class="add">' + (out ? 'View' : 'Order') + '</span></div></div></a>';
+      '<div class="row"><span class="price">' + (p.priceText ? esc(p.priceText) : money(p.price)) + (p.was ? '<s>' + money(p.was) + '</s>' : '') + '</span><span class="add">' + (out ? 'View' : 'Order') + '</span></div></div></a>';
   }
 
   function viewHome(anchor) {
     var s = Store.settings(), all = Store.products();
-    var leb = all.filter(function (p) { return p.col === 'lebanon'; }), xm = all.filter(function (p) { return p.col === 'xmas'; });
+    var leb = all.filter(function (p) { return p.col === 'lebanon'; }), xm = all.filter(function (p) { return p.col === 'xmas'; }), wg = all.filter(function (p) { return p.col === 'woggles'; });
     var vp = leb.filter(function (p) { return (p.art || p.id) === 'my-village'; })[0], others = leb.filter(function (p) { return p !== vp; });
     var fee = (+s.feeBeirut === +s.feeMount && +s.feeMount === +s.feeOther) ? money(s.feeOther) + ' anywhere in Lebanon' + (s.freeOver ? ', free over ' + money(s.freeOver) : '') : (s.feeMount === s.feeBeirut ? money(s.feeBeirut) + ' in Beirut &amp; Mount Lebanon' : money(s.feeBeirut) + ' in Beirut, ' + money(s.feeMount) + ' in Mount Lebanon') + ', ' + money(s.feeOther) + ' elsewhere' + (s.freeOver ? ', free over ' + money(s.freeOver) : '');
     app.innerHTML =
@@ -709,6 +724,10 @@
       '<section class="blk2" id="sec-christmas"><div class="wrap"><div class="shead"><h2>Christmas collection <small class="custhint">Click to customize yours</small></h2><span class="soonlbl">' + (xm.length ? 'Order by ' + new Date(s.xmasCutoff).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }) : 'Coming soon') + '</span></div>' +
         (xm.length ? '<div class="xrow" role="list">' + xm.map(function (p) { return '<a class="xc" role="listitem" href="#p-' + p.id + '"><div class="xc-img">' + thumb(p) + '</div><b>' + esc(p.name) + '</b><span>' + money(p.price) + '</span></a>'; }).join('') + '</div>'
           : '<div class="xempty"><b>New Christmas pieces are on the way.</b><span class="muted">Personalized gifts with your name on them — follow <a href="https://instagram.com/3dblaze.lb" target="_blank" rel="noopener">@3dblaze.lb</a> to see them first.</span></div>') + '</div></section>' +
+
+      (wg.length ? '<section class="blk2" id="sec-woggles"><div class="wrap"><div class="shead"><h2>Scout woggles</h2><span class="muted">' + wg.length + ' piece' + (wg.length === 1 ? '' : 's') + '</span></div>' +
+        '<p class="wogsub">Send us your patrol’s totem animal, or anything you want, and we’ll put it on your woggle.</p>' +
+        '<div class="xrow" role="list">' + wg.map(function (p) { return '<a class="xc" role="listitem" href="#p-' + p.id + '"><div class="xc-img">' + thumb(p) + '</div><b>' + esc(p.name) + '</b><span>' + (p.priceText ? esc(p.priceText) : money(p.price)) + '</span></a>'; }).join('') + '</div></div></section>' : '') +
 
       '<section class="blk2" id="sec-how"><div class="wrap"><div class="shead"><h2>How it works</h2></div><div class="steps2">' +
         step2(1, 'Pick', 'A piece and a colour') + step2(2, 'Confirm', 'We WhatsApp you') + step2(3, 'Print', 'Ready in 2–4 days') + step2(4, 'Deliver', 'Cash or Whish') +
@@ -763,12 +782,12 @@
     var out = isOut(p);
     return '<div class="pc"><div class="pc-media"><a class="pc-img" href="#p-' + p.id + '">' + thumb(p) +
       (out ? '<span class="tag out">Sold out</span>' : p.tag ? '<span class="tag">' + esc(p.tag) + '</span>' : '') + '</a>' +
-      (out ? '' : '<button type="button" class="qadd" data-q="' + p.id + '" aria-label="Add ' + esc(p.name) + ' to cart">+</button>') + '</div>' +
+      (out || p.contactOnly ? '' : '<button type="button" class="qadd" data-q="' + p.id + '" aria-label="Add ' + esc(p.name) + ' to cart">+</button>') + '</div>' +
       '<a class="pc-info" href="#p-' + p.id + '"><h3>' + esc(p.name) + '</h3><div class="pc-row"><span class="price">' + money(p.price) + (p.was ? '<s>' + money(p.was) + '</s>' : '') + '</span>' + pdots(p) + '</div></a></div>';
   }
   function quickAdd(id, btn) {
     var p = Store.product(id); if (!p) return;
-    if ((p.text && p.text.required) || packSlots(p).length) { location.hash = 'p-' + id; return; }
+    if ((p.text && p.text.required) || packSlots(p).length || p.contactOnly) { location.hash = 'p-' + id; return; }
     var ol = optList(p).filter(function (o) { return !o.out; }), color = ol.length ? ol[0].name : (p.colors ? p.colors[0] : null);
     Cart.add(p, 1, color);
     toast('Added: ' + p.name + (color ? ' (' + color + ')' : '') + ' — tap the photo to pick another colour');
@@ -795,26 +814,72 @@
     tick(); cdTimer = setInterval(tick, 1000);
   }
 
+  function colHash(p) { return p.col === 'xmas' ? 'christmas' : p.col === 'woggles' ? 'woggles' : 'shop'; }
+  function colLabel(p) { return p.col === 'xmas' ? 'Christmas 2026' : p.col === 'woggles' ? 'Scout woggles' : 'The Lebanon drop'; }
+  // Made-to-design products (custom woggle): see the examples in 3D, then contact us on WhatsApp.
+  function viewContactProduct(p) {
+    var s = Store.settings(), ex = p.examples || [], cur = 0, cols = slotOpts(p).filter(function (o) { return !o.out; }), v3 = null;
+    var pick = {};
+    var colorsFor = function (e) {
+      if (e.white) return [col3d('white')];
+      var n = (e.parts || []).length, out = [];
+      for (var i = 0; i < n; i++) out.push(col3d(e.fixed && e.fixed[i] ? e.fixed[i] : (pick[e.n] || e.def || [])[(e.pick || []).indexOf(i)] || 'white'));
+      return out;
+    };
+    var swatches = function (e) {
+      if (e.white) return '<div class="wnote">Printed full white.</div>';
+      return (e.pick || []).map(function (pi, j) {
+        var curc = (pick[e.n] || e.def || [])[j];
+        return '<div class="pslot"><div class="pslot-h"><b class="n">' + (j + 1) + '</b><span>' + esc(e.parts[pi]) + '</span></div><div class="swatches">' + cols.map(function (o) { return '<button type="button" class="sw osw' + (String(o.name).toLowerCase() === String(curc).toLowerCase() ? ' on' : '') + '" data-j="' + j + '" data-c="' + esc(o.name) + '"><i style="background:' + (COLOR_HEX[String(o.name).toLowerCase()] || '#D9DDE3') + '"></i>' + esc(o.name) + '</button>'; }).join('') + '</div></div>';
+      }).join('');
+    };
+    app.innerHTML = '<div class="wrap"><a class="back" href="#' + colHash(p) + '">← Back</a><div class="ppage">' +
+      '<div class="exwrap"><div class="big w3dbox" id="pArt"></div>' + (ex.length > 1 ? '<div class="extabs" role="tablist">' + ex.map(function (e, i) { return '<button type="button" role="tab" data-ex="' + i + '" class="' + (i === 0 ? 'on' : '') + '">' + esc(e.n) + '</button>'; }).join('') + '</div>' : '') + '</div><div>' +
+      '<div class="eyebrow">' + colLabel(p) + '</div>' +
+      '<h1>' + esc(p.name) + '</h1><div class="price">' + (p.priceText ? esc(p.priceText) : money(p.price)) + '</div>' +
+      '<p style="color:#3A4352;font-size:17px;margin:16px 0 0">' + esc(p.desc || p.blurb || '') + '</p>' +
+      '<div class="opt packopts"><span class="lab">Example: <b id="exName"></b></span><div id="exOpts"></div></div>' +
+      '<div class="opt"><label class="field">What should we put on your woggle?<input id="cText" maxlength="60" placeholder="e.g. our patrol animal, the Eagle"></label></div>' +
+      '<div class="buyrow"><a class="btn pri" id="cWa" target="_blank" rel="noopener">Ask us on WhatsApp</a><a class="btn sec" href="tel:+' + esc(String(s.whatsapp || '').replace(/\D/g, '')) + '">Call ' + esc(fmtLocal(s.whatsapp)) + '</a></div>' +
+      '<div class="specs">' + (p.specs || []).map(function (x) { return '<div>' + esc(x) + '</div>'; }).join('') + '<div>Made to order · we confirm the price with you first</div></div>' +
+      '</div></div></div>';
+    var waMsg = function () { var e = ex[cur] || {}, t = $('#cText').value.trim(); return 'Hi 3DBlaze! I would like a custom woggle.' + (t ? '\nOn it: ' + t : '') + (e.n ? '\nLike the ' + e.n + ' example' + (e.white ? ' (full white)' : pick[e.n] || e.def ? ' — cords: ' + (pick[e.n] || e.def).join(' + ') : '') : ''); };
+    var updWa = function () { $('#cWa').href = waLink(s.whatsapp, waMsg()); };
+    var show = function (i) {
+      cur = i; var e = ex[i]; $('#exName').textContent = e.n; $('#exOpts').innerHTML = swatches(e);
+      $$('[data-ex]').forEach(function (b) { b.classList.toggle('on', +b.dataset.ex === i); });
+      if (v3) v3.destroy();
+      v3 = window.Blaze3D ? Blaze3D.mount($('#pArt'), { src: 'models/' + e.model + '.bin?v=94858834', colors: colorsFor(e), pitch: -38, poster: p.img }) : null;
+      $$('#exOpts .sw').forEach(function (b) { b.onclick = function () { var j = +b.dataset.j; pick[e.n] = (pick[e.n] || (e.def || []).slice()); pick[e.n][j] = b.dataset.c; $$('#exOpts .sw[data-j="' + j + '"]').forEach(function (x) { x.classList.toggle('on', x === b); }); if (v3) v3.setColors(colorsFor(e)); updWa(); }; });
+      updWa();
+    };
+    $$('[data-ex]').forEach(function (b) { b.onclick = function () { show(+b.dataset.ex); }; });
+    $('#cText').oninput = updWa;
+    if (ex.length) show(0);
+    window.scrollTo(0, 0);
+  }
+  function fmtLocal(n) { n = String(n || '').replace(/\D/g, '').replace(/^961/, ''); return n.length === 8 ? n.slice(0, 2) + ' ' + n.slice(2, 5) + ' ' + n.slice(5) : n; }
   function viewProduct(id) {
     var p = Store.product(id);
     if (!p) { app.innerHTML = '<div class="wrap page empty"><h1>Not found</h1><a class="btn pri" href="#shop">Back to the shop</a></div>'; return; }
+    if (p.contactOnly) return viewContactProduct(p);
     var soon = false;
     var slots = packSlots(p);
     var ol = slots.length ? [] : optList(p);
     var out = soon || isOut(p);
     var st = { color: ol.length ? (ol.filter(function (o) { return !o.out; })[0] || ol[0]).name : (p.colors && !slots.length) ? p.colors[0] : null, text: '', qty: 1,
-      picks: slots.map(function (x) { var so = slotOpts(x.p), f = so.filter(function (o) { return !o.out; })[0] || so[0]; return { id: x.of, name: x.p.name, color: f ? f.name : null, text: '' }; }) };
+      picks: slots.map(function (x, i) { var so = slotOpts(x.p), ok = so.filter(function (o) { return !o.out; }), f = (x.part ? ok[(i * 2 + 2) % Math.max(ok.length, 1)] : ok[0]) || so[0]; return { id: x.of, name: x.p.name, color: f ? f.name : null, text: '' }; }) };
     var swatch = function (o, on, extra) { return '<button type="button" class="sw osw' + (on ? ' on' : '') + '" data-c="' + esc(o.name) + '"' + (extra || '') + (o.out ? ' disabled title="Sold out"' : '') + '>' + (o.photo ? '<img src="' + o.photo + '" alt="">' : '<i style="background:' + (COLOR_HEX[o.name.toLowerCase()] || '#D9DDE3') + '"></i>') + esc(o.name) + (o.out ? '<small>sold out</small>' : '') + '</button>'; };
-    var packHTML = slots.length ? '<div class="opt packopts"><span class="lab">Choose each piece</span>' + slots.map(function (x, i) {
+    var packHTML = slots.length ? '<div class="opt packopts"><span class="lab">' + (p.parts ? 'Choose the colours' : 'Choose each piece') + '</span>' + slots.map(function (x, i) {
       var so = slotOpts(x.p);
       return '<div class="pslot" data-slot="' + i + '"><div class="pslot-h"><b class="n">' + (i + 1) + '</b><span>' + esc(x.p.name) + '</span></div>' +
         (so.length ? '<div class="swatches">' + so.map(function (o) { return swatch(o, o.name === st.picks[i].color, ' data-s="' + i + '"'); }).join('') + '</div>' : '') +
         (x.p.text ? '<input class="ptx" data-s="' + i + '" maxlength="' + (x.p.text.max || 20) + '" placeholder="' + esc(x.p.text.label + (x.p.text.ph ? ' — ' + x.p.text.ph : '')) + '">' : '') + '</div>';
     }).join('') + '<div class="err" id="packErr"></div></div>' : '';
     if (p.id === 'my-village') st.text = ls('prefillVillage') || '';
-    app.innerHTML = '<div class="wrap"><a class="back" href="#' + (p.col === 'xmas' ? 'christmas' : 'shop') + '">← Back</a><div class="ppage">' +
+    app.innerHTML = '<div class="wrap"><a class="back" href="#' + colHash(p) + '">← Back</a><div class="ppage">' +
       '<div class="big" id="pArt"></div><div>' +
-      '<div class="eyebrow">' + (p.col === 'xmas' ? 'Christmas 2026' : 'The Lebanon drop') + '</div>' +
+      '<div class="eyebrow">' + colLabel(p) + '</div>' +
       '<h1>' + esc(p.name) + '</h1><div class="price">' + money(p.price) + (p.was ? '<s>' + money(p.was) + '</s>' : '') + '</div>' +
       '<p style="color:#3A4352;font-size:17px;margin:16px 0 0">' + esc(p.desc || p.blurb || '') + '</p>' +
       (slots.length ? packHTML : ol.length ? '<div class="opt"><span class="lab">' + esc(p.optLabel || 'Colour') + '</span><div class="swatches">' + ol.map(function (o) { return swatch(o, o.name === st.color); }).join('') + '</div></div>' :
@@ -838,8 +903,11 @@
       $$('[data-v]').forEach(function (b) { b.onclick = function () { var ph = b.dataset.v === 'photo'; $$('[data-v]').forEach(function (x) { x.classList.toggle('on', x === b); }); $('#pLive').classList.toggle('hidden', ph); $('.realph').classList.toggle('hidden', !ph); }; });
     }
     var artBox = function (h) { if (!hasReal) { $('#pArt').innerHTML = h; return; } if ($('#pLive').classList.contains('hidden')) $('[data-v=live]').click(); $('#pLive').innerHTML = h; };
+    var v3 = null;
+    if (p.model && window.Blaze3D) { $('#pArt').classList.add('w3dbox'); v3 = Blaze3D.mount($('#pArt'), { src: 'models/' + p.model + '.bin?v=94858834', colors: st.picks.map(function (k) { return col3d(k.color); }), pitch: -50, poster: p.img }); }
     var draw = function () {
       if (!document.getElementById('pArt')) return;   // customer already left this page (late map search)
+      if (v3) { v3.setColors(st.picks.map(function (k) { return col3d(k.color); })); return; }
       if (mlive) { if ($('#pLive').classList.contains('hidden') && st.text) $('[data-v=live]').click(); mlive.set({ text: st.text || 'Your village', ar: st.geo && st.geo.ar, ele: st.geo && st.geo.ele, lat: st.geo && st.geo.lat, lon: st.geo && st.geo.lon }); return; }
       if (slots.length && window.BlazeArt && BlazeArt.has(p.art || p.id)) { artBox(thumb(p, { texts: st.picks.map(function (k, i) { return k.text || ((window.BlazeArt && BlazeArt.ornNames) || ['Gabriel', 'Maria', 'Elie'])[i % 10]; }) })); return; }
       if (slots.length && st.focus != null) { var fx = slots[st.focus], pk = st.picks[st.focus]; artBox(thumb(fx.p, { color: pk.color, text: pk.text || undefined })); return; }
@@ -1341,7 +1409,8 @@
     var groups = {}, mins = 0;
     orders.forEach(function (o) { o.items.forEach(function (i) {
       if (i.id === 'design') return;
-      var pieces = i.picks ? (Array.isArray(i.picks) ? i.picks : Object.keys(i.picks).map(function (k2) { return i.picks[k2]; })).map(function (pk) { return { id: pk.id, name: pk.name, color: pk.color, text: pk.text, qty: i.qty, from: i.name }; }) : [i];
+      var ownParts = (Store.product(i.id) || {}).parts;
+      var pieces = i.picks && !ownParts ? (Array.isArray(i.picks) ? i.picks : Object.keys(i.picks).map(function (k2) { return i.picks[k2]; })).map(function (pk) { return { id: pk.id, name: pk.name, color: pk.color, text: pk.text, qty: i.qty, from: i.name }; }) : [i];
       pieces.forEach(function (i) {
         var k = i.id + '|' + (i.color || ''); var p = Store.product(i.id) || { id: i.id, name: i.name, printMin: i.printMin || 60 };
         if (!groups[k]) groups[k] = { p: p, color: i.color, qty: 0, texts: [], orders: [] };
@@ -1763,7 +1832,7 @@
     if (window.BLAZE_ADMIN) return viewAdmin();
     if (h !== 'admin') document.title = '3DBlaze — Personalized 3D printed gifts';
     if (h === 'home' || h === '') return viewHome();
-    if (h === 'shop' || h === 'christmas' || h === 'faq' || h === 'make' || h === 'how') return viewHome(h);
+    if (h === 'shop' || h === 'christmas' || h === 'woggles' || h === 'faq' || h === 'make' || h === 'how') return viewHome(h);
     if (h.indexOf('p-') === 0) return viewProduct(h.slice(2));
     if (h === 'cart') return viewCart();
     if (h === 'checkout') return viewCheckout();
@@ -1796,7 +1865,7 @@
         if (Store.rev() === drawnRev) return;
         var h = (location.hash || '#home').slice(1), first = !firstFull;
         drawnRev = Store.rev(); firstFull = true;
-        var calm = h === '' || h === 'home' || h === 'shop' || h === 'christmas' || h === 'faq' || h === 'cart' || h === 'track' || h.indexOf('order-') === 0;
+        var calm = h === '' || h === 'home' || h === 'shop' || h === 'christmas' || h === 'woggles' || h === 'faq' || h === 'cart' || h === 'track' || h.indexOf('order-') === 0;
         if (!first && !calm) return;
         var y = window.scrollY, typing = document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
         if (!first && typing) return;
