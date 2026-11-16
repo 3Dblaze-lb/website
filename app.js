@@ -56,7 +56,17 @@
       colors: ['black'], text: { label: 'Your village or town', max: 18, ph: 'e.g. Hadchit', required: true },
       blurb: 'Lebanon in 3D, with your village on it.',
       desc: 'A raised map of Lebanon standing on a base with your village name printed in. We place a green pin where your village is. A desk piece that starts conversations.',
-      specs: ['About 17 cm tall, 15 cm wide', 'Real Lebanon outline with light relief and district borders', 'Your village name in English and Arabic, with its elevation, on the base', 'Green pin placed on your village', 'Black base, white map'] }
+      specs: ['About 17 cm tall, 15 cm wide', 'Real Lebanon outline with light relief and district borders', 'Your village name in English and Arabic, with its elevation, on the base', 'Green pin placed on your village', 'Black base, white map'] },
+    { id: 'holy-ornament', col: 'xmas', name: 'Holy Night Ornament', price: 4, tag: 'Personalized', printMin: 50, grams: 9,
+      text: { label: 'Name on the ornament', max: 14, ph: 'e.g. Gabriel', required: true },
+      blurb: 'The star of Christmas, the Holy Family, and a name.',
+      desc: 'Our own design: the star of Bethlehem shining over Mary, Joseph and baby Jesus in the manger, with the name of your choice in white on the banner. Type the name and see it on the ornament before you order. One for every person in the family.',
+      specs: ['9 cm round, 3 mm thick', 'Red with the name in white, set flush into the ornament', 'Name up to 14 letters', 'Hanging loop for string or ribbon'] },
+    { id: 'holy-ornament-3', col: 'xmas', name: 'Holy Night Ornament — 3 for $10', price: 10, was: 12, tag: 'Save $2', printMin: 150, grams: 27,
+      pack: [{ of: 'holy-ornament' }, { of: 'holy-ornament' }, { of: 'holy-ornament' }],
+      blurb: 'Three ornaments, three names.',
+      desc: 'Three Holy Night ornaments, each with its own name. Perfect for the family tree or as gifts.',
+      specs: ['3 ornaments, 9 cm each', 'A different name on each one', 'Red with white names'] }
   ];
   var COLOR_HEX = { black: '#30343B', white: '#F2F3F5', red: '#E2262B', green: '#1FA14E', orange: '#FF6A1F' };
   var STATUSES = [
@@ -320,14 +330,14 @@
     save: function () { ls('cart', this.items); var cc = $('#cartCount'); if (cc) cc.textContent = this.count(); },
     count: function () { return this.items.reduce(function (n, i) { return n + i.qty; }, 0); },
     add: function (p, qty, color, text, geo, picks) {
-      if (!p || p.col === 'xmas') return;
+      if (!p) return;
       var key = p.id + '|' + (color || '') + '|' + (text || '');
       var ex = this.items.filter(function (i) { return i.key === key; })[0];
       if (ex) ex.qty += qty; else { var it = { key: key, id: p.id, qty: qty, color: color || null, text: text || null, geo: geo || null }; if (picks) it.picks = picks; this.items.push(it); }
       this.save();
     },
     lines: function () {
-      return this.items.map(function (i) { var p = Store.product(i.id); return p && p.col !== 'xmas' ? Object.assign({}, i, { p: p, total: p.price * i.qty }) : null; }).filter(Boolean);
+      return this.items.map(function (i) { var p = Store.product(i.id); return p ? Object.assign({}, i, { p: p, total: p.price * i.qty }) : null; }).filter(Boolean);
     },
     subtotal: function () { return this.lines().reduce(function (n, l) { return n + l.total; }, 0); },
     clear: function () { this.items = []; this.save(); }
@@ -364,6 +374,7 @@
     if (fo) return '<img src="' + fo.photo + '" alt="' + esc(p.name) + '">';
     if ((p.art || p.id) === 'my-village' && (!opts || !opts.text)) return '<img src="img/my-village.jpg" alt="' + esc(p.name) + ' — real printed piece">';
     if ((p.art || p.id) === 'my-village' && window.BlazeArt) return '<div class="mapart">' + BlazeArt.draw('my-village', opts) + '</div>';
+    if (window.BlazeArt && BlazeArt.has(p.art || p.id) && /ornament/.test(p.art || p.id)) return '<div class="ornart">' + BlazeArt.draw(p.art || p.id, opts || {}) + '</div>';
     return '<div class="ph"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="13" width="36" height="26" rx="6" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M17 13 l3-5 h8 l3 5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><circle cx="24" cy="26" r="7" fill="none" stroke="currentColor" stroke-width="2.5"/></svg><span>' + esc(p.name) + '</span><small>Photo coming soon</small></div>';
   }
   function fee(region) {
@@ -592,7 +603,7 @@
         '<div class="cdline" id="countdown"></div>' +
       '</div></section>' +
 
-      '<section class="blk2" id="sec-christmas"><div class="wrap"><div class="shead"><h2>Christmas collection</h2><span class="soonlbl">Coming soon</span></div>' +
+      '<section class="blk2" id="sec-christmas"><div class="wrap"><div class="shead"><h2>Christmas collection</h2><span class="soonlbl">' + (xm.length ? 'Order by ' + new Date(s.xmasCutoff).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }) : 'Coming soon') + '</span></div>' +
         (xm.length ? '<div class="xrow" role="list">' + xm.map(function (p) { return '<a class="xc" role="listitem" href="#p-' + p.id + '"><div class="xc-img">' + thumb(p) + '</div><b>' + esc(p.name) + '</b><span>' + money(p.price) + '</span></a>'; }).join('') + '</div>'
           : '<div class="xempty"><b>New Christmas pieces are on the way.</b><span class="muted">Personalized gifts with your name on them — follow <a href="https://instagram.com/3dblaze.lb" target="_blank" rel="noopener">@3dblaze.lb</a> to see them first.</span></div>') + '</div></section>' +
 
@@ -684,7 +695,7 @@
   function viewProduct(id) {
     var p = Store.product(id);
     if (!p) { app.innerHTML = '<div class="wrap page empty"><h1>Not found</h1><a class="btn pri" href="#shop">Back to the shop</a></div>'; return; }
-    var soon = p.col === 'xmas';
+    var soon = false;
     var slots = packSlots(p);
     var ol = slots.length ? [] : optList(p);
     var out = soon || isOut(p);
@@ -720,6 +731,7 @@
     var draw = function () {
       if (!document.getElementById('pArt')) return;   // customer already left this page (late map search)
       if (mlive) { if ($('#pLive').classList.contains('hidden') && st.text) $('[data-v=live]').click(); mlive.set({ text: st.text || 'Your village', ar: st.geo && st.geo.ar, ele: st.geo && st.geo.ele, lat: st.geo && st.geo.lat, lon: st.geo && st.geo.lon }); return; }
+      if (slots.length && window.BlazeArt && BlazeArt.has(p.art || p.id)) { $('#pArt').innerHTML = thumb(p, { texts: st.picks.map(function (k, i) { return k.text || ['Gabriel', 'Maria', 'Elie'][i % 3]; }) }); return; }
       if (slots.length && st.focus != null) { var fx = slots[st.focus], pk = st.picks[st.focus]; $('#pArt').innerHTML = thumb(fx.p, { color: pk.color, text: pk.text || undefined }); return; }
       $('#pArt').innerHTML = thumb(p, { color: st.color, text: st.text || undefined, lat: st.geo && st.geo.lat, lon: st.geo && st.geo.lon });
     };
@@ -741,7 +753,7 @@
           if (bp.text && bp.text.required && !pk.text) { $('#packErr').textContent = 'Piece ' + (i + 1) + ': please fill in “' + bp.text.label + '”.'; var ti2 = $('.ptx[data-s="' + i + '"]'); if (ti2) ti2.focus(); return false; }
         }
         var picks = st.picks.map(function (k) { return { id: k.id, name: k.name, color: k.color || null, text: k.text || null }; });
-        Cart.add(p, st.qty, picks.map(function (k) { return k.color || '—'; }).join(' + '), picks.filter(function (k) { return k.text; }).map(function (k) { return k.text; }).join(' · '), null, picks);
+        Cart.add(p, st.qty, picks.some(function (k) { return k.color; }) ? picks.map(function (k) { return k.color || '—'; }).join(' + ') : null, picks.filter(function (k) { return k.text; }).map(function (k) { return k.text; }).join(' · '), null, picks);
         return true;
       }
       var so = optFor(p, st.color); if (so && so.out) { toast(so.name + ' is sold out'); return false; }
@@ -1107,6 +1119,13 @@
         box.querySelector('#mPaid').onchange = function (e) { Store.updateOrder(o.code, { paid: e.target.checked }).then(function () { o.paid = e.target.checked; renderAdmin(); toast(e.target.checked ? 'Marked paid' : 'Marked unpaid'); }); };
         var nt; box.querySelector('#mNote').oninput = function (e) { clearTimeout(nt); nt = setTimeout(function () { Store.updateOrder(o.code, { note: e.target.value }); }, 600); };
         var rqb = box.querySelector('#mReq'); if (rqb) rqb.onclick = function () {
+          var orn = o.items.filter(function (i) { return /holy-ornament/.test(i.id); });
+          if (orn.length) {
+            var names = []; orn.forEach(function (i) { var ps = i.picks ? (Array.isArray(i.picks) ? i.picks : Object.keys(i.picks).map(function (k) { return i.picks[k]; })) : [{ text: i.text }]; for (var q = 0; q < i.qty; q++) ps.forEach(function (pk) { if (pk.text) names.push(pk.text); }); });
+            var od = { type: 'ornament', title: 'Holy Night Ornament × ' + names.length, names: names, order: o.code, status: 'sent', createdAt: Date.now() };
+            Store.saveRequest(null, od).then(function (id) { od.id = id; copy(requestText(od), 'Copied — paste it in your Claude chat'); close(); adm.tab = 'requests'; renderAdmin(); });
+            return;
+          }
           var it = o.items.filter(function (i) { return i.id === 'my-village'; })[0] || o.items.filter(function (i) { return i.text; })[0];
           var data = { type: it.id === 'my-village' ? 'map' : 'custom', geo: it.geo || null, title: it.id === 'my-village' ? (it.text || '') : it.name + (it.text ? ' with “' + it.text + '”' : ''), base: it.id === 'my-village' ? 'black' : (it.color === 'white' ? 'white' : 'black'), mapc: it.id === 'my-village' ? 'white' : (it.color === 'white' ? 'green' : 'white'), place: o.customer.region || '', notes: '', size: '', order: o.code, status: 'sent', createdAt: Date.now() };
           Store.saveRequest(null, data).then(function (id) { data.id = id; copy(requestText(data), 'Copied — paste it in your Claude chat'); close(); adm.tab = 'requests'; renderAdmin(); });
@@ -1135,6 +1154,7 @@
           '\nBase text: ' + r.title.toUpperCase() + (g.ele != null ? ' ' + g.ele + ' m' : ' ### m') + (g.ar ? ' ' + g.ar : '') : '\n(not found on the map — find the location)') +
         (r.place ? '\nWhere: ' + r.place : '') + '\nColours: black plate, white map, black borders, green pin, black base, white name';
     }
+    else if (r.type === 'ornament') t += 'Product: Holy Night Ornament (3DBlaze original) — one .3mf per name\nTemplate: Christmass\\3DBlaze Holy Night Ornament - Gabriel - sample.3mf (made with the 3DBlaze ornament tool)\nNames: ' + (r.names || []).join(', ') + '\n3 mm thick, red ornament, name in white set flush (top 0.8 mm)';
     else t += 'Product: custom design (.3mf for Bambu Studio)\nWhat: ' + r.title;
     if (r.size) t += '\nSize: ' + r.size;
     if (r.notes) t += '\nNotes: ' + r.notes;
