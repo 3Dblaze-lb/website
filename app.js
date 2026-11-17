@@ -59,14 +59,14 @@
       blurb: 'Lebanon in 3D, with your village on it.',
       desc: 'A raised map of Lebanon standing on a base with your village name printed in. We place a green pin where your village is. A desk piece that starts conversations.',
       specs: ['About 17 cm tall, 15 cm wide', 'Real Lebanon outline with light relief and district borders', 'Your village name in English and Arabic, with its elevation, on the base', 'Green pin placed on your village', 'Black base, white map'] },
-    { id: 'door-xmas', col: 'xmas', name: 'Santa & Elves Family Door Sign', price: 0, priceText: 'Coming soon', comingSoon: true, art: 'door-xmas',
+    { id: 'door-xmas', col: 'xmas', name: 'Santa & Elves Family Door Sign', price: 0, priceText: 'Coming soon', comingSoon: true, art: 'door-xmas', grams: 116, printMin: 210,
       blurb: 'Dad is Santa, Mom is Mama Claus, every kid is an elf — each with their name.',
       desc: 'A house-shaped door sign for the holidays: “Welcome”, your family name, and the whole family as Santa, Mama Claus and the elves — each one holding a sign with their name. Try your names below.',
-      specs: ['About 25 × 21 cm (hangs from a cord)', 'Green or red, with everything raised in white', '1 to 5 kids'] },
-    { id: 'door-plain', col: 'xmas', name: 'Family Door Sign', price: 0, priceText: 'Coming soon', comingSoon: true, art: 'door-plain',
+      specs: ['About 23 × 22 cm (hangs from a cord)', 'Green or red, with everything raised in white', '1 to 5 kids'] },
+    { id: 'door-plain', col: 'xmas', name: 'Family Door Sign', price: 0, priceText: 'Coming soon', comingSoon: true, art: 'door-plain', grams: 83, printMin: 150,
       blurb: 'Welcome + your family name, on a little house.',
       desc: 'A house-shaped door sign with “Welcome” and your family name raised in white. Try your name below.',
-      specs: ['About 23 × 17 cm (hangs from a cord)', 'Green or red, with the letters raised in white'] },
+      specs: ['About 23 × 17.5 cm (hangs from a cord)', 'Green or red, with the letters raised in white'] },
     { id: 'holy-ornament', col: 'xmas', name: 'Holy Night Ornament', price: 4, tag: 'Personalized', printMin: 50, grams: 9,
       text: { label: 'Name on the ornament', max: 14, ph: 'e.g. Gabriel', required: true },
       blurb: 'The star of Christmas, the Holy Family, and a name.',
@@ -139,7 +139,7 @@
     function pick(k) { if (!k || typeof k !== 'object') return null; return { id: str(k.id, 40), name: str(k.name, 80), color: str(k.color, 40), text: str(k.text, 60) }; }
     function item(i) {
       if (!i || typeof i !== 'object') return null;
-      var o = { id: str(i.id, 40) || 'item', name: str(i.name, 80) || 'Item', price: num(i.price, 0, 100000), qty: Math.round(num(i.qty, 1, 999)) || 1, color: str(i.color, 40), text: str(i.text, 60) };
+      var o = { id: str(i.id, 40) || 'item', name: str(i.name, 80) || 'Item', price: num(i.price, 0, 100000), qty: Math.round(num(i.qty, 1, 999)) || 1, color: str(i.color, 40), text: str(i.text, 200) };
       if (i.geo) o.geo = geo(i.geo);
       if (i.picks) o.picks = arr(i.picks).slice(0, 30).map(pick).filter(Boolean);
       if (i.unitCost != null) o.unitCost = num(i.unitCost, 0, 100000);
@@ -311,7 +311,14 @@
     function products() {
       var list = CATALOG.map(function (p) { return Object.assign({}, p, state.overrides[p.id] || {}); });
       Object.keys(state.extra || {}).forEach(function (k) { var e = state.extra[k]; if (e && e.name) list.push(Object.assign({ id: k, col: 'lebanon', price: 0, specs: [] }, e, state.overrides[k] || {})); });
-      return list.filter(function (p) { return !p.removed; }).map(resolvePhotos).map(packArtOf);
+      return list.filter(function (p) { return !p.removed; }).map(saleOf).map(resolvePhotos).map(packArtOf);
+    }
+    // "Coming soon" products go on sale by themselves as soon as a price is set in the manager
+    function saleOf(p) {
+      if (!p.comingSoon || !(+p.price > 0)) return p;
+      p = Object.assign({}, p, { comingSoon: false });
+      if (p.priceText === 'Coming soon') delete p.priceText;
+      return p;
     }
     // a pack made only of Holy Night ornaments is drawn like the 1 and the 3 (N ornaments)
     function packArtOf(p) {
@@ -896,12 +903,13 @@
     var out = isOut(p);
     return '<div class="pc"><div class="pc-media"><a class="pc-img" href="#p-' + p.id + '">' + thumb(p) +
       (out ? '<span class="tag out">Sold out</span>' : p.tag ? '<span class="tag">' + esc(p.tag) + '</span>' : '') + '</a>' +
-      (out || p.contactOnly || p.comingSoon ? '' : '<button type="button" class="qadd" data-q="' + p.id + '" aria-label="Add ' + esc(p.name) + ' to cart">+</button>') + '</div>' +
+      (out || p.contactOnly || p.comingSoon || isDoor(p) ? '' : '<button type="button" class="qadd" data-q="' + p.id + '" aria-label="Add ' + esc(p.name) + ' to cart">+</button>') + '</div>' +
       '<a class="pc-info" href="#p-' + p.id + '"><h3>' + esc(p.name) + '</h3><div class="pc-row"><span class="price">' + money(p.price) + (p.was ? '<s>' + money(p.was) + '</s>' : '') + '</span>' + pdots(p) + '</div></a></div>';
   }
+  function isDoor(p) { return p.art === 'door-xmas' || p.art === 'door-plain'; }
   function quickAdd(id, btn) {
     var p = Store.product(id); if (!p) return;
-    if ((p.text && p.text.required) || packSlots(p).length || p.contactOnly || p.comingSoon) { location.hash = 'p-' + id; return; }
+    if ((p.text && p.text.required) || packSlots(p).length || p.contactOnly || p.comingSoon || isDoor(p)) { location.hash = 'p-' + id; return; }
     var ol = optList(p).filter(function (o) { return !o.out; }), color = ol.length ? ol[0].name : (p.colors ? p.colors[0] : null);
     Cart.add(p, 1, color);
     toast('Added: ' + p.name + (color ? ' (' + color + ')' : '') + ' — tap the photo to pick another colour');
@@ -975,18 +983,19 @@
   }
   // Not for sale yet: customers can try their names on the live preview.
   function viewSoonProduct(p) {
+    var sale = !p.comingSoon && +p.price > 0;
     var xm = p.art === 'door-xmas', o = { family: 'The Haddads', dad: 'Georges', mom: 'Rita', kids: ['Jad', 'Lea', 'Sami'], color: 'green' };
     var field = function (id, label, val, max, ph) { return '<label class="field">' + label + '<input id="' + id + '" maxlength="' + max + '" value="' + esc(val) + '" placeholder="' + esc(ph || '') + '" autocomplete="off"></label>'; };
     app.innerHTML = '<div class="wrap"><a class="back" href="#christmas">← Back</a><div class="ppage">' +
       '<div class="big ornart doorbig" id="pArt"></div><div>' +
-      '<div class="eyebrow">Christmas 2026</div><h1>' + esc(p.name) + '</h1><div class="price"><span class="soonpill">Coming soon</span></div>' +
+      '<div class="eyebrow">Christmas 2026</div><h1>' + esc(p.name) + '</h1><div class="price">' + (sale ? money(p.price) + (p.was ? '<s>' + money(p.was) + '</s>' : '') : '<span class="soonpill">Coming soon</span>') + '</div>' +
       '<p style="color:#3A4352;font-size:17px;margin:16px 0 0">' + esc(p.desc || '') + '</p>' +
       '<div class="opt"><span class="lab">Colour</span><div class="swatches" id="dCol"><button type="button" class="sw on" data-c="green"><i style="background:#126854"></i>Green</button><button type="button" class="sw" data-c="red"><i style="background:#BE202C"></i>Red</button></div></div>' +
       '<div class="opt">' + field('dFam', 'Family name', o.family, 22, 'e.g. The Haddads') + '</div>' +
       (xm ? '<div class="opt drow">' + field('dDad', 'Dad (Santa)', o.dad, 12) + field('dMom', 'Mom (Mama Claus)', o.mom, 12) + '</div>' +
         '<div class="opt"><span class="lab">Kids (elves)</span><div class="swatches" id="dN">' + [1, 2, 3, 4, 5].map(function (k) { return '<button type="button" class="sw' + (k === 3 ? ' on' : '') + '" data-n="' + k + '">' + k + '</button>'; }).join('') + '</div><div class="drow" id="dKids"></div></div>' : '') +
-      '<div class="buyrow"><button class="btn pri" disabled>Coming soon</button></div>' +
-      '<div class="specs">' + (p.specs || []).map(function (x) { return '<div>' + esc(x) + '</div>'; }).join('') + '<div>Not for sale yet — you can already try your names</div></div>' +
+      (sale ? '<div class="buyrow"><button class="btn pri" id="dAdd">Add to cart</button></div>' : '<div class="buyrow"><button class="btn pri" disabled>Coming soon</button></div>') +
+      '<div class="specs">' + (p.specs || []).map(function (x) { return '<div>' + esc(x) + '</div>'; }).join('') + (sale ? '' : '<div>Not for sale yet — you can already try your names</div>') + '</div>' +
       '</div></div></div>';
     var draw = function () { $('#pArt').innerHTML = BlazeArt.draw(p.art, o); };
     var kidsUI = function () {
@@ -1003,6 +1012,17 @@
       kidsUI();
     }
     $$('#dCol .sw').forEach(function (b) { b.onclick = function () { o.color = b.dataset.c; $$('#dCol .sw').forEach(function (x) { x.classList.toggle('on', x === b); }); draw(); }; });
+    if (sale) $('#dAdd').onclick = function () {
+      var t = function (v) { return String(v || '').trim(); }, fam = t(o.family);
+      if (!fam) { toast('Type your family name'); $('#dFam').focus(); return; }
+      var txt = fam;
+      if (xm) {
+        var kids = o.kids.map(t);
+        if (!t(o.dad) || !t(o.mom) || kids.some(function (k) { return !k; })) { toast('Type every name (Dad, Mom and each kid)'); return; }
+        txt += ' — Dad ' + t(o.dad) + ', Mom ' + t(o.mom) + ', Kids ' + kids.join(', ');
+      }
+      Cart.add(p, 1, o.color, txt); toast('Added to cart ✓');
+    };
     draw();
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
     window.scrollTo(0, 0);
@@ -1012,7 +1032,7 @@
     var p = Store.product(id);
     if (!p) { app.innerHTML = '<div class="wrap page empty"><h1>Not found</h1><a class="btn pri" href="#shop">Back to the shop</a></div>'; return; }
     if (p.contactOnly) return viewContactProduct(p);
-    if (p.comingSoon) return viewSoonProduct(p);
+    if (p.comingSoon || isDoor(p)) return viewSoonProduct(p);
     var soon = false;
     var slots = packSlots(p);
     var ol = slots.length ? [] : optList(p);

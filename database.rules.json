@@ -100,7 +100,7 @@
               ".validate": "newData.isString() && newData.val().length <= 40"
             },
             "text": {
-              ".validate": "newData.isString() && newData.val().length <= 60"
+              ".validate": "newData.isString() && newData.val().length <= 200"
             },
             "unitCost": {
               ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100000"
