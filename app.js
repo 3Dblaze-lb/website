@@ -1518,10 +1518,12 @@
         (r.place ? '\nWhere: ' + r.place : '') + '\nColours: black plate, white map, black borders, green pin, black base, white name';
     }
     else if (r.type === 'ornament') t += 'Product: Holy Night Ornament (3DBlaze original) — one .3mf per name\nTemplate: Christmass\\3DBlaze Holy Night Ornament - Gabriel - sample.3mf (made with the 3DBlaze ornament tool)\nNames: ' + (r.names || []).join(', ') + '\n3 mm red ornament, name in white Pacifico RAISED 0.8 mm on the banner (3.8 mm at the letters)';
+    else if (/door ?sign|santa|elf|elves/i.test(r.title + ' ' + (r.notes || ''))) t += 'Product: Family door sign (3DBlaze original) (.3mf for Bambu Studio)\nTool: Christmass\\3DBlaze door sign tool.zip (door.py) — run it with the family name, Dad, Mum, kids and green|red. Sample: Christmass\\3DBlaze Door Sign Santa Elves - Sassine - sample.3mf\nWhat: ' + r.title;
     else t += 'Product: custom design (.3mf for Bambu Studio)\nWhat: ' + r.title;
     if (r.size) t += '\nSize: ' + r.size;
     if (r.notes) t += '\nNotes: ' + r.notes;
     if (r.order) t += '\nFor order: ' + r.order;
+    t += '\n\nHOW TO WORK: first read the project doc "My Village .3mf recipe (read this first)". Use the SAVED TOOL/TEMPLATE from my 3DBLAZE folder (connect the folder if it is not connected). Do NOT redraw or reinvent the design. Show me the preview PNG before I print.';
     return t;
   }
   function admRequests() {
