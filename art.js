@@ -291,6 +291,33 @@
     var d = ['Gabriel', 'Maria', 'Elie'], n = o.texts || (o.text ? String(o.text).split(' · ') : d); n = [n[0] || d[0], n[1] || d[1], n[2] || d[2]];
     return '<svg viewBox="-99 -40 198 76" class="orn" role="img" aria-label="Three Holy Night ornaments">' + ornament({ text: n[0] }, 'translate(-64 0) scale(.64)') + ornament({ text: n[1] }, 'translate(0 0) scale(.64)') + ornament({ text: n[2] }, 'translate(64 0) scale(.64)') + '</svg>';
   };
+  // ---- Family door signs (Christmas: Santa = dad, Mama Claus = mom, elves = kids; plain: family name) ----
+  var DOOR = {"xmas":{"1":[[80.47,194.86,33.49,11.72],[125.12,207.14,29.02,14.51],[169.78,190.4,33.49,11.72]],"2":[[52.48,207.14,29.02,14.51],[97.13,194.86,33.49,11.72],[152.94,190.4,33.49,11.72],[197.59,207.14,29.02,14.51]],"3":[[40.88,208.27,27.34,13.67],[82.94,196.71,31.55,11.04],[125.0,208.27,27.34,13.67],[167.06,192.5,31.55,11.04],[209.12,208.27,27.34,13.67]],"4":[[38.48,210.58,23.68,11.84],[65.8,210.58,23.68,11.84],[102.23,200.57,27.32,9.56],[147.77,196.92,27.32,9.56],[184.2,210.58,23.68,11.84],[211.52,210.58,23.68,11.84]],"5":[[36.65,212.22,20.88,10.44],[60.75,212.22,20.88,10.44],[92.87,203.39,24.09,8.43],[133.03,200.17,24.09,8.43],[165.16,212.22,20.88,10.44],[189.25,212.22,20.88,10.44],[213.35,212.22,20.88,10.44]]},"plain":{},"xmasSize":[250,248],"plainSize":[230,200],"xmasFamily":[125,114,184,34],"plainFamily":[115,136,170,44],"roles":{"1":["S","E","M"],"2":["E","S","M","E"],"3":["E","S","E","M","E"],"4":["E","E","S","M","E","E"],"5":["E","E","S","M","E","E","E"]}};
+  var DOORC = { green: '#126854', red: '#BE202C' };
+  var _mc = null;
+  function tw(txt, font) { try { _mc = _mc || document.createElement('canvas').getContext('2d'); _mc.font = font; return _mc.measureText(txt).width; } catch (e) { return txt.length * 0.6 * parseFloat(font.match(/(\d+(?:\.\d+)?)px/)[1]); } }
+  function fitText(txt, x, y, maxw, maxh, fam, weight, fill, extra) {
+    if (!txt) return '';
+    var w1 = tw(txt, weight + ' 100px ' + fam) / 100 || txt.length * 0.6;
+    var size = Math.min(maxh, maxw / w1);
+    return '<text x="' + x + '" y="' + y + '" text-anchor="middle" dominant-baseline="central" font-family="' + fam.replace(/"/g, '') + '" font-weight="' + weight + '" font-size="' + size.toFixed(2) + '" fill="' + fill + '"' + (extra || '') + '>' + esc2(txt) + '</text>';
+  }
+  function doorCol(o) { return o.color === 'red' ? 'red' : 'green'; }
+  ART['door-xmas'] = function (o) {
+    var kids = (o.kids && o.kids.length ? o.kids : ['Jad', 'Lea', 'Sami']).slice(0, 5), n = kids.length, c = doorCol(o), roles = DOOR.roles[n], pl = DOOR.xmas[n], ki = 0, t = '';
+    var fam = o.family == null ? 'The Haddads' : o.family, F = DOOR.xmasFamily;
+    t += fitText(fam, F[0], F[1] + 2, F[2], F[3] * 0.82, 'Pacifico3DB, Pacifico, cursive', 400, '#FFFFFF', ' style="filter:drop-shadow(0 .6px .5px rgba(0,0,0,.35))"');
+    roles.forEach(function (r, i) {
+      var b = pl[i], nm = r === 'S' ? (o.dad == null ? 'Georges' : o.dad) : r === 'M' ? (o.mom == null ? 'Rita' : o.mom) : (kids[ki++] || '');
+      t += fitText(nm, b[0], b[1] + 0.3, b[2] - 4, b[3] * 0.62, 'Inter, Manrope, system-ui, sans-serif', 800, DOORC[c]);
+    });
+    return '<svg viewBox="0 0 250 248" class="door" role="img" aria-label="Family Christmas door sign"><image href="img/door/xmas-' + c + '-' + n + '.webp" x="0" y="0" width="250" height="248"/>' + t + '</svg>';
+  };
+  ART['door-plain'] = function (o) {
+    var c = doorCol(o), F = DOOR.plainFamily, fam = o.family == null ? 'The Haddads' : o.family;
+    return '<svg viewBox="0 0 230 200" class="door" role="img" aria-label="Family door sign"><image href="img/door/plain-' + c + '.webp" x="0" y="0" width="230" height="200"/>' +
+      fitText(fam, F[0], F[1] + 2, F[2], F[3] * 0.82, 'Pacifico3DB, Pacifico, cursive', 400, '#FFFFFF', ' style="filter:drop-shadow(0 .6px .5px rgba(0,0,0,.35))"') + '</svg>';
+  };
   // Any pack of Holy Night ornaments (e.g. 5 = "4 get 1 free"): rows of up to 3, same look as the 1 and the 3.
   var ORN_NAMES = ['Gabriel', 'Maria', 'Elie', 'Rita', 'Joseph', 'Sara', 'Charbel', 'Nour', 'Jad', 'Lea'];
   function ornPack(n) {
