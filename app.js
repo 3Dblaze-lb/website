@@ -836,7 +836,7 @@
       '<section class="blk2" id="sec-how"><div class="wrap"><div class="shead"><h2>How it works</h2></div><div class="steps2">' +
         step2(1, 'Pick', 'A piece and a colour') + step2(2, 'Confirm', 'We WhatsApp you') + step2(3, 'Print', 'Ready in 2–4 days') + step2(4, 'Deliver', 'Cash or Whish') +
         '</div><p class="feeline">Delivery ' + fee + '.' + (s.pickup ? ' Pickup available.' : '') + ' Pay the driver in cash, or by Whish with your order code.</p>' +
-        '<div class="trackbox custombox"><div><h3>Something else in mind?</h3><p class="muted">Custom gifts, names, logos, a replacement part… Send us your idea and we’ll tell you if we can print it and how much.</p></div>' +
+        '<div class="trackbox custombox"><div><h3>Something else in mind?</h3><p class="muted">Custom gifts, names, logos, university projects… Send us your idea and we’ll tell you if we can print it and how much.</p></div>' +
         '<a class="btn pri" target="_blank" rel="noopener" href="' + waLink(s.whatsapp, 'Hi 3DBlaze! I have a custom idea I’d like printed:') + '">WhatsApp us</a></div>' +
         '<form class="trackbox" id="homeTrack"><div><h3>Track your order</h3><p class="muted">Type the code you got when you ordered (3DB-XXXXX).</p></div><div class="trackin"><input name="code" placeholder="3DB-XXXXX" aria-label="Order code" autocomplete="off"><button class="btn pri" type="submit">Track</button></div></form>' +
       '</div></section>' +
