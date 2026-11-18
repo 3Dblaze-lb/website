@@ -1395,6 +1395,60 @@
     return { start: start, watch: watch, count: function () { return count; }, on: function (f) { subs.push(f); } };
   })();
 
+  // ---------- visitors per day (each device counts once a day, Lebanon time; the owner's devices and bots are skipped) ----------
+  var Visits = (function () {
+    var days = null, state = 'wait', subs = [], watching = false;
+    function emit() { subs.forEach(function (f) { f(); }); }
+    function dayKey(t) {
+      try { var p = {}; new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Beirut', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date(t)).forEach(function (x) { p[x.type] = x.value; }); if (p.year && p.month && p.day) return p.year + '-' + p.month + '-' + p.day; } catch (e) {}
+      return new Date(t + 7200000).toISOString().slice(0, 10);
+    }
+    function skip() { return !!window.BLAZE_ADMIN || ls('owner') || navigator.webdriver || /bot|crawl|spider|headless|lighthouse|preview/i.test(navigator.userAgent || ''); }
+    var busy = false;
+    function hit() {
+      if (skip() || busy) return;
+      var d = dayKey(Date.now()); if (ls('visitDay') === d) return;
+      if (Store.live) {
+        var id = ls('vid'); if (!/^v[a-z0-9]{6,24}$/.test(id || '')) { id = 'v' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); ls('vid', id); }
+        busy = true;
+        Store.rest('PUT', 'visits/' + d + '/' + id, { '.sv': 'timestamp' }).then(function () { ls('visitDay', d); }).catch(function () {}).then(function () { busy = false; });
+      } else {
+        var m = ls('visits') || {}; m[d] = (m[d] || 0) + 1; ls('visits', m); ls('visitDay', d); if (watching) { days = m; state = 'ok'; emit(); }
+      }
+    }
+    function start() {
+      hit();
+      document.addEventListener('visibilitychange', function () { if (!document.hidden) hit(); });
+      window.addEventListener('hashchange', hit);
+    }
+    function watch() {
+      if (watching) return; watching = true;
+      if (Store.live && window.firebase && firebase.apps && firebase.apps.length) {
+        firebase.database().ref('visits').orderByKey().limitToLast(60).on('value', function (s) {
+          var v = s.val() || {}, m = {}; Object.keys(v).forEach(function (k) { if (/^\d{4}-\d\d-\d\d$/.test(k) && v[k] && typeof v[k] === 'object') m[k] = Object.keys(v[k]).length; });
+          days = m; state = 'ok'; emit();
+        }, function () { days = {}; state = 'error'; emit(); });
+      } else if (!Store.live) { days = ls('visits') || {}; state = 'ok'; emit(); }
+    }
+    // last n days, oldest first, days with nobody = 0
+    function last(n) { var out = [], t = Date.now(); for (var i = n - 1; i >= 0; i--) { var k = dayKey(t - i * 86400000); out.push({ day: k, n: (days && days[k]) || 0 }); } return out; }
+    return { start: start, watch: watch, last: last, state: function () { return state; }, today: function () { return state === 'ok' ? last(1)[0].n : '…'; }, on: function (f) { subs.push(f); } };
+  })();
+
+  function admVisitors() {
+    var st = Visits.state(), L = Visits.last(30), sum = function (a) { return a.reduce(function (n, x) { return n + x.n; }, 0); };
+    var max = Math.max.apply(null, L.map(function (x) { return x.n; }).concat([1]));
+    var lab = function (k) { var p = k.split('-'); return new Date(Date.UTC(+p[0], +p[1] - 1, +p[2])).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }); };
+    if (st !== 'ok') { $('#admBody').innerHTML = '<div class="panel empty"><p class="muted">' + (st === 'error' ? 'Couldn’t read the visitor count. The new database rules still need to be published in Firebase (Realtime Database → Rules → Publish) — counting starts right after.' : 'Loading visitors…') + '</p></div>'; return; }
+    var best = L.slice().sort(function (a, b) { return b.n - a.n; })[0];
+    $('#admBody').innerHTML =
+      '<div class="kpis vk"><div class="kpi"><small>Today</small><b>' + L[29].n + '</b></div><div class="kpi"><small>Yesterday</small><b>' + L[28].n + '</b></div><div class="kpi"><small>Last 7 days</small><b>' + sum(L.slice(23)) + '</b></div><div class="kpi"><small>Last 30 days</small><b>' + sum(L) + '</b></div><div class="kpi"><small>Best day</small><b>' + (best.n ? best.n : '—') + '</b>' + (best.n ? '<small>' + lab(best.day) + '</small>' : '') + '</div></div>' +
+      '<div class="panel"><h3>Visitors per day · last 30 days</h3>' +
+      '<div class="vbars">' + L.map(function (x, i) { return '<div class="vb' + (i === 29 ? ' now' : '') + '" title="' + lab(x.day) + ': ' + x.n + '"><span>' + (x.n || '') + '</span><i style="height:' + Math.max(x.n ? 3 : 0, Math.round(x.n / max * 100)) + '%"></i><em>' + (+x.day.slice(8)) + '</em></div>'; }).join('') + '</div>' +
+      '<p class="muted" style="font-size:13px;margin:14px 0 0">One person on one device counts once per day (Lebanon time). Your own devices that are signed in to the manager are not counted.</p></div>' +
+      '<div class="panel" style="margin-top:14px"><h3>Day by day</h3><div class="vlist">' + L.slice().reverse().map(function (x) { return '<div><span>' + lab(x.day) + '</span><b>' + x.n + '</b></div>'; }).join('') + '</div></div>';
+  }
+
   // ---------- admin ----------
   var adm = { tab: 'orders', filter: 'active', q: '' };
   function statusBadge(k) { var s = STATUSES.filter(function (x) { return x.k === k; })[0] || STATUSES[0]; return '<span class="badge s-' + s.k + '">' + s.l + '</span>'; }
@@ -1433,15 +1487,16 @@
 
     var rd = Store.ordersReady(), K = function (x) { return rd === true ? x : '…'; };
     app.innerHTML = '<div class="wrap admin">' + (rd === 'error' ? '<div class="demo">Couldn’t load orders — check the internet and reload. Signed in as ' + esc((Store.user() || {}).email || '') + '.</div>' : rd ? '' : '<div class="demo">Loading orders…</div>') + (Store.live ? '' : '<div class="demo">Demo mode: orders are saved in this browser only. <button class="upl" id="clrDemo">Clear sample orders</button></div>') +
-      '<div class="adm-top"><h1>Manager</h1><div class="tabs">' + [['orders', 'Orders' + (newCount ? ' (' + newCount + ')' : '')], ['customers', 'Customers'], ['queue', 'Print queue'], ['requests', 'Design requests' + (function () { var rq = Store.requests(), w = Store.orders().filter(function (o) { return o.status !== 'cancelled' && o.status !== 'delivered' && !o.demo && needsFile(o) && !rq.some(function (r) { return r.order === o.code; }); }).length; return w ? ' (' + w + ' waiting)' : ''; })()], ['calc', 'Calculator'], ['offers', 'Offers'], ['products', 'Products'], ['settings', 'Settings']].map(function (t) { return '<button data-tab="' + t[0] + '" class="' + (adm.tab === t[0] ? 'on' : '') + '">' + t[1] + '</button>'; }).join('') +
+      '<div class="adm-top"><h1>Manager</h1><div class="tabs">' + [['orders', 'Orders' + (newCount ? ' (' + newCount + ')' : '')], ['customers', 'Customers'], ['visitors', 'Visitors'], ['queue', 'Print queue'], ['requests', 'Design requests' + (function () { var rq = Store.requests(), w = Store.orders().filter(function (o) { return o.status !== 'cancelled' && o.status !== 'delivered' && !o.demo && needsFile(o) && !rq.some(function (r) { return r.order === o.code; }); }).length; return w ? ' (' + w + ' waiting)' : ''; })()], ['calc', 'Calculator'], ['offers', 'Offers'], ['products', 'Products'], ['settings', 'Settings']].map(function (t) { return '<button data-tab="' + t[0] + '" class="' + (adm.tab === t[0] ? 'on' : '') + '">' + t[1] + '</button>'; }).join('') +
       '</div><button class="btn sec" id="logout" style="min-height:42px;padding:8px 14px;font-size:14px">Log out</button></div>' +
-      '<div class="kpis"><div class="kpi live"><small><i class="dot"></i>On the site now</small><b id="liveNow">' + Presence.count() + '</b></div><div class="kpi o"><small>New orders</small><b>' + K(newCount) + '</b></div><div class="kpi"><small>Orders today</small><b>' + K(today) + '</b></div><div class="kpi g"><small>Sales · profit this month</small><b>' + K(money(revMonth) + ' · ' + money(profMonth)) + '</b></div><div class="kpi"><small>To collect · in queue</small><b>' + K(money(toCollect) + ' · ' + inQueue) + '</b></div></div>' +
+      '<div class="kpis"><div class="kpi live"><small><i class="dot"></i>On the site now</small><b id="liveNow">' + Presence.count() + '</b></div><div class="kpi"><small>Visitors today</small><b id="visToday">' + Visits.today() + '</b></div><div class="kpi o"><small>New orders</small><b>' + K(newCount) + '</b></div><div class="kpi"><small>Orders today</small><b>' + K(today) + '</b></div><div class="kpi g"><small>Sales · profit this month</small><b>' + K(money(revMonth) + ' · ' + money(profMonth)) + '</b></div><div class="kpi"><small>To collect · in queue</small><b>' + K(money(toCollect) + ' · ' + inQueue) + '</b></div></div>' +
       '<div id="admBody"></div></div>';
     $$('[data-tab]').forEach(function (b) { b.onclick = function () { adm.tab = b.dataset.tab; renderAdmin(); }; });
     $('#logout').onclick = function () { Store.logout(); viewAdmin(); };
     Presence.watch();
+    Visits.watch(); ls('owner', true);
     var cd = $('#clrDemo'); if (cd) cd.onclick = function () { Store.clearDemo(); toast('Sample orders removed'); };
-    ({ orders: admOrders, customers: admCustomers, queue: admQueue, requests: admRequests, calc: admCalc, products: admProducts, offers: admOffers, settings: admSettings })[adm.tab]();
+    ({ orders: admOrders, customers: admCustomers, visitors: admVisitors, queue: admQueue, requests: admRequests, calc: admCalc, products: admProducts, offers: admOffers, settings: admSettings })[adm.tab]();
   }
 
   function admOrders() {
@@ -2173,6 +2228,7 @@
   window.addEventListener('hashchange', route);
   Cart.save();
   Presence.on(function (n) { var el = document.getElementById('liveNow'); if (el) el.textContent = n; });
+  Visits.on(function () { var el = document.getElementById('visToday'); if (el) el.textContent = Visits.today(); if (window.BLAZE_ADMIN && adm.tab === 'visitors' && document.getElementById('admBody')) admVisitors(); });
   // Draw as soon as shop data is there (device copy or the quick HTTPS fetch) — don't wait for the Firebase library.
   var drawnRev = -1, firstFull = false, redrawT = null;
   var initP = Store.init();
@@ -2180,6 +2236,7 @@
   else if (!window.BLAZE_ADMIN) app.innerHTML = '<div class="wrap page" style="min-height:60vh;display:flex;align-items:center;justify-content:center"><div class="muted" style="font-size:15px">Loading the shop…</div></div>';
   initP.then(function () {
     Presence.start();
+    Visits.start();
     if (!firstFull) {
       if (Store.ready() || window.BLAZE_ADMIN) { if (Store.ready()) { drawnRev = Store.rev(); firstFull = true; } route(); }
       else setTimeout(function () { if (!firstFull) route(); }, 4000);

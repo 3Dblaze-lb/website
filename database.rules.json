@@ -230,6 +230,16 @@
         }
       }
     },
+    "visits": {
+      ".read": "(auth != null && auth.token.email === '3dbllaze@gmail.com' && auth.token.email_verified === true)",
+      ".write": "(auth != null && auth.token.email === '3dbllaze@gmail.com' && auth.token.email_verified === true)",
+      "$day": {
+        "$id": {
+          ".write": "!data.exists() && newData.val() === now && $day.matches(/^20[0-9]{2}-[0-9]{2}-[0-9]{2}$/) && $id.matches(/^v[a-z0-9]{6,24}$/)",
+          ".validate": "newData.isNumber()"
+        }
+      }
+    },
     "photos": {
       ".read": true,
       "$ref": {
