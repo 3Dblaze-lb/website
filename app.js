@@ -139,7 +139,7 @@
     feeBeirut: 5, feeMount: 5, feeOther: 5, freeOver: 40, pickup: true, open: true,
     banner: '🇱🇧 Independence Day drop is live — order by 19 Nov for delivery before the 22nd',
     xmasCutoff: '2026-12-18',
-    calcPla: 25, calcMachine: 0.35, calcPack: 0.25, calcFail: 10, calcMarkup: 3, calcMin: 5, calcInfill: 15, calcGph: 15
+    calcPla: 25, calcMachine: 0.35, calcPack: 0.25, calcFail: 10, calcMarkup: 3, calcMin: 5, calcInfill: 15, calcGph: 15, calcOrderPack: 0
   };
 
   // ---------- utils ----------
@@ -503,12 +503,18 @@
       fullPhoto: fullOf,
       orders: function () { return Object.keys(state.orders).map(function (k) { return state.orders[k]; }).filter(Boolean).sort(function (a, b) { return b.createdAt - a.createdAt; }); },
       user: function () { return state.user; },
-      requests: function () { return Object.keys(state.requests).map(function (k) { return Object.assign({ id: k }, state.requests[k]); }).sort(function (a, b) { return b.createdAt - a.createdAt; }); },
+      requests: function () { return Object.keys(state.requests).filter(function (k) { return k !== '_costs'; }).map(function (k) { return Object.assign({ id: k }, state.requests[k]); }).sort(function (a, b) { return b.createdAt - a.createdAt; }); },
       saveRequest: function (id, data) {
         id = id || 'R' + Date.now().toString(36).toUpperCase();
         if (!live) { state.requests[id] = Object.assign(state.requests[id] || {}, data); ls('requests', state.requests); emit(); return Promise.resolve(id); }
         if (!sockOrders) { state.requests[id] = Object.assign(state.requests[id] || {}, data); emit(); return restWrite('PATCH', 'requests/' + id, data).then(function () { return id; }); }
         return fb.ref('requests/' + id).update(data).then(function () { return id; });
+      },
+      costs: function () { var c = state.requests._costs || {}; var a = function (x) { return x ? Object.keys(x).map(function (k) { return x[k]; }).filter(Boolean) : []; }; return { fil: a(c.fil), sup: a(c.sup), exp: a(c.exp) }; },
+      saveCosts: function (c) {
+        if (!live) { state.requests._costs = c; ls('requests', state.requests); emit(); return Promise.resolve(); }
+        if (!sockOrders) { state.requests._costs = c; emit(); return restWrite('PUT', 'requests/_costs', c); }
+        return fb.ref('requests/_costs').set(c);
       },
       deleteRequest: function (id) {
         if (!live) { delete state.requests[id]; ls('requests', state.requests); emit(); return Promise.resolve(); }
@@ -693,6 +699,10 @@
     var S = Store.settings(), base = (+grams || 0) * S.calcPla / 1000 + (+minutes || 0) / 60 * S.calcMachine + (+S.calcPack || 0);
     return Math.round(base * (1 + S.calcFail / 100) * 100) / 100;
   }
+  // supplies used once per order (cards, bags, stickers…) — set from Manager → Costs
+  function orderPack() { return Math.round((+Store.settings().calcOrderPack || 0) * 100) / 100; }
+  // full cost of one piece sold on its own = piece cost + the per-order supplies
+  function productCost(p) { return p && p.grams != null ? Math.round((pieceCost(p.grams, p.printMin) + orderPack()) * 100) / 100 : null; }
   function orderCost(o) {
     var c = 0, known = true;
     o.items.forEach(function (i) {
@@ -700,6 +710,7 @@
       var u = i.unitCost != null ? i.unitCost : (function () { var p = Store.product(i.id); return p && p.grams != null ? pieceCost(p.grams, p.printMin) : null; })();
       if (u == null) known = false; else c += u * i.qty;
     });
+    if (o.items.some(function (i) { return i.id !== 'design'; })) c += orderPack();
     return known ? Math.round(c * 100) / 100 : null;
   }
 
@@ -1532,7 +1543,7 @@
 
     var rd = Store.ordersReady(), K = function (x) { return rd === true ? x : '…'; };
     app.innerHTML = '<div class="wrap admin">' + (rd === 'error' ? '<div class="demo">Couldn’t load orders — check the internet and reload. Signed in as ' + esc((Store.user() || {}).email || '') + '.</div>' : rd ? '' : '<div class="demo">Loading orders…</div>') + (Store.live ? '' : '<div class="demo">Demo mode: orders are saved in this browser only. <button class="upl" id="clrDemo">Clear sample orders</button></div>') +
-      '<div class="adm-top"><h1>Manager</h1><div class="tabs">' + [['orders', 'Orders' + (newCount ? ' (' + newCount + ')' : '')], ['customers', 'Customers'], ['visitors', 'Visitors'], ['queue', 'Print queue'], ['requests', 'Design requests' + (function () { var rq = Store.requests(), w = Store.orders().filter(function (o) { return o.status !== 'cancelled' && o.status !== 'delivered' && !o.demo && needsFile(o) && !rq.some(function (r) { return r.order === o.code; }); }).length; return w ? ' (' + w + ' waiting)' : ''; })()], ['calc', 'Calculator'], ['offers', 'Offers'], ['products', 'Products'], ['settings', 'Settings']].map(function (t) { return '<button data-tab="' + t[0] + '" class="' + (adm.tab === t[0] ? 'on' : '') + '">' + t[1] + '</button>'; }).join('') +
+      '<div class="adm-top"><h1>Manager</h1><div class="tabs">' + [['orders', 'Orders' + (newCount ? ' (' + newCount + ')' : '')], ['customers', 'Customers'], ['visitors', 'Visitors'], ['queue', 'Print queue'], ['requests', 'Design requests' + (function () { var rq = Store.requests(), w = Store.orders().filter(function (o) { return o.status !== 'cancelled' && o.status !== 'delivered' && !o.demo && needsFile(o) && !rq.some(function (r) { return r.order === o.code; }); }).length; return w ? ' (' + w + ' waiting)' : ''; })()], ['calc', 'Calculator'], ['costs', 'Costs'], ['offers', 'Offers'], ['products', 'Products'], ['settings', 'Settings']].map(function (t) { return '<button data-tab="' + t[0] + '" class="' + (adm.tab === t[0] ? 'on' : '') + '">' + t[1] + '</button>'; }).join('') +
       '</div><button class="btn sec" id="logout" style="min-height:42px;padding:8px 14px;font-size:14px">Log out</button></div>' +
       '<div class="kpis"><div class="kpi live"><small><i class="dot"></i>On the site now</small><b id="liveNow">' + Presence.count() + '</b></div><div class="kpi"><small>Visitors today</small><b id="visToday">' + Visits.today() + '</b></div><div class="kpi o"><small>New orders</small><b>' + K(newCount) + '</b></div><div class="kpi"><small>Orders today</small><b>' + K(today) + '</b></div><div class="kpi g"><small>Sales · profit this month</small><b>' + K(money(revMonth) + ' · ' + money(profMonth)) + '</b></div><div class="kpi"><small>To collect · in queue</small><b>' + K(money(toCollect) + ' · ' + inQueue) + '</b></div></div>' +
       '<div id="admBody"></div></div>';
@@ -1541,7 +1552,7 @@
     Presence.watch();
     Visits.watch(); ls('owner', true);
     var cd = $('#clrDemo'); if (cd) cd.onclick = function () { Store.clearDemo(); toast('Sample orders removed'); };
-    ({ orders: admOrders, customers: admCustomers, visitors: admVisitors, queue: admQueue, requests: admRequests, calc: admCalc, products: admProducts, offers: admOffers, settings: admSettings })[adm.tab]();
+    ({ orders: admOrders, customers: admCustomers, visitors: admVisitors, queue: admQueue, requests: admRequests, calc: admCalc, costs: admCosts, products: admProducts, offers: admOffers, settings: admSettings })[adm.tab]();
   }
 
   function admOrders() {
@@ -1605,7 +1616,7 @@
       function price(l) { return l.price === '' || l.price == null ? (prod(l.id) || { price: 0 }).price : +l.price; }
       function sum() {
         var sub = 0, cost = 0, known = true;
-        lines.forEach(function (l) { sub += price(l) * (l.qty || 1); var c = lineCost(l); if (c == null) known = false; else cost += c * (l.qty || 1); });
+        lines.forEach(function (l) { sub += price(l) * (l.qty || 1); var c = lineCost(l); if (c == null) known = false; else cost += c * (l.qty || 1); }); cost += orderPack();
         box.querySelector('#sSum').innerHTML = '<div><span>Sale</span><b>' + money(sub) + '</b></div><div><span>Cost · profit</span><b style="color:var(--green)">' + (known ? money(cost) + ' · ' + money(sub - cost) : '<span class="muted" style="font-weight:400">cost unknown for an item → profit not counted</span>') + '</b></div>';
       }
       function draw() {
@@ -1929,13 +1940,13 @@
     var qty = Math.max(1, parseInt(c.qty) || 1), g = +c.grams || 0, h = (+c.hours || 0) + (+c.mins || 0) / 60;
     var design = +c.design || 0, delivery = c.pickup ? 0 : (+c.delivery || 0);
     var mat = g * S.calcPla / 1000, mac = h * S.calcMachine, pack = +S.calcPack, base = mat + mac + pack, fail = base * S.calcFail / 100, unitCost = base + fail;
-    var unit = c.fixed != null ? c.fixed : Math.max(Math.ceil(unitCost * S.calcMarkup), +S.calcMin);
+    var op = orderPack(), unit = c.fixed != null ? c.fixed : Math.max(Math.ceil((unitCost + op / qty) * S.calcMarkup), +S.calcMin);
     if (c.rush) unit *= 1.25;
     var disc = 0;
     if (c.bulk && c.fixed !== 2 && c.fixed !== 2.5) disc = qty >= 20 ? .35 : qty >= 10 ? .25 : qty >= 3 ? .15 : 0;
-    var unitFinal = Math.round(unit * (1 - disc) * 2) / 2, items = unitFinal * qty + design, total = items + delivery, cost = unitCost * qty, profit = items - cost;
+    var unitFinal = Math.round(unit * (1 - disc) * 2) / 2, items = unitFinal * qty + design, total = items + delivery, cost = unitCost * qty + op, profit = items - cost;
     return { qty: qty, unitFinal: unitFinal, disc: disc, design: design, delivery: delivery, items: items, total: total, cost: cost, profit: profit, margin: items > 0 ? profit / items * 100 : 0,
-      parts: [mat, mac, pack, fail], unitCost: unitCost, minutes: Math.round(h * 60) };
+      parts: [mat, mac, pack + op / qty, fail], unitCost: unitCost, minutes: Math.round(h * 60) };
   }
 
 
@@ -2039,6 +2050,81 @@
     };
   })();
 
+  // ---------- costs: what Pierre pays for filament, supplies (cards, bags, stickers…) and other expenses ----------
+  var costDraft = null;
+  function admCosts() {
+    var C = Store.costs(), d = costDraft || { fil: C.fil.map(function (x) { return Object.assign({}, x); }), sup: C.sup.map(function (x) { return Object.assign({}, x); }), exp: C.exp.map(function (x) { return Object.assign({}, x); }) }; costDraft = d;
+    var iso = function (t) { var x = new Date(t || Date.now()); return x.getFullYear() + '-' + ('0' + (x.getMonth() + 1)).slice(-2) + '-' + ('0' + x.getDate()).slice(-2); };
+    var n = function (v) { return Math.max(0, +v || 0); };
+    var unit = function (x) { return n(x.qty) ? n(x.paid) / n(x.qty) : 0; };
+    function derive() {
+      var kg = 0, paid = 0, piece = 0, order = 0;
+      d.fil.forEach(function (x) { if (n(x.kg) && n(x.paid)) { kg += n(x.kg); paid += n(x.paid); } });
+      d.sup.forEach(function (x) { var c = unit(x) * (n(x.per) || 1); if (x.use === 'piece') piece += c; else order += c; });
+      return { pla: kg ? Math.round(paid / kg * 100) / 100 : null, piece: Math.round(piece * 100) / 100, order: Math.round(order * 100) / 100 };
+    }
+    var inp = function (k, i, f, v, type, extra) { return '<input data-s="' + k + '" data-i="' + i + '" data-f="' + f + '" type="' + (type || 'number') + '" value="' + esc(v == null ? '' : v) + '"' + (type ? '' : ' min="0" step="any"') + (extra || '') + '>'; };
+    function stats() {
+      var D = derive(), S = Store.settings(), monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime();
+      var all = d.fil.concat(d.sup, d.exp), spentAll = all.reduce(function (t, x) { return t + n(x.paid); }, 0);
+      var spentMonth = all.filter(function (x) { return x.date && new Date(x.date + 'T12:00:00').getTime() >= monthStart; }).reduce(function (t, x) { return t + n(x.paid); }, 0);
+      var profAll = Store.orders().filter(function (o) { return o.status !== 'cancelled' && !o.demo; }).reduce(function (t, o) { var c = orderCost(o); return t + (c == null ? 0 : (o.subtotal || 0) - c); }, 0);
+      var other = d.exp.reduce(function (t, x) { return t + n(x.paid); }, 0);
+      return '<div class="stat"><div class="k">Filament (average)</div><div class="v">' + money(D.pla != null ? D.pla : S.calcPla) + '/kg</div></div><div class="stat"><div class="k">Supplies per order</div><div class="v">' + money(D.order) + '</div></div><div class="stat"><div class="k">Supplies per piece</div><div class="v">' + money(D.piece) + '</div></div><div class="stat"><div class="k">Spent this month · total</div><div class="v">' + money(spentMonth) + ' · ' + money(spentAll) + '</div></div><div class="stat"><div class="k">Profit so far − other expenses</div><div class="v' + (profAll - other >= 0 ? ' good' : '') + '">' + (profAll - other < 0 ? '−' : '') + money(Math.abs(profAll - other)) + '</div></div>';
+    }
+    function out(k, x) {
+      if (k === 'fil') return n(x.kg) ? '<b>' + money(n(x.paid) / n(x.kg)) + '/kg</b>' : '—';
+      if (k === 'sup') { var u = unit(x), per = n(x.per) || 1; return u ? money(u) + ' each<br><b>' + money(u * per) + ' / ' + (x.use === 'piece' ? 'piece' : 'order') + '</b>' : '—'; }
+      return '';
+    }
+    function draw() {
+      var row = function (cells, k, i) { return '<div class="cost-row" style="--c:' + cells.cols + ' 36px">' + cells.html + '<button type="button" class="upl" data-rm="' + k + '" data-i="' + i + '" title="Remove" style="min-height:42px">✕</button></div>'; };
+      var L = function (t, h) { return '<label class="field" style="margin:0;font-size:12px">' + t + h + '</label>'; };
+      $('#admBody').innerHTML =
+        '<div class="panel" style="margin-bottom:14px"><b style="font-family:var(--head)">Costs</b><div class="muted" style="font-size:14px">Write what you paid. Filament sets the PLA price, supplies are added to every product’s cost, so profit everywhere (products, orders, calculator, sales) is real. Press <b>Save</b> when done.</div>' +
+        '<div class="stats" id="cStats" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">' + stats() + '</div></div>' +
+
+        '<div class="panel" style="margin-bottom:14px"><b style="font-family:var(--head)">Filament</b><div class="muted" style="font-size:13px;margin-bottom:10px">One line per spool you bought, e.g. Black PLA · $20 · 1 kg.</div>' +
+        d.fil.map(function (x, i) { return row({ cols: '2fr 1fr 1fr 1.2fr 1fr', html: L('Filament', inp('fil', i, 'name', x.name, 'text', ' placeholder="Black PLA"')) + L('Paid $', inp('fil', i, 'paid', x.paid)) + L('Weight kg', inp('fil', i, 'kg', x.kg == null ? 1 : x.kg)) + L('Date', inp('fil', i, 'date', x.date || iso(), 'date')) + '<div style="font-size:13px;padding-bottom:12px" id="co_fil_' + i + '">' + out('fil', x) + '</div>' }, 'fil', i); }).join('') +
+        '<button type="button" class="upl" data-add="fil">+ Add filament</button></div>' +
+
+        '<div class="panel" style="margin-bottom:14px"><b style="font-family:var(--head)">Supplies</b><div class="muted" style="font-size:13px;margin-bottom:10px">Cards, bags, stickers, boxes… e.g. Cards · $50 · 54 bought · 1 per order.</div>' +
+        d.sup.map(function (x, i) { return row({ cols: '1.6fr .9fr .9fr 1.1fr .8fr 1.2fr', html: L('Item', inp('sup', i, 'name', x.name, 'text', ' placeholder="Cards"')) + L('Paid $', inp('sup', i, 'paid', x.paid)) + L('How many', inp('sup', i, 'qty', x.qty)) + L('Used', '<select data-s="sup" data-i="' + i + '" data-f="use"><option value="order"' + (x.use !== 'piece' ? ' selected' : '') + '>per order</option><option value="piece"' + (x.use === 'piece' ? ' selected' : '') + '>per piece</option></select>') + L('× each time', inp('sup', i, 'per', x.per == null ? 1 : x.per)) + '<div style="font-size:13px;padding-bottom:6px;line-height:1.3" id="co_sup_' + i + '">' + out('sup', x) + '</div>' }, 'sup', i); }).join('') +
+        '<button type="button" class="upl" data-add="sup">+ Add supply</button></div>' +
+
+        '<div class="panel" style="margin-bottom:14px"><b style="font-family:var(--head)">Other expenses</b><div class="muted" style="font-size:13px;margin-bottom:10px">One-off things (nozzle, build plate, tools, ads…). Not added to product cost — only counted in “spent”.</div>' +
+        d.exp.map(function (x, i) { return row({ cols: '2fr 1fr 1.2fr', html: L('What', inp('exp', i, 'name', x.name, 'text', ' placeholder="Spare nozzle"')) + L('Paid $', inp('exp', i, 'paid', x.paid)) + L('Date', inp('exp', i, 'date', x.date || iso(), 'date')) }, 'exp', i); }).join('') +
+        '<button type="button" class="upl" data-add="exp">+ Add expense</button></div>' +
+
+        '<div class="actions"><button class="btn pri" id="cSave" style="flex:1">Save costs</button></div>';
+
+      $$('[data-s]').forEach(function (el) {
+        var x = d[el.dataset.s][+el.dataset.i], f = el.dataset.f;
+        el.addEventListener(el.tagName === 'SELECT' || el.type === 'date' ? 'change' : 'input', function () {
+          x[f] = el.type === 'number' ? (el.value === '' ? null : +el.value) : el.value;
+          var o = $('#co_' + el.dataset.s + '_' + el.dataset.i); if (o) o.innerHTML = out(el.dataset.s, x);
+          $('#cStats').innerHTML = stats();
+        });
+      });
+      $$('[data-add]').forEach(function (b) { b.onclick = function () { var k = b.dataset.add; d[k].push(k === 'fil' ? { name: '', paid: null, kg: 1, date: iso() } : k === 'sup' ? { name: '', paid: null, qty: null, use: 'order', per: 1, date: iso() } : { name: '', paid: null, date: iso() }); draw(); var r = $$('[data-s="' + k + '"][data-f="name"]'); if (r.length) r[r.length - 1].focus(); }; });
+      $$('[data-rm]').forEach(function (b) { b.onclick = function () { d[b.dataset.rm].splice(+b.dataset.i, 1); draw(); }; });
+      $('#cSave').onclick = function () {
+        var clean = function (a, keys) { return a.filter(function (x) { return (x.name || '').trim() || n(x.paid); }).map(function (x) { var o = {}; keys.forEach(function (k) { var v = x[k]; if (v == null || v === '') return; o[k] = typeof v === 'string' ? v.trim().slice(0, 80) : Math.round(n(v) * 1000) / 1000; }); return o; }); };
+        var out = { fil: clean(d.fil, ['name', 'paid', 'kg', 'date']), sup: clean(d.sup, ['name', 'paid', 'qty', 'use', 'per', 'date']), exp: clean(d.exp, ['name', 'paid', 'date']), updatedAt: Date.now() };
+        var bad = out.sup.filter(function (x) { return !n(x.qty); })[0]; if (bad) { toast('Add “How many” for ' + (bad.name || 'each supply')); return; }
+        var bf = out.fil.filter(function (x) { return !n(x.kg); })[0]; if (bf) { toast('Add the weight (kg) for ' + (bf.name || 'each filament')); return; }
+        d = costDraft = { fil: out.fil, sup: out.sup, exp: out.exp };
+        var D = derive(), set = { calcOrderPack: D.order };
+        if (D.pla != null) set.calcPla = D.pla;
+        if (out.sup.length) set.calcPack = D.piece;
+        var btn = $('#cSave'); btn.disabled = true; btn.textContent = 'Saving…';
+        Store.saveCosts(out).then(function () { return Store.saveSettings(set); }).then(function () { costDraft = null; toast('Costs saved · product costs updated'); renderAdmin(); })
+          .catch(function () { btn.disabled = false; btn.textContent = 'Save costs'; toast('Could not save — check the internet and try again'); });
+      };
+    }
+    draw();
+  }
+
   function admCalc() {
     if (!admCalc._fee) { admCalc._fee = 1; calcIn.delivery = +Store.settings().feeOther || 5; }
     var S = Store.settings(), c = calcIn;
@@ -2056,7 +2142,7 @@
       '<div class="panel"><button class="upl" id="c_tog" style="font-size:15px">' + (calcOpen ? '▾' : '▸') + ' Cost settings</button><div id="c_set"' + (calcOpen ? '' : ' class="hidden"') + ' style="margin-top:14px"><div class="grid3">' +
         num('s_calcPla', 'PLA price ($/kg)', S.calcPla, 0.5) + num('s_calcMachine', 'Machine cost ($/hour)', S.calcMachine, 0.05) + num('s_calcPack', 'Packaging ($/piece)', S.calcPack, 0.05) +
         num('s_calcFail', 'Failure buffer (%)', S.calcFail, 1) + num('s_calcMarkup', 'Markup (× cost)', S.calcMarkup, 0.1) + num('s_calcMin', 'Minimum price / piece ($)', S.calcMin, 0.5) + num('s_calcInfill', 'Infill % (for STL estimates)', S.calcInfill, 5) + num('s_calcGph', 'Print speed (grams / hour)', S.calcGph, 1) +
-      '</div><p class="hint">Machine cost = electricity (~$0.05/h on generator power) + wear and spares (~$0.30/h). Saved to your shop settings.</p></div></div></div>' +
+      '</div><p class="hint">Machine cost = electricity (~$0.05/h on generator power) + wear and spares (~$0.30/h). Saved to your shop settings.' + (Store.costs().fil.length || Store.costs().sup.length ? ' <b>PLA price and packaging come from the Costs tab</b>' + (orderPack() ? ' (+ ' + money(orderPack()) + ' supplies per order)' : '') + '.' : '') + '</p></div></div></div>' +
       '<div class="panel res"><div class="lbl">Customer pays</div><div class="big" id="r_total"></div><div class="muted" id="r_sub" style="font-size:15px"></div>' +
       '<div class="stats"><div class="stat"><div class="k">Your cost</div><div class="v" id="r_cost"></div></div><div class="stat"><div class="k">Profit</div><div class="v good" id="r_profit"></div></div><div class="stat"><div class="k">Margin</div><div class="v good" id="r_margin"></div></div></div>' +
       '<div class="lbl">Where your cost goes</div><div class="bar"><div id="b0" style="background:#1A8CFF"></div><div id="b1" style="background:#7ABEFF"></div><div id="b2" style="background:#0B1220"></div><div id="b3" style="background:#B4BDC9"></div></div>' +
@@ -2070,7 +2156,7 @@
       $('#r_total').textContent = m(r.total);
       $('#r_sub').innerHTML = '<b style="color:var(--text)">' + r.qty + ' × ' + m(r.unitFinal) + '</b>' + (r.disc ? ' (−' + Math.round(r.disc * 100) + '%)' : '') + (r.design ? ' + ' + m(r.design) + ' design' : '') + (r.delivery ? ' + ' + m(r.delivery) + ' delivery' : ' · pickup');
       $('#r_cost').textContent = m(r.cost); $('#r_profit').textContent = m(r.profit); $('#r_margin').textContent = Math.round(r.margin) + '%';
-      var sum = r.unitCost || 1; r.parts.forEach(function (v, i) { $('#b' + i).style.width = (v / sum * 100) + '%'; $('#l' + i).textContent = m(v * r.qty); });
+      var sum = r.cost / r.qty || 1; r.parts.forEach(function (v, i) { $('#b' + i).style.width = (v / sum * 100) + '%'; $('#l' + i).textContent = m(v * r.qty); });
       var name = calcIn.name || 'Custom print';
       lastQuote = 'Hey! Here’s your 3DBlaze quote ⚡\n' + name + ' × ' + r.qty + ' — ' + m(r.unitFinal * r.qty) + '\n' + (r.design ? 'Design / personalization — ' + m(r.design) + '\n' : '') +
         (r.delivery ? 'Delivery — ' + m(r.delivery) + '\n' : 'Free pickup\n') + 'Total: ' + m(r.total) + (r.delivery ? ' (cash on delivery or Whish)' : '') + '\nReady in ' + (calcIn.rush ? '24 hours' : '3 days') + '. Reply YES to confirm 🙌';
@@ -2138,9 +2224,9 @@
       '<div class="panel" style="margin-bottom:14px"><b style="font-family:var(--head)">Drops</b><div class="muted" style="font-size:14px;margin-bottom:8px"><b>Coming soon</b>: shown clearly but can’t be ordered (people can still try their names). <b>Blur</b>: shown blurred with “Coming soon” on it, can’t be ordered. Choose it for a whole drop here, or for one product / offer with its own switches.</div><div class="droprow">' +
       COLS.map(function (c) { return '<div class="dropc"><b>' + c[1] + '</b><label class="switch"><input type="checkbox" data-dsoon="' + c[0] + '"' + (soonCol(c[0]) ? ' checked' : '') + '> Coming soon</label><label class="switch"><input type="checkbox" data-dblur="' + c[0] + '"' + (blurCol(c[0]) ? ' checked' : '') + '> Blur</label></div>'; }).join('') + '</div></div>' +
       list.map(function (p) {
-        var pc = p.grams != null ? pieceCost(p.grams, p.printMin) : null;
+        var pc = productCost(p);
         var costLine = pc == null ? '<div class="muted" style="font-size:12px;margin-top:3px">No print file yet — add one to see cost & profit</div>' :
-          '<div style="font-size:12px;margin-top:3px;color:#2C3443">' + (Math.round(p.grams * 10) / 10) + ' g · ' + Math.floor(p.printMin / 60) + 'h ' + Math.round(p.printMin % 60) + 'm' + (p.printFile ? ' · ' + esc(p.printFile) : '') + (p.printExact ? ' ✓' : ' (estimate)') + '<br>Cost ' + money(pc) + ' · <b style="color:' + (p.price - pc > 0 ? 'var(--green)' : 'var(--red)') + '">profit ' + money(p.price - pc) + ' (' + (p.price > 0 ? Math.round((p.price - pc) / p.price * 100) : 0) + '%)</b> per piece</div>';
+          '<div style="font-size:12px;margin-top:3px;color:#2C3443">' + (Math.round(p.grams * 10) / 10) + ' g · ' + Math.floor(p.printMin / 60) + 'h ' + Math.round(p.printMin % 60) + 'm' + (p.printFile ? ' · ' + esc(p.printFile) : '') + (p.printExact ? ' ✓' : ' (estimate)') + '<br>Cost ' + money(pc) + ' · <b style="color:' + (p.price - pc > 0 ? 'var(--green)' : 'var(--red)') + '">profit ' + money(p.price - pc) + ' (' + (p.price > 0 ? Math.round((p.price - pc) / p.price * 100) : 0) + '%)</b> per piece' + (orderPack() ? ' <span class="muted">(incl. ' + money(orderPack()) + ' cards/bags/stickers)</span>' : '') + '</div>';
         return '<div class="prow" data-p="' + p.id + '"><div class="th">' + (realPhoto(p) && modelKind(p) ? '<img src="' + realPhoto(p) + '" alt="' + esc(p.name) + '" title="Real picture (2nd view in the shop — the model is shown first)">' : thumb(p)) + '</div><div><b>' + esc(p.name) + '</b><div class="muted" style="font-size:13px">' + colName(p.col) + (p.comingSoon ? ' · <b style="color:#B26B00">Coming soon</b>' : '') + ' · <button class="upl" data-ed="' + p.id + '">Edit</button> · <button class="upl" data-bf="' + p.id + '">' + (p.grams != null ? 'Replace Bambu file' : '+ Bambu file') + '</button> · <button class="upl" data-up="' + p.id + '">' + (p.photo ? 'Change photo' : 'Upload photo') + '</button> · ' + (p.photo ? '<button class="upl" data-rmph="' + p.id + '">Remove photo</button> · ' : '') + (packSlots(p).length ? '<button class="upl" data-offer="' + p.id + '">Edit offer (' + packSlots(p).length + ' pieces)</button>' : '<button class="upl" data-opt="' + p.id + '">Colours & photos' + (optList(p).length ? ' (' + optList(p).length + ')' : '') + '</button>') + ' · <button class="upl" data-del="' + p.id + '">Remove</button></div>' + costLine + '</div>' +
           '<label class="field" style="font-size:12px">Price $<input type="number" min="0" step="0.5" value="' + p.price + '" data-price="' + p.id + '"></label>' +
           '<label class="switch"><input type="checkbox" data-av="' + p.id + '"' + (p.available === false ? '' : ' checked') + '> On sale</label>' +
@@ -2378,7 +2464,7 @@
     // Pages where the customer is typing (checkout, product page after first draw) are not redrawn under them.
     Store.on(function () {
       var cc = $('#cartCount'); if (cc) cc.textContent = Cart.count();
-      if (window.BLAZE_ADMIN) { if (Store.user() && !document.querySelector('.modal')) renderAdmin(); return; }
+      if (window.BLAZE_ADMIN) { if (Store.user() && !document.querySelector('.modal') && !(adm.tab === 'costs' && document.activeElement && /INPUT|SELECT/.test(document.activeElement.tagName))) renderAdmin(); return; }
       if (!Store.ready() || Store.rev() === drawnRev) return;
       clearTimeout(redrawT);
       redrawT = setTimeout(function () {
