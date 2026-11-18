@@ -696,21 +696,22 @@
   // cost of one piece from its print data (grams + minutes)
   function pieceCost(grams, minutes) {
     if (grams == null && minutes == null) return null;
-    var S = Store.settings(), base = (+grams || 0) * S.calcPla / 1000 + (+minutes || 0) / 60 * S.calcMachine + (+S.calcPack || 0);
+    var S = Store.settings(), base = (+grams || 0) * S.calcPla / 1000 + (+minutes || 0) / 60 * S.calcMachine;
     return Math.round(base * (1 + S.calcFail / 100) * 100) / 100;
   }
-  // supplies used once per order (cards, bags, stickers…) — set from Manager → Costs
-  function orderPack() { return Math.round((+Store.settings().calcOrderPack || 0) * 100) / 100; }
+  // supplies (card + bag + sticker…) used ONCE per product or offer sold — set from Manager → Costs
+  function orderPack() { var S = Store.settings(); return Math.round(((+S.calcOrderPack || 0) + (+S.calcPack || 0)) * 100) / 100; }
   // full cost of one piece sold on its own = piece cost + the per-order supplies
-  // cost of what one "unit" of a product is: a normal product = 1 piece; an offer / pack = the cost of every piece in it
+  // cost of one product or offer sold: printing (filament + machine) × every piece in it, + ONE set of supplies
   function unitCostOf(p) {
     if (!p) return null;
-    var sl = isPack(p) ? packSlots(p) : [];
-    if (sl.length && sl.every(function (x) { return x.p && x.p.grams != null; })) return Math.round(sl.reduce(function (t, x) { return t + pieceCost(x.p.grams, x.p.printMin); }, 0) * 100) / 100;
-    return p.grams != null ? pieceCost(p.grams, p.printMin) : null;
+    var sl = isPack(p) ? packSlots(p) : [], pr = null;
+    if (sl.length && sl.every(function (x) { return x.p && x.p.grams != null; })) pr = sl.reduce(function (t, x) { return t + pieceCost(x.p.grams, x.p.printMin); }, 0);
+    else if (p.grams != null) pr = pieceCost(p.grams, p.printMin);
+    return pr == null ? null : Math.round((pr + orderPack()) * 100) / 100;
   }
   function isPack(p) { return !!(p && p.pack && !(p.parts && p.parts.length)); }
-  function productCost(p) { var c = unitCostOf(p); return c == null ? null : Math.round((c + orderPack()) * 100) / 100; }
+  function productCost(p) { return unitCostOf(p); }
   function orderCost(o) {
     var c = 0, known = true;
     o.items.forEach(function (i) {
@@ -718,7 +719,6 @@
       var u = i.unitCost != null ? i.unitCost : unitCostOf(Store.product(i.id));
       if (u == null) known = false; else c += u * i.qty;
     });
-    if (o.items.some(function (i) { return i.id !== 'design'; })) c += orderPack();
     return known ? Math.round(c * 100) / 100 : null;
   }
 
@@ -1624,7 +1624,7 @@
       function price(l) { return l.price === '' || l.price == null ? (prod(l.id) || { price: 0 }).price : +l.price; }
       function sum() {
         var sub = 0, cost = 0, known = true;
-        lines.forEach(function (l) { sub += price(l) * (l.qty || 1); var c = lineCost(l); if (c == null) known = false; else cost += c * (l.qty || 1); }); cost += orderPack();
+        lines.forEach(function (l) { sub += price(l) * (l.qty || 1); var c = lineCost(l); if (c == null) known = false; else cost += c * (l.qty || 1); });
         box.querySelector('#sSum').innerHTML = '<div><span>Sale</span><b>' + money(sub) + '</b></div><div><span>Cost · profit</span><b style="color:var(--green)">' + (known ? money(cost) + ' · ' + money(sub - cost) : '<span class="muted" style="font-weight:400">cost unknown for an item → profit not counted</span>') + '</b></div>';
       }
       function draw() {
@@ -1947,14 +1947,14 @@
     var S = Store.settings(), c = calcIn;
     var qty = Math.max(1, parseInt(c.qty) || 1), g = +c.grams || 0, h = (+c.hours || 0) + (+c.mins || 0) / 60;
     var design = +c.design || 0, delivery = c.pickup ? 0 : (+c.delivery || 0);
-    var mat = g * S.calcPla / 1000, mac = h * S.calcMachine, pack = +S.calcPack, base = mat + mac + pack, fail = base * S.calcFail / 100, unitCost = base + fail;
-    var op = orderPack(), unit = c.fixed != null ? c.fixed : Math.max(Math.ceil((unitCost + op / qty) * S.calcMarkup), +S.calcMin);
+    var mat = g * S.calcPla / 1000, mac = h * S.calcMachine, pack = orderPack(), fail = (mat + mac) * S.calcFail / 100, unitCost = mat + mac + fail + pack;
+    var unit = c.fixed != null ? c.fixed : Math.max(Math.ceil(unitCost * S.calcMarkup), +S.calcMin);
     if (c.rush) unit *= 1.25;
     var disc = 0;
     if (c.bulk && c.fixed !== 2 && c.fixed !== 2.5) disc = qty >= 20 ? .35 : qty >= 10 ? .25 : qty >= 3 ? .15 : 0;
-    var unitFinal = Math.round(unit * (1 - disc) * 2) / 2, items = unitFinal * qty + design, total = items + delivery, cost = unitCost * qty + op, profit = items - cost;
+    var unitFinal = Math.round(unit * (1 - disc) * 2) / 2, items = unitFinal * qty + design, total = items + delivery, cost = unitCost * qty, profit = items - cost;
     return { qty: qty, unitFinal: unitFinal, disc: disc, design: design, delivery: delivery, items: items, total: total, cost: cost, profit: profit, margin: items > 0 ? profit / items * 100 : 0,
-      parts: [mat, mac, pack + op / qty, fail], unitCost: unitCost, minutes: Math.round(h * 60) };
+      parts: [mat, mac, pack, fail], unitCost: unitCost, minutes: Math.round(h * 60) };
   }
 
 
@@ -2068,7 +2068,7 @@
     function derive() {
       var kg = 0, paid = 0, piece = 0, order = 0;
       d.fil.forEach(function (x) { if (n(x.kg) && n(x.paid)) { kg += n(x.kg); paid += n(x.paid); } });
-      d.sup.forEach(function (x) { var c = unit(x) * (n(x.per) || 1); if (x.use === 'piece') piece += c; else order += c; });
+      d.sup.forEach(function (x) { order += unit(x) * (n(x.per) || 1); });
       return { pla: kg ? Math.round(paid / kg * 100) / 100 : null, piece: Math.round(piece * 100) / 100, order: Math.round(order * 100) / 100 };
     }
     var inp = function (k, i, f, v, type, extra) { return '<input data-s="' + k + '" data-i="' + i + '" data-f="' + f + '" type="' + (type || 'number') + '" value="' + esc(v == null ? '' : v) + '"' + (type ? '' : ' min="0" step="any"') + (extra || '') + '>'; };
@@ -2078,26 +2078,26 @@
       var spentMonth = all.filter(function (x) { return x.date && new Date(x.date + 'T12:00:00').getTime() >= monthStart; }).reduce(function (t, x) { return t + n(x.paid); }, 0);
       var profAll = Store.orders().filter(function (o) { return o.status !== 'cancelled' && !o.demo; }).reduce(function (t, o) { var c = orderCost(o); return t + (c == null ? 0 : (o.subtotal || 0) - c); }, 0);
       var other = d.exp.reduce(function (t, x) { return t + n(x.paid); }, 0);
-      return '<div class="stat"><div class="k">Filament (average)</div><div class="v">' + money(D.pla != null ? D.pla : S.calcPla) + '/kg</div></div><div class="stat"><div class="k">Supplies per order</div><div class="v">' + money(D.order) + '</div></div><div class="stat"><div class="k">Supplies per piece</div><div class="v">' + money(D.piece) + '</div></div><div class="stat"><div class="k">Spent this month · total</div><div class="v">' + money(spentMonth) + ' · ' + money(spentAll) + '</div></div><div class="stat"><div class="k">Profit so far − other expenses</div><div class="v' + (profAll - other >= 0 ? ' good' : '') + '">' + (profAll - other < 0 ? '−' : '') + money(Math.abs(profAll - other)) + '</div></div>';
+      return '<div class="stat"><div class="k">Filament (average)</div><div class="v">' + money(D.pla != null ? D.pla : S.calcPla) + '/kg</div></div><div class="stat"><div class="k">Supplies per product / offer</div><div class="v">' + money(D.order) + '</div></div><div class="stat"><div class="k">Spent this month · total</div><div class="v">' + money(spentMonth) + ' · ' + money(spentAll) + '</div></div><div class="stat"><div class="k">Profit so far − other expenses</div><div class="v' + (profAll - other >= 0 ? ' good' : '') + '">' + (profAll - other < 0 ? '−' : '') + money(Math.abs(profAll - other)) + '</div></div>';
     }
     function out(k, x) {
       if (k === 'fil') return n(x.kg) ? '<b>' + money(n(x.paid) / n(x.kg)) + '/kg</b>' : '—';
-      if (k === 'sup') { var u = unit(x), per = n(x.per) || 1; return u ? money(u) + ' each<br><b>' + money(u * per) + ' / ' + (x.use === 'piece' ? 'piece' : 'order') + '</b>' : '—'; }
+      if (k === 'sup') { var u = unit(x), per = n(x.per) || 1; return u ? money(u) + ' each<br><b>' + money(u * per) + ' per sale</b>' : '—'; }
       return '';
     }
     function draw() {
       var row = function (cells, k, i) { return '<div class="cost-row" style="--c:' + cells.cols + ' 36px">' + cells.html + '<button type="button" class="upl" data-rm="' + k + '" data-i="' + i + '" title="Remove" style="min-height:42px">✕</button></div>'; };
       var L = function (t, h) { return '<label class="field" style="margin:0;font-size:12px">' + t + h + '</label>'; };
       $('#admBody').innerHTML =
-        '<div class="panel" style="margin-bottom:14px"><b style="font-family:var(--head)">Costs</b><div class="muted" style="font-size:14px">Write what you paid. Filament sets the PLA price, supplies are added to every product’s cost, so profit everywhere (products, orders, calculator, sales) is real. Press <b>Save</b> when done.</div>' +
+        '<div class="panel" style="margin-bottom:14px"><b style="font-family:var(--head)">Costs</b><div class="muted" style="font-size:14px">Write what you paid. Filament sets the PLA price (× every piece in a pack), supplies are added once to every product or offer, so profit everywhere (products, orders, calculator, sales) is real. Press <b>Save</b> when done.</div>' +
         '<div class="stats" id="cStats" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">' + stats() + '</div></div>' +
 
         '<div class="panel" style="margin-bottom:14px"><b style="font-family:var(--head)">Filament</b><div class="muted" style="font-size:13px;margin-bottom:10px">One line per spool you bought, e.g. Black PLA · $20 · 1 kg.</div>' +
         d.fil.map(function (x, i) { return row({ cols: '2fr 1fr 1fr 1.2fr 1fr', html: L('Filament', inp('fil', i, 'name', x.name, 'text', ' placeholder="Black PLA"')) + L('Paid $', inp('fil', i, 'paid', x.paid)) + L('Weight kg', inp('fil', i, 'kg', x.kg == null ? 1 : x.kg)) + L('Date', inp('fil', i, 'date', x.date || iso(), 'date')) + '<div style="font-size:13px;padding-bottom:12px" id="co_fil_' + i + '">' + out('fil', x) + '</div>' }, 'fil', i); }).join('') +
         '<button type="button" class="upl" data-add="fil">+ Add filament</button></div>' +
 
-        '<div class="panel" style="margin-bottom:14px"><b style="font-family:var(--head)">Supplies</b><div class="muted" style="font-size:13px;margin-bottom:10px">Cards, bags, stickers, boxes… e.g. Cards · $50 · 54 bought · 1 per order.</div>' +
-        d.sup.map(function (x, i) { return row({ cols: '1.6fr .9fr .9fr 1.1fr .8fr 1.2fr', html: L('Item', inp('sup', i, 'name', x.name, 'text', ' placeholder="Cards"')) + L('Paid $', inp('sup', i, 'paid', x.paid)) + L('How many', inp('sup', i, 'qty', x.qty)) + L('Used', '<select data-s="sup" data-i="' + i + '" data-f="use"><option value="order"' + (x.use !== 'piece' ? ' selected' : '') + '>per order</option><option value="piece"' + (x.use === 'piece' ? ' selected' : '') + '>per piece</option></select>') + L('× each time', inp('sup', i, 'per', x.per == null ? 1 : x.per)) + '<div style="font-size:13px;padding-bottom:6px;line-height:1.3" id="co_sup_' + i + '">' + out('sup', x) + '</div>' }, 'sup', i); }).join('') +
+        '<div class="panel" style="margin-bottom:14px"><b style="font-family:var(--head)">Supplies</b><div class="muted" style="font-size:13px;margin-bottom:10px">Cards, bags, stickers, boxes… e.g. Cards · $50 · 54 bought. Used once per product or offer sold (a pack of 3 = one bag, one card).</div>' +
+        d.sup.map(function (x, i) { return row({ cols: '1.8fr .9fr .9fr .9fr 1.2fr', html: L('Item', inp('sup', i, 'name', x.name, 'text', ' placeholder="Cards"')) + L('Paid $', inp('sup', i, 'paid', x.paid)) + L('How many', inp('sup', i, 'qty', x.qty)) + L('Used per sale', inp('sup', i, 'per', x.per == null ? 1 : x.per)) + '<div style="font-size:13px;padding-bottom:6px;line-height:1.3" id="co_sup_' + i + '">' + out('sup', x) + '</div>' }, 'sup', i); }).join('') +
         '<button type="button" class="upl" data-add="sup">+ Add supply</button></div>' +
 
         '<div class="panel" style="margin-bottom:14px"><b style="font-family:var(--head)">Other expenses</b><div class="muted" style="font-size:13px;margin-bottom:10px">One-off things (nozzle, build plate, tools, ads…). Not added to product cost — only counted in “spent”.</div>' +
@@ -2114,17 +2114,17 @@
           $('#cStats').innerHTML = stats();
         });
       });
-      $$('[data-add]').forEach(function (b) { b.onclick = function () { var k = b.dataset.add; d[k].push(k === 'fil' ? { name: '', paid: null, kg: 1, date: iso() } : k === 'sup' ? { name: '', paid: null, qty: null, use: 'order', per: 1, date: iso() } : { name: '', paid: null, date: iso() }); draw(); var r = $$('[data-s="' + k + '"][data-f="name"]'); if (r.length) r[r.length - 1].focus(); }; });
+      $$('[data-add]').forEach(function (b) { b.onclick = function () { var k = b.dataset.add; d[k].push(k === 'fil' ? { name: '', paid: null, kg: 1, date: iso() } : k === 'sup' ? { name: '', paid: null, qty: null, per: 1, date: iso() } : { name: '', paid: null, date: iso() }); draw(); var r = $$('[data-s="' + k + '"][data-f="name"]'); if (r.length) r[r.length - 1].focus(); }; });
       $$('[data-rm]').forEach(function (b) { b.onclick = function () { d[b.dataset.rm].splice(+b.dataset.i, 1); draw(); }; });
       $('#cSave').onclick = function () {
         var clean = function (a, keys) { return a.filter(function (x) { return (x.name || '').trim() || n(x.paid); }).map(function (x) { var o = {}; keys.forEach(function (k) { var v = x[k]; if (v == null || v === '') return; o[k] = typeof v === 'string' ? v.trim().slice(0, 80) : Math.round(n(v) * 1000) / 1000; }); return o; }); };
-        var out = { fil: clean(d.fil, ['name', 'paid', 'kg', 'date']), sup: clean(d.sup, ['name', 'paid', 'qty', 'use', 'per', 'date']), exp: clean(d.exp, ['name', 'paid', 'date']), updatedAt: Date.now() };
+        var out = { fil: clean(d.fil, ['name', 'paid', 'kg', 'date']), sup: clean(d.sup, ['name', 'paid', 'qty', 'per', 'date']), exp: clean(d.exp, ['name', 'paid', 'date']), updatedAt: Date.now() };
         var bad = out.sup.filter(function (x) { return !n(x.qty); })[0]; if (bad) { toast('Add “How many” for ' + (bad.name || 'each supply')); return; }
         var bf = out.fil.filter(function (x) { return !n(x.kg); })[0]; if (bf) { toast('Add the weight (kg) for ' + (bf.name || 'each filament')); return; }
         d = costDraft = { fil: out.fil, sup: out.sup, exp: out.exp };
         var D = derive(), set = { calcOrderPack: D.order };
         if (D.pla != null) set.calcPla = D.pla;
-        if (out.sup.length) set.calcPack = D.piece;
+        if (out.sup.length) set.calcPack = 0;
         var btn = $('#cSave'); btn.disabled = true; btn.textContent = 'Saving…';
         Store.saveCosts(out).then(function () { return Store.saveSettings(set); }).then(function () { costDraft = null; toast('Costs saved · product costs updated'); renderAdmin(); })
           .catch(function () { btn.disabled = false; btn.textContent = 'Save costs'; toast('Could not save — check the internet and try again'); });
@@ -2150,7 +2150,7 @@
       '<div class="panel"><button class="upl" id="c_tog" style="font-size:15px">' + (calcOpen ? '▾' : '▸') + ' Cost settings</button><div id="c_set"' + (calcOpen ? '' : ' class="hidden"') + ' style="margin-top:14px"><div class="grid3">' +
         num('s_calcPla', 'PLA price ($/kg)', S.calcPla, 0.5) + num('s_calcMachine', 'Machine cost ($/hour)', S.calcMachine, 0.05) + num('s_calcPack', 'Packaging ($/piece)', S.calcPack, 0.05) +
         num('s_calcFail', 'Failure buffer (%)', S.calcFail, 1) + num('s_calcMarkup', 'Markup (× cost)', S.calcMarkup, 0.1) + num('s_calcMin', 'Minimum price / piece ($)', S.calcMin, 0.5) + num('s_calcInfill', 'Infill % (for STL estimates)', S.calcInfill, 5) + num('s_calcGph', 'Print speed (grams / hour)', S.calcGph, 1) +
-      '</div><p class="hint">Machine cost = electricity (~$0.05/h on generator power) + wear and spares (~$0.30/h). Saved to your shop settings.' + (Store.costs().fil.length || Store.costs().sup.length ? ' <b>PLA price and packaging come from the Costs tab</b>' + (orderPack() ? ' (+ ' + money(orderPack()) + ' supplies per order)' : '') + '.' : '') + '</p></div></div></div>' +
+      '</div><p class="hint">Machine cost = electricity (~$0.05/h on generator power) + wear and spares (~$0.30/h). Saved to your shop settings.' + (Store.costs().fil.length || Store.costs().sup.length ? ' <b>PLA price and packaging come from the Costs tab</b>' + (orderPack() ? ' (' + money(orderPack()) + ' card/bag/sticker per piece)' : '') + '.' : '') + '</p></div></div></div>' +
       '<div class="panel res"><div class="lbl">Customer pays</div><div class="big" id="r_total"></div><div class="muted" id="r_sub" style="font-size:15px"></div>' +
       '<div class="stats"><div class="stat"><div class="k">Your cost</div><div class="v" id="r_cost"></div></div><div class="stat"><div class="k">Profit</div><div class="v good" id="r_profit"></div></div><div class="stat"><div class="k">Margin</div><div class="v good" id="r_margin"></div></div></div>' +
       '<div class="lbl">Where your cost goes</div><div class="bar"><div id="b0" style="background:#1A8CFF"></div><div id="b1" style="background:#7ABEFF"></div><div id="b2" style="background:#0B1220"></div><div id="b3" style="background:#B4BDC9"></div></div>' +
@@ -2234,7 +2234,7 @@
       list.map(function (p) {
         var pc = productCost(p);
         var costLine = pc == null ? '<div class="muted" style="font-size:12px;margin-top:3px">No print file yet — add one to see cost & profit</div>' :
-          '<div style="font-size:12px;margin-top:3px;color:#2C3443">' + (isPack(p) && packSlots(p).length && packSlots(p).every(function (x) { return x.p && x.p.grams != null; }) ? packSlots(p).length + ' pieces — cost of each piece added up' : (Math.round(p.grams * 10) / 10) + ' g · ' + Math.floor(p.printMin / 60) + 'h ' + Math.round(p.printMin % 60) + 'm' + (p.printFile ? ' · ' + esc(p.printFile) : '') + (p.printExact ? ' ✓' : ' (estimate)')) + '<br>Cost ' + money(pc) + ' · <b style="color:' + (p.price - pc > 0 ? 'var(--green)' : 'var(--red)') + '">profit ' + money(p.price - pc) + ' (' + (p.price > 0 ? Math.round((p.price - pc) / p.price * 100) : 0) + '%)</b> ' + (isPack(p) ? 'per pack' : 'per piece') + (orderPack() ? ' <span class="muted">(incl. ' + money(orderPack()) + ' cards/bags/stickers)</span>' : '') + '</div>';
+          '<div style="font-size:12px;margin-top:3px;color:#2C3443">' + (isPack(p) && packSlots(p).length && packSlots(p).every(function (x) { return x.p && x.p.grams != null; }) ? packSlots(p).length + ' pieces — filament × ' + packSlots(p).length + ', one card/bag/sticker' : (Math.round(p.grams * 10) / 10) + ' g · ' + Math.floor(p.printMin / 60) + 'h ' + Math.round(p.printMin % 60) + 'm' + (p.printFile ? ' · ' + esc(p.printFile) : '') + (p.printExact ? ' ✓' : ' (estimate)')) + '<br>Cost ' + money(pc) + ' · <b style="color:' + (p.price - pc > 0 ? 'var(--green)' : 'var(--red)') + '">profit ' + money(p.price - pc) + ' (' + (p.price > 0 ? Math.round((p.price - pc) / p.price * 100) : 0) + '%)</b> ' + (isPack(p) ? 'per pack' : 'per piece') + (orderPack() ? ' <span class="muted">(incl. ' + money(orderPack()) + ' card/bag/sticker)</span>' : '') + '</div>';
         return '<div class="prow" data-p="' + p.id + '"><div class="th">' + (realPhoto(p) && modelKind(p) ? '<img src="' + realPhoto(p) + '" alt="' + esc(p.name) + '" title="Real picture (2nd view in the shop — the model is shown first)">' : thumb(p)) + '</div><div><b>' + esc(p.name) + '</b><div class="muted" style="font-size:13px">' + colName(p.col) + (p.comingSoon ? ' · <b style="color:#B26B00">Coming soon</b>' : '') + ' · <button class="upl" data-ed="' + p.id + '">Edit</button> · <button class="upl" data-bf="' + p.id + '">' + (p.grams != null ? 'Replace Bambu file' : '+ Bambu file') + '</button> · <button class="upl" data-up="' + p.id + '">' + (p.photo ? 'Change photo' : 'Upload photo') + '</button> · ' + (p.photo ? '<button class="upl" data-rmph="' + p.id + '">Remove photo</button> · ' : '') + (packSlots(p).length ? '<button class="upl" data-offer="' + p.id + '">Edit offer (' + packSlots(p).length + ' pieces)</button>' : '<button class="upl" data-opt="' + p.id + '">Colours & photos' + (optList(p).length ? ' (' + optList(p).length + ')' : '') + '</button>') + ' · <button class="upl" data-del="' + p.id + '">Remove</button></div>' + costLine + '</div>' +
           '<label class="field" style="font-size:12px">Price $<input type="number" min="0" step="0.5" value="' + p.price + '" data-price="' + p.id + '"></label>' +
           '<label class="switch"><input type="checkbox" data-av="' + p.id + '"' + (p.available === false ? '' : ' checked') + '> On sale</label>' +
