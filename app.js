@@ -702,12 +702,20 @@
   // supplies used once per order (cards, bags, stickers…) — set from Manager → Costs
   function orderPack() { return Math.round((+Store.settings().calcOrderPack || 0) * 100) / 100; }
   // full cost of one piece sold on its own = piece cost + the per-order supplies
-  function productCost(p) { return p && p.grams != null ? Math.round((pieceCost(p.grams, p.printMin) + orderPack()) * 100) / 100 : null; }
+  // cost of what one "unit" of a product is: a normal product = 1 piece; an offer / pack = the cost of every piece in it
+  function unitCostOf(p) {
+    if (!p) return null;
+    var sl = isPack(p) ? packSlots(p) : [];
+    if (sl.length && sl.every(function (x) { return x.p && x.p.grams != null; })) return Math.round(sl.reduce(function (t, x) { return t + pieceCost(x.p.grams, x.p.printMin); }, 0) * 100) / 100;
+    return p.grams != null ? pieceCost(p.grams, p.printMin) : null;
+  }
+  function isPack(p) { return !!(p && p.pack && !(p.parts && p.parts.length)); }
+  function productCost(p) { var c = unitCostOf(p); return c == null ? null : Math.round((c + orderPack()) * 100) / 100; }
   function orderCost(o) {
     var c = 0, known = true;
     o.items.forEach(function (i) {
       if (i.id === 'design') return;
-      var u = i.unitCost != null ? i.unitCost : (function () { var p = Store.product(i.id); return p && p.grams != null ? pieceCost(p.grams, p.printMin) : null; })();
+      var u = i.unitCost != null ? i.unitCost : unitCostOf(Store.product(i.id));
       if (u == null) known = false; else c += u * i.qty;
     });
     if (o.items.some(function (i) { return i.id !== 'design'; })) c += orderPack();
@@ -1335,7 +1343,7 @@
       ls('customer', cust);
       var order = {
         code: newCode(), createdAt: now, status: 'new', paid: false, payment: f.payment.value, method: method, customer: cust,
-        items: Cart.lines().map(function (l) { var it = { id: l.id, name: l.p.name, price: l.unit, qty: l.qty, color: l.color, text: l.text }; if (l.geo) it.geo = l.geo; if (l.picks) it.picks = l.picks; if (l.p.grams != null) { it.unitCost = pieceCost(l.p.grams, l.p.printMin); it.printMin = l.p.printMin; } return it; }),
+        items: Cart.lines().map(function (l) { var it = { id: l.id, name: l.p.name, price: l.unit, qty: l.qty, color: l.color, text: l.text }; if (l.geo) it.geo = l.geo; if (l.picks) it.picks = l.picks; var uc = unitCostOf(l.p); if (uc != null) it.unitCost = uc; if (l.p.printMin != null) it.printMin = l.p.printMin; return it; }),
         subtotal: c.sub, delivery: c.del, total: c.sub + c.del, history: [{ s: 'new', t: now }]
       };
       $('#coBtn').disabled = true; $('#coBtn').textContent = 'Placing order…';
@@ -1612,7 +1620,7 @@
       '<div class="sum" id="sSum"></div><div class="err" id="sErr"></div><button class="btn pri">Save sale</button></form>', function (box, close) {
       var sl = box.querySelector('#sl');
       function prod(id) { return prods.filter(function (p) { return p.id === id; })[0]; }
-      function lineCost(l) { if (l.id === 'other') return l.cost === '' || l.cost == null ? null : +l.cost; var p = prod(l.id); return p && p.grams != null ? pieceCost(p.grams, p.printMin) : null; }
+      function lineCost(l) { if (l.id === 'other') return l.cost === '' || l.cost == null ? null : +l.cost; return unitCostOf(prod(l.id)); }
       function price(l) { return l.price === '' || l.price == null ? (prod(l.id) || { price: 0 }).price : +l.price; }
       function sum() {
         var sub = 0, cost = 0, known = true;
@@ -2226,7 +2234,7 @@
       list.map(function (p) {
         var pc = productCost(p);
         var costLine = pc == null ? '<div class="muted" style="font-size:12px;margin-top:3px">No print file yet — add one to see cost & profit</div>' :
-          '<div style="font-size:12px;margin-top:3px;color:#2C3443">' + (Math.round(p.grams * 10) / 10) + ' g · ' + Math.floor(p.printMin / 60) + 'h ' + Math.round(p.printMin % 60) + 'm' + (p.printFile ? ' · ' + esc(p.printFile) : '') + (p.printExact ? ' ✓' : ' (estimate)') + '<br>Cost ' + money(pc) + ' · <b style="color:' + (p.price - pc > 0 ? 'var(--green)' : 'var(--red)') + '">profit ' + money(p.price - pc) + ' (' + (p.price > 0 ? Math.round((p.price - pc) / p.price * 100) : 0) + '%)</b> per piece' + (orderPack() ? ' <span class="muted">(incl. ' + money(orderPack()) + ' cards/bags/stickers)</span>' : '') + '</div>';
+          '<div style="font-size:12px;margin-top:3px;color:#2C3443">' + (isPack(p) && packSlots(p).length && packSlots(p).every(function (x) { return x.p && x.p.grams != null; }) ? packSlots(p).length + ' pieces — cost of each piece added up' : (Math.round(p.grams * 10) / 10) + ' g · ' + Math.floor(p.printMin / 60) + 'h ' + Math.round(p.printMin % 60) + 'm' + (p.printFile ? ' · ' + esc(p.printFile) : '') + (p.printExact ? ' ✓' : ' (estimate)')) + '<br>Cost ' + money(pc) + ' · <b style="color:' + (p.price - pc > 0 ? 'var(--green)' : 'var(--red)') + '">profit ' + money(p.price - pc) + ' (' + (p.price > 0 ? Math.round((p.price - pc) / p.price * 100) : 0) + '%)</b> ' + (isPack(p) ? 'per pack' : 'per piece') + (orderPack() ? ' <span class="muted">(incl. ' + money(orderPack()) + ' cards/bags/stickers)</span>' : '') + '</div>';
         return '<div class="prow" data-p="' + p.id + '"><div class="th">' + (realPhoto(p) && modelKind(p) ? '<img src="' + realPhoto(p) + '" alt="' + esc(p.name) + '" title="Real picture (2nd view in the shop — the model is shown first)">' : thumb(p)) + '</div><div><b>' + esc(p.name) + '</b><div class="muted" style="font-size:13px">' + colName(p.col) + (p.comingSoon ? ' · <b style="color:#B26B00">Coming soon</b>' : '') + ' · <button class="upl" data-ed="' + p.id + '">Edit</button> · <button class="upl" data-bf="' + p.id + '">' + (p.grams != null ? 'Replace Bambu file' : '+ Bambu file') + '</button> · <button class="upl" data-up="' + p.id + '">' + (p.photo ? 'Change photo' : 'Upload photo') + '</button> · ' + (p.photo ? '<button class="upl" data-rmph="' + p.id + '">Remove photo</button> · ' : '') + (packSlots(p).length ? '<button class="upl" data-offer="' + p.id + '">Edit offer (' + packSlots(p).length + ' pieces)</button>' : '<button class="upl" data-opt="' + p.id + '">Colours & photos' + (optList(p).length ? ' (' + optList(p).length + ')' : '') + '</button>') + ' · <button class="upl" data-del="' + p.id + '">Remove</button></div>' + costLine + '</div>' +
           '<label class="field" style="font-size:12px">Price $<input type="number" min="0" step="0.5" value="' + p.price + '" data-price="' + p.id + '"></label>' +
           '<label class="switch"><input type="checkbox" data-av="' + p.id + '"' + (p.available === false ? '' : ' checked') + '> On sale</label>' +
