@@ -291,6 +291,46 @@
     var d = ['Gabriel', 'Maria', 'Elie'], n = o.texts || (o.text ? String(o.text).split(' · ') : d); n = [n[0] || d[0], n[1] || d[1], n[2] || d[2]];
     return '<svg viewBox="-99 -40 198 76" class="orn" role="img" aria-label="Three Holy Night ornaments">' + ornament({ text: n[0] }, 'translate(-64 0) scale(.64)') + ornament({ text: n[1] }, 'translate(0 0) scale(.64)') + ornament({ text: n[2] }, 'translate(64 0) scale(.64)') + '</svg>';
   };
+  // ---- Name ornaments made with the 3DBlaze name ornaments tool (make_orn.py): body image rendered by the tool, the name is
+  // fitted with the SAME rules as the tool (cap height of "H", ink width, squeeze then shrink, ink centred) so the preview = the .3mf.
+  var _nc = null, NFIT = {};
+  function nameFit(txt, fam, cap, maxw, smin) {
+    var k = fam + '|' + txt; if (NFIT[k]) return NFIT[k];
+    var x0, x1, capH, exact = false;
+    try {
+      if (g.document && document.fonts && document.fonts.check('100px ' + fam)) {
+        _nc = _nc || document.createElement('canvas').getContext('2d'); _nc.font = '100px ' + fam;
+        var m = _nc.measureText(txt), h = _nc.measureText('H');
+        if (m.actualBoundingBoxRight !== undefined) { x0 = -m.actualBoundingBoxLeft; x1 = m.actualBoundingBoxRight; capH = h.actualBoundingBoxAscent; exact = true; }
+      }
+    } catch (e) {}
+    if (!exact) { x0 = 0; x1 = txt.length * (fam.indexOf('Caladea') >= 0 ? 62 : 52); capH = 66; }
+    var size = 100 * cap / capH, w = (x1 - x0) * size / 100, sx = 1;
+    if (w > maxw) { sx = maxw / w; if (sx < smin) { size *= sx / smin; sx = smin; } }
+    var r = { size: size, sx: sx, dx: -(x0 + x1) / 2 * size / 100, half: (x1 - x0) * size / 100 * sx / 2 };
+    if (exact) NFIT[k] = r;
+    return r;
+  }
+  function nameText(txt, fam, F, base, fill, cls) {
+    var y = (-base).toFixed(2), t = esc2(txt);
+    var tx = function (col, extra) { return '<text class="nmorn" x="' + F.dx.toFixed(2) + '" y="0" font-family="' + fam + '" font-size="' + F.size.toFixed(2) + '" fill="' + col + '"' + (extra || '') + '>' + t + '</text>'; };
+    return '<g transform="translate(0 ' + y + ') scale(' + F.sx.toFixed(4) + ' 1)">' + tx('#7A0402', ' transform="translate(.35 .45)" opacity=".55"') + tx(fill) + '</g>';
+  }
+  function plainName(t) { t = String(t || '').trim(); try { t = t.normalize('NFKD').replace(/[̀-ͯ]/g, ''); } catch (e) {} return t; }
+  ART['snowflake-ornament'] = function (o) {
+    var nm = plainName(o.text || 'Joseph').toUpperCase(), F = nameFit(nm, 'Caladea3DB', 29.6, 87, 0.72);
+    return '<svg viewBox="-52 -72 104 124" class="orn" role="img" aria-label="Snowflake name ornament"><defs><clipPath id="snwc"><circle r="46.8"/></clipPath></defs>' +
+      '<image href="img/snowflake-ornament.webp?v=95040001" x="-51" y="-71" width="102" height="122"/><g clip-path="url(#snwc)">' + nameText(nm, 'Caladea3DB, Caladea, Georgia, serif', F, -13.4, '#E60705') + '</g></svg>';
+  };
+  ART['bow-ornament'] = function (o) {
+    var nm = plainName(o.text || 'Maria'), F = nameFit(nm, 'LoraBI3DB', 16, 68, 0.8), yb = 5.7, l = -F.half, r = F.half;   // svg y = -mm
+    var sw = 'M-41 ' + (yb + 9) + 'C-34 ' + (yb + 4) + ' ' + (l - 8).toFixed(2) + ' ' + yb + ' ' + l.toFixed(2) + ' ' + yb + 'L' + r.toFixed(2) + ' ' + yb + 'C' + (r + 9).toFixed(2) + ' ' + yb + ' 34 ' + (yb - 2) + ' 41 ' + (yb - 8);
+    return '<svg viewBox="-55 -63 110 116" class="orn" role="img" aria-label="Bow name ornament"><image href="img/bow-ornament.webp?v=95040001" x="-54" y="-62" width="108" height="114"/>' +
+      '<path d="' + sw + '" fill="none" stroke="#E60705" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>' + nameText(nm, 'LoraBI3DB, Lora, Georgia, serif', F, -5, '#FFFFFF') + '</svg>';
+  };
+  function nameRefit() { NFIT = {}; if (g.document) { var e = document.querySelectorAll('svg .nmorn'); if (e.length && g.dispatchEvent) try { g.dispatchEvent(new Event('blazeart:fonts')); } catch (x) {} } }
+  try { if (g.document && document.fonts) { Promise.all([document.fonts.load('100px Caladea3DB'), document.fonts.load('100px LoraBI3DB')]).then(nameRefit, function () {}); } } catch (e) {}
+
   // ---- Family door signs (Christmas: Santa = dad, Mama Claus = mom, elves = kids; plain: family name) ----
   var DOOR = {"xmas":{"1":[[80.47,194.86,33.49,11.72],[125.12,207.14,29.02,14.51],[169.78,190.4,33.49,11.72]],"2":[[52.48,207.14,29.02,14.51],[97.13,194.86,33.49,11.72],[152.94,190.4,33.49,11.72],[197.59,207.14,29.02,14.51]],"3":[[40.88,208.27,27.34,13.67],[82.94,196.71,31.55,11.04],[125.0,208.27,27.34,13.67],[167.06,192.5,31.55,11.04],[209.12,208.27,27.34,13.67]],"4":[[38.48,210.58,23.68,11.84],[65.8,210.58,23.68,11.84],[102.23,200.57,27.32,9.56],[147.77,196.92,27.32,9.56],[184.2,210.58,23.68,11.84],[211.52,210.58,23.68,11.84]],"5":[[36.65,212.22,20.88,10.44],[60.75,212.22,20.88,10.44],[92.87,203.39,24.09,8.43],[133.03,200.17,24.09,8.43],[165.16,212.22,20.88,10.44],[189.25,212.22,20.88,10.44],[213.35,212.22,20.88,10.44]]},"plain":{},"xmasSize":[250,248],"plainSize":[230,200],"xmasFamily":[125,114,184,34],"plainFamily":[115,136,170,44],"roles":{"1":["S","E","M"],"2":["E","S","M","E"],"3":["E","S","E","M","E"],"4":["E","E","S","M","E","E"],"5":["E","E","S","M","E","E","E"]}};
   var DOORC = { green: '#126854', red: '#BE202C' };

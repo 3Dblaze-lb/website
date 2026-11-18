@@ -67,16 +67,26 @@
       blurb: 'Welcome + your family name, on a little house.',
       desc: 'A house-shaped door sign with “Welcome” and your family name raised in white. Try your name below.',
       specs: ['About 23 × 17.5 cm (hangs from a cord)', 'Green or red, with the letters raised in white'] },
-    { id: 'holy-ornament', col: 'xmas', name: 'Holy Night Ornament', price: 4, tag: 'Personalized', printMin: 50, grams: 9,
+    { id: 'holy-ornament', col: 'xmas', name: 'Holy Night Ornament', price: 4, tag: 'Personalized', printMin: 62, grams: 14,
       text: { label: 'Name on the ornament', max: 14, ph: 'e.g. Gabriel', required: true },
       blurb: 'The star of Christmas, the Holy Family, and a name.',
       desc: 'Our own design: the star of Bethlehem shining over Mary, Joseph and baby Jesus in the manger, with the name of your choice in white on the banner. Type the name and see it on the ornament before you order. One for every person in the family.',
-      specs: ['9 cm round, 3 mm thick (name raised 0.8 mm)', 'Red, with the name in white raised on the banner', 'Name up to 14 letters', 'Hanging loop for string or ribbon'] },
-    { id: 'holy-ornament-3', col: 'xmas', name: 'Holy Night Ornament — 3 for $10', price: 10, was: 12, tag: 'Save $2', printMin: 150, grams: 27,
+      specs: ['10 cm round, 3 mm thick (name raised 0.8 mm)', 'Red, with the name in white raised on the banner', 'Name up to 14 letters', 'Hanging loop for string or ribbon'] },
+    { id: 'holy-ornament-3', col: 'xmas', name: 'Holy Night Ornament — 3 for $10', price: 10, was: 12, tag: 'Save $2', printMin: 185, grams: 42,
       pack: [{ of: 'holy-ornament' }, { of: 'holy-ornament' }, { of: 'holy-ornament' }],
       blurb: 'Three ornaments, three names.',
       desc: 'Three Holy Night ornaments, each with its own name. Perfect for the family tree or as gifts.',
-      specs: ['3 ornaments, 9 cm each', 'A different name on each one', 'Red with white names'] },
+      specs: ['3 ornaments, 10 cm each', 'A different name on each one', 'Red with white names'] },
+    { id: 'snowflake-ornament', col: 'xmas', name: 'Snowflake Name Ornament', price: 0, priceText: 'Coming soon', comingSoon: true, tag: 'Personalized', printMin: 85, grams: 17,
+      text: { label: 'Name on the ornament', max: 12, ph: 'e.g. Joseph', required: true },
+      blurb: 'Snowflakes, scrolls and a name in big letters.',
+      desc: 'Our snowflake ornament with the name of your choice in big letters across the middle, between swirls and snowflakes. Type the name and see it on the ornament before you order.',
+      specs: ['10 cm round (about 12 cm with the loop), 3 mm thick', 'All red, the name in big letters across the middle', 'Name up to 12 letters', 'Hanging loop for string or ribbon'] },
+    { id: 'bow-ornament', col: 'xmas', name: 'Bow Name Ornament', price: 0, priceText: 'Coming soon', comingSoon: true, tag: 'Personalized', printMin: 85, grams: 17,
+      text: { label: 'Name on the ornament', max: 12, ph: 'e.g. Maria', required: true },
+      blurb: 'A red frame with bows, holly and a name in white.',
+      desc: 'An oval frame with a big bow on top, holly and a small bow below, and the name of your choice in white on a red swash. Type the name and see it before you order.',
+      specs: ['10 × 8 cm oval (about 11 cm with the loop)', 'Red, with the bow and holly raised and the name in white', 'Name up to 12 letters', 'Hanging loop for string or ribbon'] },
     { id: 'woggle-white', col: 'woggles', name: 'Woggle — white', price: 4, img: 'img/woggle-white.webp', model: 'woggle-plain', modelColors: ['white', 'white'], printMin: 40, grams: 4.1,
       blurb: 'The classic braided woggle, all white.',
       desc: 'A braided scout woggle in white. Turn it around in 3D before you order.',
@@ -313,11 +323,14 @@
       Object.keys(state.extra || {}).forEach(function (k) { var e = state.extra[k]; if (e && e.name) list.push(Object.assign({ id: k, col: 'lebanon', price: 0, specs: [] }, e, state.overrides[k] || {})); });
       return list.filter(function (p) { return !p.removed; }).map(saleOf).map(resolvePhotos).map(packArtOf);
     }
-    // "Coming soon" products go on sale by themselves as soon as a price is set in the manager
+    // Coming soon: a whole drop (settings.soonCols), one product or one offer (p.soon, set in the manager) can be
+    // "Coming soon". With no manager choice, a catalogue "coming soon" product goes on sale once it has a price.
     function saleOf(p) {
-      if (!p.comingSoon || !(+p.price > 0)) return p;
-      p = Object.assign({}, p, { comingSoon: false });
-      if (p.priceText === 'Coming soon') delete p.priceText;
+      var sc = (state.settings && state.settings.soonCols) || {};
+      var soon = sc[p.col] ? true : p.soon === true ? true : p.soon === false ? !(+p.price > 0) : !!(p.comingSoon && !(+p.price > 0));
+      p = Object.assign({}, p, { comingSoon: soon });
+      if (soon) { if (!p.contactOnly) p.priceText = 'Coming soon'; }
+      else if (p.priceText === 'Coming soon') delete p.priceText;
       return p;
     }
     // a pack made only of Holy Night ornaments is drawn like the 1 and the 3 (N ornaments)
@@ -558,6 +571,7 @@
     save: function () { ls('cart', this.items); var cc = $('#cartCount'); if (cc) cc.textContent = this.count(); },
     count: function () { return this.items.reduce(function (n, i) { return n + i.qty; }, 0); },
     add: function (p, qty, color, text, geo, picks) {
+      var cp = p && Store.product(p.id); if (cp && cp.comingSoon) { toast('Coming soon — not for sale yet'); return; }
       if (!p) return;
       var key = p.id + '|' + (color || '') + '|' + (text || '');
       var ex = this.items.filter(function (i) { return i.key === key; })[0];
@@ -595,23 +609,36 @@
     return sl.some(function (x) { var bp = x.p; return bp.removed || bp.soldOut || bp.available === false || allOptsOut(bp); });
   }
   function isOut(p) { return p.soldOut || p.available === false || allOptsOut(p) || packOut(p); }
-  // personalised products drawn live (e.g. Holy Night ornament): the preview always comes first,
-  // an uploaded photo is the second view ("Real picture") on the product page. My Village keeps its own setup.
-  function livePreview(p) {
+  // MODEL FIRST (every product, also new ones): the product's own model — 3D model, live drawing or its stock image — is what
+  // the shop always shows. Uploaded photos (main photo or a colour's photo) are the second view, "Real picture".
+  // A product with no model at all (e.g. one added in the manager with just a photo) simply shows its photo.
+  function modelKind(p) {
     var a = p.art || p.id;
-    if (a === 'my-village' || !window.BlazeArt || !BlazeArt.has(a)) return false;
-    return !!(p.text || packSlots(p).some(function (x) { return x.p && x.p.text; }));
+    if (a === 'my-village') return 'map';
+    if (p.model) return '3d';
+    if (window.BlazeArt && BlazeArt.has(a)) return 'art';
+    if (p.img) return 'img';
+    return null;
+  }
+  function realPhoto(p, color) {
+    var so = color ? optFor(p, color) : null;
+    return (so && so.photo) || p.photo || (optList(p).filter(function (o) { return o.photo; })[0] || {}).photo || null;
+  }
+  function livePreview(p) { return !!modelKind(p) && !!realPhoto(p); }
+  function artHTML(p, opts) {
+    var a = p.art || p.id;
+    return '<div class="ornart" data-art="' + esc(a) + '" data-o="' + esc(JSON.stringify(opts || {})) + '">' + BlazeArt.draw(a, opts || {}) + '</div>';
   }
   function thumb(p, opts) {
-    var so = opts && opts.color ? optFor(p, opts.color) : null;
-    if (so && so.photo) return '<img src="' + so.photo + '" alt="' + esc(p.name + ' — ' + so.name) + '">';
-    if (p.photo && !livePreview(p)) return '<img src="' + p.photo + '" alt="' + esc(p.name) + '">';
-    var fo = (p.art || p.id) === 'my-village' ? null : optList(p).filter(function (o) { return o.photo; })[0];
-    if (fo) return '<img src="' + fo.photo + '" alt="' + esc(p.name) + '">';
+    var a = p.art || p.id, k = modelKind(p);
+    if (k === 'map') {
+      if (!opts || !opts.text) return '<img src="img/my-village.jpg" alt="' + esc(p.name) + ' — real printed piece">';
+      return '<div class="mapart">' + BlazeArt.draw('my-village', opts) + '</div>';
+    }
+    if (k === 'art') return artHTML(p, opts);
     if (p.img) return '<img src="' + p.img + '" alt="' + esc(p.name) + '">';
-    if ((p.art || p.id) === 'my-village' && (!opts || !opts.text)) return '<img src="img/my-village.jpg" alt="' + esc(p.name) + ' — real printed piece">';
-    if ((p.art || p.id) === 'my-village' && window.BlazeArt) return '<div class="mapart">' + BlazeArt.draw('my-village', opts) + '</div>';
-    if (window.BlazeArt && BlazeArt.has(p.art || p.id) && /ornament|door-/.test(p.art || p.id)) return '<div class="ornart">' + BlazeArt.draw(p.art || p.id, opts || {}) + '</div>';
+    var ph = realPhoto(p, opts && opts.color);
+    if (ph) return '<img src="' + ph + '" alt="' + esc(p.name) + '">';
     return '<div class="ph"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="13" width="36" height="26" rx="6" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M17 13 l3-5 h8 l3 5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><circle cx="24" cy="26" r="7" fill="none" stroke="currentColor" stroke-width="2.5"/></svg><span>' + esc(p.name) + '</span><small>Photo coming soon</small></div>';
   }
   function fee(region) {
@@ -636,6 +663,9 @@
   }
 
 
+  window.addEventListener('blazeart:fonts', function () {
+    $$('.ornart[data-art]').forEach(function (d) { if (!/snowflake-ornament|bow-ornament/.test(d.dataset.art)) return; var o = {}; try { o = JSON.parse(d.dataset.o || '{}'); } catch (e) {} d.innerHTML = BlazeArt.draw(d.dataset.art, o); });
+  });
   document.addEventListener('click', function (e) {
     var b = e.target.closest && e.target.closest('[data-usename]'); if (!b) return;
     var inp = document.getElementById(b.dataset.for); if (!inp) return;
@@ -835,16 +865,16 @@
       '</div></section>' +
 
       '<section class="blk2" id="sec-shop"><div class="wrap">' +
-        '<div class="shead"><h2>Lebanon drop</h2><span class="muted">' + leb.length + ' piece' + (leb.length === 1 ? '' : 's') + '</span></div>' +
+        '<div class="shead"><h2>Lebanon drop</h2>' + (soonCol('lebanon') ? '<span class="soonlbl">Coming soon</span>' : '<span class="muted">' + leb.length + ' piece' + (leb.length === 1 ? '' : 's') + '</span>') + '</div>' +
         '<div class="pgrid">' + (vp ? villageFeature(vp) : '') + others.map(card2).join('') + (vp ? villageCompact(vp) : '') + '</div>' +
         '<div class="cdline" id="countdown"></div>' +
       '</div></section>' +
 
-      '<section class="blk2" id="sec-christmas"><div class="wrap"><div class="shead"><h2>Christmas collection <small class="custhint">Click to customize yours</small></h2><span class="soonlbl">' + (xm.length ? 'Order by ' + new Date(s.xmasCutoff).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }) : 'Coming soon') + '</span></div>' +
+      '<section class="blk2" id="sec-christmas"><div class="wrap"><div class="shead"><h2>Christmas collection <small class="custhint">Click to customize yours</small></h2><span class="soonlbl">' + (xm.length && !soonCol('xmas') ? 'Order by ' + new Date(s.xmasCutoff).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }) : 'Coming soon') + '</span></div>' +
         (xm.length ? '<div class="xrow" role="list">' + xm.map(function (p) { return '<a class="xc" role="listitem" href="#p-' + p.id + '"><div class="xc-img">' + thumb(p) + '</div><b>' + esc(p.name) + '</b><span>' + (p.priceText ? esc(p.priceText) : money(p.price)) + '</span></a>'; }).join('') + '</div>'
           : '<div class="xempty"><b>New Christmas pieces are on the way.</b><span class="muted">Personalized gifts with your name on them — follow <a href="https://instagram.com/3dblaze.lb" target="_blank" rel="noopener">@3dblaze.lb</a> to see them first.</span></div>') + '</div></section>' +
 
-      (wg.length ? '<section class="blk2" id="sec-woggles"><div class="wrap"><div class="shead"><h2>Scout woggles</h2><span class="muted">' + wg.length + ' piece' + (wg.length === 1 ? '' : 's') + '</span></div>' +
+      (wg.length ? '<section class="blk2" id="sec-woggles"><div class="wrap"><div class="shead"><h2>Scout woggles</h2>' + (soonCol('woggles') ? '<span class="soonlbl">Coming soon</span>' : '<span class="muted">' + wg.length + ' piece' + (wg.length === 1 ? '' : 's') + '</span>') + '</div>' +
         '<p class="wogsub">Send us your patrol’s totem animal, or anything you want, and we’ll put it on your woggle.</p>' +
         '<div class="xrow" role="list">' + wg.map(function (p) { return '<a class="xc" role="listitem" href="#p-' + p.id + '"><div class="xc-img">' + thumb(p) + '</div><b>' + esc(p.name) + '</b><span>' + (p.priceText ? esc(p.priceText) : money(p.price)) + '</span></a>'; }).join('') + '</div></div></section>' : '') +
 
@@ -904,7 +934,7 @@
     return '<div class="pc"><div class="pc-media"><a class="pc-img" href="#p-' + p.id + '">' + thumb(p) +
       (out ? '<span class="tag out">Sold out</span>' : p.tag ? '<span class="tag">' + esc(p.tag) + '</span>' : '') + '</a>' +
       (out || p.contactOnly || p.comingSoon || isDoor(p) ? '' : '<button type="button" class="qadd" data-q="' + p.id + '" aria-label="Add ' + esc(p.name) + ' to cart">+</button>') + '</div>' +
-      '<a class="pc-info" href="#p-' + p.id + '"><h3>' + esc(p.name) + '</h3><div class="pc-row"><span class="price">' + money(p.price) + (p.was ? '<s>' + money(p.was) + '</s>' : '') + '</span>' + pdots(p) + '</div></a></div>';
+      '<a class="pc-info" href="#p-' + p.id + '"><h3>' + esc(p.name) + '</h3><div class="pc-row"><span class="price">' + (p.priceText ? esc(p.priceText) : money(p.price) + (p.was ? '<s>' + money(p.was) + '</s>' : '')) + '</span>' + pdots(p) + '</div></a></div>';
   }
   function isDoor(p) { return p.art === 'door-xmas' || p.art === 'door-plain'; }
   function quickAdd(id, btn) {
@@ -936,6 +966,11 @@
     tick(); cdTimer = setInterval(tick, 1000);
   }
 
+  // drops (collections) — the manager can set a whole drop to "Coming soon"
+  var COLS = [['lebanon', 'Lebanon drop'], ['xmas', 'Christmas'], ['woggles', 'Scout woggles']];
+  function soonCol(c) { var sc = Store.settings().soonCols || {}; return !!sc[c]; }
+  function colSelect(v) { return '<select name="col">' + COLS.map(function (c) { return '<option value="' + c[0] + '"' + ((v || 'lebanon') === c[0] ? ' selected' : '') + '>' + c[1] + '</option>'; }).join('') + '</select>'; }
+  function colName(c) { return (COLS.filter(function (x) { return x[0] === c; })[0] || COLS[0])[1]; }
   function colHash(p) { return p.col === 'xmas' ? 'christmas' : p.col === 'woggles' ? 'woggles' : 'shop'; }
   function colLabel(p) { return p.col === 'xmas' ? 'Christmas 2026' : p.col === 'woggles' ? 'Scout woggles' : 'The Lebanon drop'; }
   // Made-to-design products (custom woggle): see the examples in 3D, then contact us on WhatsApp.
@@ -1032,8 +1067,8 @@
     var p = Store.product(id);
     if (!p) { app.innerHTML = '<div class="wrap page empty"><h1>Not found</h1><a class="btn pri" href="#shop">Back to the shop</a></div>'; return; }
     if (p.contactOnly) return viewContactProduct(p);
-    if (p.comingSoon || isDoor(p)) return viewSoonProduct(p);
-    var soon = false;
+    if (isDoor(p)) return viewSoonProduct(p);
+    var soon = !!p.comingSoon;
     var slots = packSlots(p);
     var ol = slots.length ? [] : optList(p);
     var out = soon || isOut(p);
@@ -1050,14 +1085,14 @@
     app.innerHTML = '<div class="wrap"><a class="back" href="#' + colHash(p) + '">← Back</a><div class="ppage">' +
       '<div class="big" id="pArt"></div><div>' +
       '<div class="eyebrow">' + colLabel(p) + '</div>' +
-      '<h1>' + esc(p.name) + '</h1><div class="price" id="pPrice">' + money(p.price) + (p.was ? '<s>' + money(p.was) + '</s>' : '') + '</div>' + (p.priceSame != null ? '<div class="muted" style="font-size:14px;margin-top:4px">' + money(p.priceSame) + ' if both cords are the same colour</div>' : '') +
+      '<h1>' + esc(p.name) + '</h1><div class="price" id="pPrice">' + (soon ? '<span class="soonpill">Coming soon</span>' : money(p.price) + (p.was ? '<s>' + money(p.was) + '</s>' : '')) + '</div>' + (p.priceSame != null ? '<div class="muted" style="font-size:14px;margin-top:4px">' + money(p.priceSame) + ' if both cords are the same colour</div>' : '') +
       '<p style="color:#3A4352;font-size:17px;margin:16px 0 0">' + esc(p.desc || p.blurb || '') + '</p>' +
       (slots.length ? packHTML : ol.length ? '<div class="opt"><span class="lab">' + esc(p.optLabel || 'Colour') + '</span><div class="swatches">' + ol.map(function (o) { return swatch(o, o.name === st.color); }).join('') + '</div></div>' :
        p.colors && p.colors.length > 1 ? '<div class="opt"><span class="lab">Colour</span><div class="swatches">' + p.colors.map(function (c) { return '<button class="sw' + (c === st.color ? ' on' : '') + '" data-c="' + c + '"><i style="background:' + (COLOR_HEX[c] || c) + '"></i>' + c + '</button>'; }).join('') + '</div></div>' : '') +
       (p.text && !slots.length ? '<div class="opt"><label class="field">' + esc(p.text.label) + '<input id="pText" maxlength="' + p.text.max + '" placeholder="' + esc(p.text.ph) + '" value="' + esc(st.text) + '"></label><div class="err" id="pErr"></div></div>' : '') +
       '<div class="opt"><span class="lab">Quantity</span><div class="qty"><button data-q="-1" aria-label="Less">−</button><span id="pQty">1</span><button data-q="1" aria-label="More">+</button></div></div>' +
       '<div class="buyrow"><button class="btn pri" id="pAdd"' + (out ? ' disabled' : '') + '>' + (soon ? 'Coming soon' : out ? 'Sold out' : 'Add to cart') + '</button>' + (out ? '' : '<button class="btn sec" id="pBuy">Buy now</button>') + '</div>' +
-      '<div class="specs">' + (p.specs || []).map(function (s) { return '<div>' + esc(s) + '</div>'; }).join('') + '<div>Made to order · ready in 2–4 days</div><div>Cash on delivery or Whish</div></div>' +
+      '<div class="specs">' + (p.specs || []).map(function (s) { return '<div>' + esc(s) + '</div>'; }).join('') + (soon ? '<div>Not for sale yet' + (p.text ? ' — you can already try your name' : '') + '</div>' : '<div>Made to order · ready in 2–4 days</div><div>Cash on delivery or Whish</div>') + '</div>' +
       '</div></div></div>';
     var isMapP = (p.art || p.id) === 'my-village', mlive = null;
     if (isMapP) {
@@ -1066,35 +1101,39 @@
       mlive = BlazeArt.village($('#pLive'), { text: st.text || 'Your village' });
       $$('[data-v]').forEach(function (b) { b.onclick = function () { var ph = b.dataset.v === 'photo'; $$('[data-v]').forEach(function (x) { x.classList.toggle('on', x === b); }); $('#pLive').classList.toggle('hidden', ph); $('.realph').classList.toggle('hidden', !ph); }; });
     }
-    var hasReal = !isMapP && !!p.photo && livePreview(p);
+    // model first, real photo second (any product that has both)
+    var mk = modelKind(p), curPh = function () { return realPhoto(p, st.color) || (slots.length ? p.photo : null); };
+    var hasReal = !isMapP && !!mk && !!curPh();
     if (hasReal) {
       $('#pArt').classList.add('realbig');
-      $('#pArt').innerHTML = '<div class="livebox" id="pLive"></div><img class="realph hidden" src="' + p.photo + '" alt="' + esc('Real picture of the ' + p.name) + '"><div class="viewsw" role="group" aria-label="View"><button type="button" class="on" data-v="live">Your preview</button><button type="button" data-v="photo">Real picture</button></div>';
+      $('#pArt').innerHTML = '<div class="livebox" id="pLive"></div><img class="realph hidden" src="' + curPh() + '" alt="' + esc('Real picture of the ' + p.name) + '"><div class="viewsw" role="group" aria-label="View"><button type="button" class="on" data-v="live">' + (p.text || slots.some(function (x) { return x.p.text; }) ? 'Your preview' : 'Model') + '</button><button type="button" data-v="photo">Real picture</button></div>';
       $$('[data-v]').forEach(function (b) { b.onclick = function () { var ph = b.dataset.v === 'photo'; $$('[data-v]').forEach(function (x) { x.classList.toggle('on', x === b); }); $('#pLive').classList.toggle('hidden', ph); $('.realph').classList.toggle('hidden', !ph); }; });
     }
-    var artBox = function (h) { if (!hasReal) { $('#pArt').innerHTML = h; return; } if ($('#pLive').classList.contains('hidden')) $('[data-v=live]').click(); $('#pLive').innerHTML = h; };
+    var artBox = function (h, keepView) { if (!hasReal) { $('#pArt').innerHTML = h; return; } var ph = curPh(); if (ph) $('.realph').src = ph; if (!keepView && $('#pLive').classList.contains('hidden')) $('[data-v=live]').click(); $('#pLive').innerHTML = h; };
     var v3 = null;
-    if (p.model && window.Blaze3D) { $('#pArt').classList.add('w3dbox'); v3 = Blaze3D.mount($('#pArt'), { src: 'models/' + p.model + '.bin?v=94858834', colors: slots.length ? st.picks.map(function (k) { return col3d(k.color); }) : (p.modelColors || ['white']).map(col3d), pitch: -50, poster: p.img }); }
+    if (mk === '3d' && window.Blaze3D) { var host = hasReal ? $('#pLive') : $('#pArt'); host.classList.add('w3dbox'); v3 = Blaze3D.mount(host, { src: 'models/' + p.model + '.bin?v=94858834', colors: slots.length ? st.picks.map(function (k) { return col3d(k.color); }) : (p.modelColors || ['white']).map(col3d), pitch: -50, poster: p.img }); }
     var draw = function () {
       if (!document.getElementById('pArt')) return;   // customer already left this page (late map search)
-      if (p.priceSame != null && $('#pPrice')) $('#pPrice').textContent = money(unitPrice(p, { picks: st.picks }));
-      if (v3) { if (slots.length) v3.setColors(st.picks.map(function (k) { return col3d(k.color); })); return; }
+      if (p.priceSame != null && !soon && $('#pPrice')) $('#pPrice').textContent = money(unitPrice(p, { picks: st.picks }));
+      if (v3) { if (slots.length) v3.setColors(st.picks.map(function (k) { return col3d(k.color); })); if (hasReal && curPh()) $('.realph').src = curPh(); return; }
       if (mlive) { if ($('#pLive').classList.contains('hidden') && st.text) $('[data-v=live]').click(); mlive.set({ text: st.text || 'Your village', ar: st.geo && st.geo.ar, ele: st.geo && st.geo.ele, lat: st.geo && st.geo.lat, lon: st.geo && st.geo.lon }); return; }
       if (slots.length && window.BlazeArt && BlazeArt.has(p.art || p.id)) { artBox(thumb(p, { texts: st.picks.map(function (k, i) { return k.text || ((window.BlazeArt && BlazeArt.ornNames) || ['Gabriel', 'Maria', 'Elie'])[i % 10]; }) })); return; }
       if (slots.length && st.focus != null) { var fx = slots[st.focus], pk = st.picks[st.focus]; artBox(thumb(fx.p, { color: pk.color, text: pk.text || undefined })); return; }
-      artBox(thumb(p, { color: st.color, text: st.text || undefined, lat: st.geo && st.geo.lat, lon: st.geo && st.geo.lon }));
+      artBox(thumb(p, { color: st.color, text: st.text || undefined, lat: st.geo && st.geo.lat, lon: st.geo && st.geo.lon }), st.keep);
+      st.keep = false;
     };
     draw();
     if (slots.length) {
       $$('.pslot .sw').forEach(function (b) { b.onclick = function () { var i = +b.dataset.s; st.picks[i].color = b.dataset.c; st.focus = i; $$('.pslot[data-slot="' + i + '"] .sw').forEach(function (x) { x.classList.toggle('on', x === b); }); $('#packErr').textContent = ''; draw(); }; });
       $$('.ptx').forEach(function (t) { t.oninput = function () { var i = +t.dataset.s; st.picks[i].text = t.value.trim(); st.focus = i; $('#packErr').textContent = ''; draw(); }; });
-    } else $$('.sw').forEach(function (b) { b.onclick = function () { st.color = b.dataset.c; $$('.sw').forEach(function (x) { x.classList.toggle('on', x === b); }); draw(); }; });
+    } else $$('.sw').forEach(function (b) { b.onclick = function () { st.color = b.dataset.c; st.keep = true; $$('.sw').forEach(function (x) { x.classList.toggle('on', x === b); }); draw(); }; });
     var isMap = (p.art || p.id) === 'my-village';
     var geoLook = function () { Geo.find(st.text, function (hit, gs) { if (gs !== 'searching') st.geo = hit; draw(); var g = $('#pGeo'); if (g) g.innerHTML = Geo.status(hit, gs, 'pText', st.text); }); };
     var ti = $('#pText'); if (ti) ti.oninput = function () { st.text = ti.value.trim(); $('#pErr').textContent = ''; if (isMap) geoLook(); else draw(); };
     if (isMap && ti) { ti.insertAdjacentHTML('afterend', '<div class="geo" id="pGeo"></div>'); if (st.text) geoLook(); }
     $$('[data-q]').forEach(function (b) { b.onclick = function () { st.qty = Math.max(1, Math.min(50, st.qty + +b.dataset.q)); $('#pQty').textContent = st.qty; }; });
     var add = function () {
+      if (soon) { toast('Coming soon — not for sale yet'); return false; }
       if (slots.length) {
         for (var i = 0; i < slots.length; i++) {
           var bp = slots[i].p, pk = st.picks[i], o = optFor(bp, pk.color);
@@ -1315,7 +1354,14 @@
     renderAdmin();
   }
 
+  // a save fired by an input losing focus while the page is being redrawn would redraw inside the redraw — do it right after instead
+  var admBusy = false;
   function renderAdmin() {
+    if (admBusy) { setTimeout(renderAdmin, 0); return; }
+    admBusy = true;
+    try { renderAdmin0(); } finally { admBusy = false; }
+  }
+  function renderAdmin0() {
     var orders = Store.orders();
     var newCount = orders.filter(function (o) { return o.status === 'new'; }).length;
     document.title = (newCount ? '(' + newCount + ') ' : '') + '3DBlaze — Orders';
@@ -1510,19 +1556,29 @@
 
 
   // ---------- design requests (files Claude makes) ----------
-  function isOrn(i) { if (/holy-ornament/.test(i.id)) return true; var p = Store.product(i.id), pk = p && p.pack; if (!pk) return false; pk = Array.isArray(pk) ? pk : Object.keys(pk).map(function (k) { return pk[k]; }); return pk.some(function (x) { return x && /holy-ornament/.test(x.of); }); }
+  // name ornaments: Holy Night (ornament tool), Snowflake + Bow (name ornaments tool) — one .3mf per name
+  var ORN_RE = /holy-ornament|snowflake-ornament|bow-ornament/;
+  function ornKind(id) { return /snowflake-ornament/.test(id) ? 'snowflake' : /bow-ornament/.test(id) ? 'bow' : 'holy'; }
+  function isOrn(i) { if (ORN_RE.test(i.id)) return true; var p = Store.product(i.id), pk = p && p.pack; if (!pk) return false; pk = Array.isArray(pk) ? pk : Object.keys(pk).map(function (k) { return pk[k]; }); return pk.some(function (x) { return x && ORN_RE.test(x.of); }); }
   function needsFile(o) { return o.items.some(function (i) { return i.id === 'my-village' || isOrn(i) || (i.text && i.id !== 'design'); }); }
   function makeOrderRequest(o, done) {
     var orn = o.items.filter(isOrn), data;
     if (orn.length) {
-      var names = []; orn.forEach(function (i) { var ps = i.picks ? (Array.isArray(i.picks) ? i.picks : Object.keys(i.picks).map(function (k) { return i.picks[k]; })) : [{ text: i.text }]; for (var q = 0; q < i.qty; q++) ps.forEach(function (pk) { if (pk.text) names.push(pk.text); }); });
-      data = { type: 'ornament', title: 'Holy Night Ornament × ' + names.length, names: names, order: o.code, status: 'sent', createdAt: Date.now() };
+      var names = [], groups = { holy: [], snowflake: [], bow: [] };
+      orn.forEach(function (i) { var ps = i.picks ? (Array.isArray(i.picks) ? i.picks : Object.keys(i.picks).map(function (k) { return i.picks[k]; })) : [{ id: i.id, text: i.text }]; for (var q = 0; q < i.qty; q++) ps.forEach(function (pk) { if (pk.text) { names.push(pk.text); groups[ornKind(pk.id || i.id)].push(pk.text); } }); });
+      var tt = Object.keys(groups).filter(function (k) { return groups[k].length; }).map(function (k) { return ORN_TOOL[k].name + ' × ' + groups[k].length; });
+      data = { type: 'ornament', title: tt.join(' + '), names: groups.holy, groups: groups, order: o.code, status: 'sent', createdAt: Date.now() };
     } else {
       var it = o.items.filter(function (i) { return i.id === 'my-village'; })[0] || o.items.filter(function (i) { return i.text; })[0];
       data = { type: it.id === 'my-village' ? 'map' : 'custom', geo: it.geo || null, title: it.id === 'my-village' ? (it.text || '') : it.name + (it.text ? ' with “' + it.text + '”' : ''), base: 'black', mapc: 'white', place: o.customer.region || '', notes: '', size: '', order: o.code, status: 'sent', createdAt: Date.now() };
     }
     Store.saveRequest(null, data).then(function (id) { data.id = id; copy(requestText(data), 'Copied — paste it in your Claude chat'); if (done) done(); });
   }
+  var ORN_TOOL = {
+    holy: { name: 'Holy Night Ornament', sample: 'Christmass\\3DBlaze Holy Night Ornament - Gabriel - sample.3mf', tool: 'Christmass\\3DBlaze ornament tool.zip → python3 make_holy.py "Name" "3DBlaze Holy Night Ornament - Name.3mf"', spec: '10 cm red ornament, 3 mm, name in white Pacifico RAISED 0.8 mm on the banner' },
+    snowflake: { name: 'Snowflake Name Ornament', sample: 'Christmass\\3DBlaze Snowflake Ornament - Joseph - sample.3mf', tool: 'Christmass\\3DBlaze name ornaments tool.zip → python3 make_orn.py snowflake "Name" "3DBlaze Snowflake Ornament - Name.3mf"', spec: '10 cm, 3 mm flat, all red (name part on slot 1), name UPPERCASE Caladea Bold' },
+    bow: { name: 'Bow Name Ornament', sample: 'Christmass\\3DBlaze Bow Ornament - Maria - sample.3mf', tool: 'Christmass\\3DBlaze name ornaments tool.zip → python3 make_orn.py bow "Name" "3DBlaze Bow Ornament - Name.3mf"', spec: 'oval 10 × 8 cm, red 3 mm base with raised bow/holly, name white Lora Bold Italic raised 0.8 mm (slot 2)' }
+  };
   var REQ_STATUS = [['new', 'New'], ['sent', 'Sent to Claude'], ['ready', 'File ready'], ['done', 'Printed']];
   function requestText(r) {
     var t = '3DBlaze design request ' + r.id + '\n';
@@ -1537,7 +1593,10 @@
           '\nBase text: ' + r.title.toUpperCase() + (g.ele != null ? ' ' + g.ele + ' m' : ' ### m') + (g.ar ? ' ' + g.ar : '') : '\n(not found on the map — find the location)') +
         (r.place ? '\nWhere: ' + r.place : '') + '\nColours: black plate, white map, black borders, green pin, black base, white name';
     }
-    else if (r.type === 'ornament') t += 'Product: Holy Night Ornament (3DBlaze original) — one .3mf per name\nTemplate: Christmass\\3DBlaze Holy Night Ornament - Gabriel - sample.3mf (made with the 3DBlaze ornament tool)\nNames: ' + (r.names || []).join(', ') + '\n3 mm red ornament, name in white Pacifico RAISED 0.8 mm on the banner (3.8 mm at the letters)';
+    else if (r.type === 'ornament') {
+      var gr = r.groups || { holy: r.names || [] };
+      t += Object.keys(ORN_TOOL).filter(function (k) { return gr[k] && gr[k].length; }).map(function (k) { var T = ORN_TOOL[k]; return 'Product: ' + T.name + ' (3DBlaze original) — one .3mf per name\nSample: ' + T.sample + '\nTool: ' + T.tool + '\nNames: ' + gr[k].join(', ') + '\n' + T.spec; }).join('\n\n');
+    }
     else if (/door ?sign|santa|elf|elves/i.test(r.title + ' ' + (r.notes || ''))) t += 'Product: Family door sign (3DBlaze original) (.3mf for Bambu Studio)\nTool: Christmass\\3DBlaze door sign tool.zip (door.py) — run it with the family name, Dad, Mum, kids and green|red. Sample: Christmass\\3DBlaze Door Sign Santa Elves - Sassine - sample.3mf\nWhat: ' + r.title;
     else t += 'Product: custom design (.3mf for Bambu Studio)\nWhat: ' + r.title;
     if (r.size) t += '\nSize: ' + r.size;
@@ -1832,20 +1891,25 @@
   function admProducts() {
     var list = Store.products();
     $('#admBody').innerHTML = '<div class="panel" style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><b style="font-family:var(--head)">Products</b><div class="muted" style="font-size:14px">These are <b>example items</b> to show the layout. Edit, remove or replace them with what you actually sell, and upload real photos.</div></div><button class="btn pri" id="addP" style="min-height:44px;padding:10px 16px;font-size:14px">+ Add product</button></div>' +
+      '<div class="panel" style="margin-bottom:14px"><b style="font-family:var(--head)">Drops</b><div class="muted" style="font-size:14px;margin-bottom:8px">Set a whole drop to <b>Coming soon</b>: every product and offer in it shows “Coming soon” and can’t be ordered (customers can still try their names).</div><div class="droprow">' +
+      COLS.map(function (c) { return '<label class="switch"><input type="checkbox" data-dsoon="' + c[0] + '"' + (soonCol(c[0]) ? ' checked' : '') + '> ' + c[1] + ' — Coming soon</label>'; }).join('') + '</div></div>' +
       list.map(function (p) {
         var pc = p.grams != null ? pieceCost(p.grams, p.printMin) : null;
         var costLine = pc == null ? '<div class="muted" style="font-size:12px;margin-top:3px">No print file yet — add one to see cost & profit</div>' :
           '<div style="font-size:12px;margin-top:3px;color:#2C3443">' + (Math.round(p.grams * 10) / 10) + ' g · ' + Math.floor(p.printMin / 60) + 'h ' + Math.round(p.printMin % 60) + 'm' + (p.printFile ? ' · ' + esc(p.printFile) : '') + (p.printExact ? ' ✓' : ' (estimate)') + '<br>Cost ' + money(pc) + ' · <b style="color:' + (p.price - pc > 0 ? 'var(--green)' : 'var(--red)') + '">profit ' + money(p.price - pc) + ' (' + (p.price > 0 ? Math.round((p.price - pc) / p.price * 100) : 0) + '%)</b> per piece</div>';
-        return '<div class="prow" data-p="' + p.id + '"><div class="th">' + (p.photo && livePreview(p) ? '<img src="' + p.photo + '" alt="' + esc(p.name) + '" title="Real picture (2nd view in the shop)">' : thumb(p)) + '</div><div><b>' + esc(p.name) + '</b><div class="muted" style="font-size:13px">' + (p.col === 'xmas' ? 'Christmas' : 'Lebanon drop') + ' · <button class="upl" data-ed="' + p.id + '">Edit</button> · <button class="upl" data-bf="' + p.id + '">' + (p.grams != null ? 'Replace Bambu file' : '+ Bambu file') + '</button> · <button class="upl" data-up="' + p.id + '">' + (p.photo ? 'Change photo' : 'Upload photo') + '</button> · ' + (packSlots(p).length ? '<button class="upl" data-offer="' + p.id + '">Edit offer (' + packSlots(p).length + ' pieces)</button>' : '<button class="upl" data-opt="' + p.id + '">Colours & photos' + (optList(p).length ? ' (' + optList(p).length + ')' : '') + '</button>') + ' · <button class="upl" data-del="' + p.id + '">Remove</button></div>' + costLine + '</div>' +
+        return '<div class="prow" data-p="' + p.id + '"><div class="th">' + (realPhoto(p) && modelKind(p) ? '<img src="' + realPhoto(p) + '" alt="' + esc(p.name) + '" title="Real picture (2nd view in the shop — the model is shown first)">' : thumb(p)) + '</div><div><b>' + esc(p.name) + '</b><div class="muted" style="font-size:13px">' + colName(p.col) + (p.comingSoon ? ' · <b style="color:#B26B00">Coming soon</b>' : '') + ' · <button class="upl" data-ed="' + p.id + '">Edit</button> · <button class="upl" data-bf="' + p.id + '">' + (p.grams != null ? 'Replace Bambu file' : '+ Bambu file') + '</button> · <button class="upl" data-up="' + p.id + '">' + (p.photo ? 'Change photo' : 'Upload photo') + '</button> · ' + (p.photo ? '<button class="upl" data-rmph="' + p.id + '">Remove photo</button> · ' : '') + (packSlots(p).length ? '<button class="upl" data-offer="' + p.id + '">Edit offer (' + packSlots(p).length + ' pieces)</button>' : '<button class="upl" data-opt="' + p.id + '">Colours & photos' + (optList(p).length ? ' (' + optList(p).length + ')' : '') + '</button>') + ' · <button class="upl" data-del="' + p.id + '">Remove</button></div>' + costLine + '</div>' +
           '<label class="field" style="font-size:12px">Price $<input type="number" min="0" step="0.5" value="' + p.price + '" data-price="' + p.id + '"></label>' +
           '<label class="switch"><input type="checkbox" data-av="' + p.id + '"' + (p.available === false ? '' : ' checked') + '> On sale</label>' +
-          '<label class="switch"><input type="checkbox" data-so="' + p.id + '"' + (p.soldOut ? ' checked' : '') + '> Sold out</label></div>';
+          '<div class="swcol"><label class="switch"><input type="checkbox" data-so="' + p.id + '"' + (p.soldOut ? ' checked' : '') + '> Sold out</label>' +
+          '<label class="switch"><input type="checkbox" data-cs="' + p.id + '"' + (p.comingSoon ? ' checked' : '') + (soonCol(p.col) ? ' disabled title="The whole drop is Coming soon"' : '') + '> Coming soon</label></div></div>';
       }).join('') + '<input type="file" accept="image/*" id="photoIn" class="hidden"><input type="file" accept=".3mf,.gcode,.stl,.obj" id="bambuIn" class="hidden">';
     var target = null;
     $$('[data-price]').forEach(function (i) { i.onchange = function () { Store.saveProduct(i.dataset.price, { price: Math.max(0, +i.value || 0) }).then(function () { toast('Price saved'); }); }; });
     $$('[data-av]').forEach(function (i) { i.onchange = function () { Store.saveProduct(i.dataset.av, { available: i.checked }).then(function () { toast(i.checked ? 'Back on sale' : 'Hidden as unavailable'); }); }; });
     $$('[data-so]').forEach(function (i) { i.onchange = function () { Store.saveProduct(i.dataset.so, { soldOut: i.checked }).then(function () { toast(i.checked ? 'Marked sold out' : 'Back in stock'); }); }; });
     $$('[data-up]').forEach(function (b) { b.onclick = function () { target = b.dataset.up; $('#photoIn').click(); }; });
+    soonHandlers(admProducts);
+    $$('[data-rmph]').forEach(function (b) { b.onclick = function () { var p = Store.product(b.dataset.rmph); confirmBox('Remove the photo of “' + p.name + '”?', 'Remove photo', function () { Store.saveProduct(p.id, { photo: null }).then(function () { toast('Photo removed'); admProducts(); }); }); }; });
     var bTarget = null;
     $$('[data-bf]').forEach(function (b) { b.onclick = function () { bTarget = b.dataset.bf; $('#bambuIn').value = ''; $('#bambuIn').click(); }; });
     $('#bambuIn').onchange = function (e) {
@@ -1861,7 +1925,7 @@
     $$('[data-offer]').forEach(function (b) { b.onclick = function () { offerModal(b.dataset.offer, admProducts); }; });
     $$('[data-del]').forEach(function (b) { b.onclick = function () { var p = Store.product(b.dataset.del); confirmBox('Remove “' + p.name + '” from the shop?', 'Remove', function () { Store.saveProduct(p.id, { removed: true }).then(function () { toast('Removed'); admProducts(); }); }); }; });
     $$('[data-ed]').forEach(function (b) { b.onclick = function () { var p = Store.product(b.dataset.ed);
-      modal('<h3 style="font-size:20px;margin-bottom:16px">Edit product</h3><form id="ep" style="display:grid;gap:12px"><label class="field">Name<input name="name" value="' + esc(p.name) + '"></label><div class="grid2"><label class="field">Price $<input name="price" type="number" min="0" step="0.5" value="' + p.price + '"></label><label class="field">Collection<select name="col"><option value="lebanon"' + (p.col !== 'xmas' ? ' selected' : '') + '>Lebanon drop</option><option value="xmas"' + (p.col === 'xmas' ? ' selected' : '') + '>Christmas</option></select></label></div><label class="field">Label on the card (e.g. New, Bestseller)<input name="tag" value="' + esc(p.tag || '') + '"></label><label class="field">Short line<input name="blurb" value="' + esc(p.blurb || '') + '"></label><label class="field">Description<textarea name="desc">' + esc(p.desc || '') + '</textarea></label><label class="field">Details (one per line)<textarea name="specs">' + esc((p.specs || []).join('\n')) + '</textarea></label>' + (optList(p).length ? '<div class="muted" style="font-size:13px">Colours are set in <b>Colours & photos</b> (' + optList(p).map(function (o) { return esc(o.name); }).join(', ') + ').</div>' : '<label class="field">Colours to choose from (comma separated, empty = none)<input name="colors" value="' + esc((p.colors || []).join(', ')) + '"><small class="muted" style="font-weight:400">To add a photo for each colour, use <b>Colours & photos</b> instead.</small></label>') + '<label class="field">Personalization question (empty = none)<input name="tq" value="' + esc(p.text ? p.text.label : '') + '"></label><button class="btn pri">Save</button></form>', function (box, close) {
+      modal('<h3 style="font-size:20px;margin-bottom:16px">Edit product</h3><form id="ep" style="display:grid;gap:12px"><label class="field">Name<input name="name" value="' + esc(p.name) + '"></label><div class="grid2"><label class="field">Price $<input name="price" type="number" min="0" step="0.5" value="' + p.price + '"></label><label class="field">Collection' + colSelect(p.col) + '</label></div><label class="field">Label on the card (e.g. New, Bestseller)<input name="tag" value="' + esc(p.tag || '') + '"></label><label class="field">Short line<input name="blurb" value="' + esc(p.blurb || '') + '"></label><label class="field">Description<textarea name="desc">' + esc(p.desc || '') + '</textarea></label><label class="field">Details (one per line)<textarea name="specs">' + esc((p.specs || []).join('\n')) + '</textarea></label>' + (optList(p).length ? '<div class="muted" style="font-size:13px">Colours are set in <b>Colours & photos</b> (' + optList(p).map(function (o) { return esc(o.name); }).join(', ') + ').</div>' : '<label class="field">Colours to choose from (comma separated, empty = none)<input name="colors" value="' + esc((p.colors || []).join(', ')) + '"><small class="muted" style="font-weight:400">To add a photo for each colour, use <b>Colours & photos</b> instead.</small></label>') + '<label class="field">Personalization question (empty = none)<input name="tq" value="' + esc(p.text ? p.text.label : '') + '"></label><button class="btn pri">Save</button></form>', function (box, close) {
         box.querySelector('#ep').onsubmit = function (e) { e.preventDefault(); var f = e.target;
           var cols = (f.colors ? f.colors.value : (p.colors || []).join(',')).split(',').map(function (c) { return c.trim().toLowerCase(); }).filter(Boolean);
           Store.saveProduct(p.id, { name: f.name.value.trim() || p.name, price: Math.max(0, +f.price.value || 0), col: f.col.value, tag: f.tag.value.trim(), blurb: f.blurb.value.trim(), desc: f.desc.value.trim(),
@@ -1871,7 +1935,7 @@
       }); }; });
     $('#photoIn').onchange = function (e) { var f = e.target.files[0]; if (!f || !target) return; resizeImage(f, 900, function (url) { Store.saveProduct(target, { photo: url }).then(function () { toast('Photo saved'); admProducts(); }); }); };
     $('#addP').onclick = function () {
-      modal('<h3 style="font-size:20px;margin-bottom:16px">New product</h3><form id="np" style="display:grid;gap:12px"><label class="field">Name<input name="name" required></label><div class="grid2"><label class="field">Price $<input name="price" type="number" min="0" step="0.5" required></label><label class="field">Collection<select name="col"><option value="lebanon">Lebanon drop</option><option value="xmas">Christmas</option></select></label></div><label class="field">Short line<input name="blurb"></label><label class="field">Description<textarea name="desc"></textarea></label><label class="field">Photo<input name="photo" type="file" accept="image/*"></label><div class="err" id="npErr"></div><button class="btn pri">Add product</button></form>', function (box, close) {
+      modal('<h3 style="font-size:20px;margin-bottom:16px">New product</h3><form id="np" style="display:grid;gap:12px"><label class="field">Name<input name="name" required></label><div class="grid2"><label class="field">Price $<input name="price" type="number" min="0" step="0.5" required></label><label class="field">Collection' + colSelect('lebanon') + '</label></div><label class="field">Short line<input name="blurb"></label><label class="field">Description<textarea name="desc"></textarea></label><label class="field">Photo<input name="photo" type="file" accept="image/*"></label><div class="err" id="npErr"></div><button class="btn pri">Add product</button></form>', function (box, close) {
         box.querySelector('#np').onsubmit = function (e) {
           e.preventDefault(); var f = e.target; if (!f.name.value.trim() || !(+f.price.value > 0)) { box.querySelector('#npErr').textContent = 'Name and price are needed.'; return; }
           var save = function (photo) { Store.addProduct({ name: f.name.value.trim(), price: +f.price.value, col: f.col.value, blurb: f.blurb.value.trim(), desc: f.desc.value.trim(), photo: photo || null, printMin: 60, specs: [] }).then(function () { close(); toast('Product added'); admProducts(); }); };
@@ -1881,20 +1945,31 @@
     };
   }
 
+  // Coming soon switches: whole drop (settings.soonCols), or one product / offer (p.soon)
+  function soonHandlers(after) {
+    $$('[data-dsoon]').forEach(function (i) { i.onchange = function () { var sc = Object.assign({}, Store.settings().soonCols || {}); if (i.checked) sc[i.dataset.dsoon] = true; else delete sc[i.dataset.dsoon];
+      Store.saveSettings({ soonCols: Object.keys(sc).length ? sc : null }).then(function () { toast(colName(i.dataset.dsoon) + (i.checked ? ' is now Coming soon' : ' is open again')); after(); }); }; });
+    $$('[data-cs]').forEach(function (i) { i.onchange = function () { var p = Store.product(i.dataset.cs);
+      if (!i.checked && !(+p.price > 0)) { i.checked = true; toast('Set a price first, then turn Coming soon off'); return; }
+      Store.saveProduct(p.id, { soon: i.checked }).then(function () { toast(i.checked ? '“' + p.name + '” is Coming soon' : '“' + p.name + '” is on sale'); after(); }); }; });
+  }
   function admOffers() {
     var offers = Store.products().filter(function (p) { return packSlots(p).length; });
     $('#admBody').innerHTML = '<div class="panel" style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><b style="font-family:var(--head)">Offers</b><div class="muted" style="font-size:14px">Packs and bundles. Customers pick the colour of <b>each piece</b> (e.g. White + White + Black). Colours and photos come from each piece’s own product.</div></div><button class="btn pri" id="addO" style="min-height:44px;padding:10px 16px;font-size:14px">+ New offer</button></div>' +
       (offers.length ? offers.map(function (p) {
         var sl = packSlots(p), cnt = {}; sl.forEach(function (x) { cnt[x.p.name] = (cnt[x.p.name] || 0) + 1; });
         var single = sl.reduce(function (n, x) { return n + (x.p.price || 0); }, 0);
-        return '<div class="prow"><div class="th">' + thumb(p) + '</div><div><b>' + esc(p.name) + '</b> <span class="muted" style="font-size:13px">' + (p.col === 'xmas' ? '· Christmas (coming soon)' : '') + '</span>' +
+        return '<div class="prow"><div class="th">' + thumb(p) + '</div><div><b>' + esc(p.name) + '</b> <span class="muted" style="font-size:13px">· ' + colName(p.col) + (p.comingSoon ? ' · <b style="color:#B26B00">Coming soon</b>' : '') + '</span>' +
           '<div style="font-size:13px;margin-top:3px">' + Object.keys(cnt).map(function (k) { return cnt[k] + ' × ' + esc(k); }).join(' + ') + '</div>' +
           '<div class="muted" style="font-size:12px;margin-top:3px">' + money(p.price) + (p.was ? ' (was ' + money(p.was) + ')' : '') + ' · bought one by one: ' + money(single) + '</div>' +
-          '<div style="margin-top:4px"><button class="upl" data-oe="' + p.id + '">Edit offer</button> · <button class="upl" data-od="' + p.id + '">Remove</button></div></div>' +
-          '<span></span><label class="switch"><input type="checkbox" data-oav="' + p.id + '"' + (p.available === false ? '' : ' checked') + '> On sale</label><span></span></div>';
+          '<div style="margin-top:4px"><button class="upl" data-oe="' + p.id + '">Edit offer</button> · ' + (p.photo ? '<button class="upl" data-rmph="' + p.id + '">Remove photo</button> · ' : '') + '<button class="upl" data-od="' + p.id + '">Remove</button></div></div>' +
+          '<span></span><label class="switch"><input type="checkbox" data-oav="' + p.id + '"' + (p.available === false ? '' : ' checked') + '> On sale</label>' +
+          '<label class="switch"><input type="checkbox" data-cs="' + p.id + '"' + (p.comingSoon ? ' checked' : '') + (soonCol(p.col) ? ' disabled title="The whole drop is Coming soon"' : '') + '> Coming soon</label></div>';
       }).join('') : '<div class="panel empty"><p class="muted">No offers yet. Tap “+ New offer”.</p></div>');
     $('#addO').onclick = function () { offerModal(null, admOffers); };
     $$('[data-oe]').forEach(function (b) { b.onclick = function () { offerModal(b.dataset.oe, admOffers); }; });
+    soonHandlers(admOffers);
+    $$('[data-rmph]').forEach(function (b) { b.onclick = function () { var p = Store.product(b.dataset.rmph); confirmBox('Remove the photo of “' + p.name + '”?', 'Remove photo', function () { Store.saveProduct(p.id, { photo: null }).then(function () { toast('Photo removed'); admOffers(); }); }); }; });
     $$('[data-oav]').forEach(function (i) { i.onchange = function () { Store.saveProduct(i.dataset.oav, { available: i.checked }).then(function () { toast(i.checked ? 'Offer on sale' : 'Offer hidden'); }); }; });
     $$('[data-od]').forEach(function (b) { b.onclick = function () { var p = Store.product(b.dataset.od); confirmBox('Remove the offer “' + p.name + '”?', 'Remove', function () { Store.saveProduct(p.id, { removed: true }).then(function () { toast('Offer removed'); admOffers(); }); }); }; });
   }
@@ -1908,9 +1983,10 @@
       '<div><span class="lab" style="font-size:13px;font-weight:600">Pieces in the offer — the customer chooses each one’s colour</span><div id="opcs" style="display:grid;gap:8px;margin-top:8px"></div>' +
       '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button type="button" class="upl" id="opAdd">+ Add a piece</button><span class="muted" id="opSum" style="font-size:13px"></span></div></div>' +
       '<div class="grid2"><label class="field">Offer price $<input name="price" type="number" min="0" step="0.5" required value="' + (p ? p.price : '') + '"></label><label class="field">Old price $ (shown crossed out)<input name="was" type="number" min="0" step="0.5" value="' + (p && p.was ? p.was : '') + '"></label></div>' +
-      '<div class="grid2"><label class="field">Label on the card<input name="tag" value="' + esc(p && p.tag || '') + '" placeholder="auto: Save $2"></label><label class="field">Collection<select name="col"><option value="lebanon"' + (!p || p.col !== 'xmas' ? ' selected' : '') + '>Lebanon drop</option><option value="xmas"' + (p && p.col === 'xmas' ? ' selected' : '') + '>Christmas</option></select></label></div>' +
+      '<div class="grid2"><label class="field">Label on the card<input name="tag" value="' + esc(p && p.tag || '') + '" placeholder="auto: Save $2"></label><label class="field">Collection' + colSelect(p && p.col) + '</label></div>' +
       '<label class="field">Short line<input name="blurb" value="' + esc(p && p.blurb || '') + '"></label><label class="field">Description<textarea name="desc">' + esc(p && p.desc || '') + '</textarea></label>' +
       '<label class="field">Photo of the offer' + (p && p.photo ? ' (leave empty to keep the current one)' : '') + '<input name="photo" type="file" accept="image/*"></label>' +
+      (p && p.photo ? '<label class="switch"><input type="checkbox" name="rmph"> Remove the current photo</label>' : '') +
       '<div class="err" id="ofErr"></div><button class="btn pri">' + (p ? 'Save offer' : 'Create offer') + '</button></form>', function (box, close) {
       var wrap = box.querySelector('#opcs'), f = box.querySelector('#of');
       var sum0 = p ? packSlots(p).reduce(function (n, x) { return n + (x.p.price || 0); }, 0) : 0, autoWas = !p || !p.was || +p.was === sum0;
@@ -1944,7 +2020,7 @@
         if (!p || !p.printFile) { data.printMin = mins; if (grams != null) data.grams = grams; }
         if (!p) data.specs = [pieces.length + ' pieces', 'Choose the colour of each piece'];
         var save = function (photo) {
-          if (photo) data.photo = photo;
+          if (photo) data.photo = photo; else if (f.rmph && f.rmph.checked) data.photo = null;
           (p ? Store.saveProduct(p.id, data) : Store.addProduct(data)).then(function () { close(); toast(p ? 'Offer saved' : 'Offer created — it’s live in the shop'); if (after) after(); })
             .catch(function (e2) { err.textContent = 'Could not save: ' + (e2 && e2.message || e2); });
         };
@@ -1964,13 +2040,14 @@
       var q = function (s) { return box.querySelector(s); }, qa = function (s) { return [].slice.call(box.querySelectorAll(s)); }, tgt = null;
       var render = function () {
         q('#oList').innerHTML = arr.length ? arr.map(function (o, i) {
-          return '<div class="optrow"><div class="ophw"><button class="oth" data-ph="' + i + '" title="Choose photo">' + (o.photo ? '<img src="' + o.photo + '" alt="">' : '<span>No photo</span>') + '</button><button class="ophb" data-ph="' + i + '">' + (o.photo ? 'Change photo' : 'Add photo') + '</button></div>' +
+          return '<div class="optrow"><div class="ophw"><button class="oth" data-ph="' + i + '" title="Choose photo">' + (o.photo ? '<img src="' + o.photo + '" alt="">' : '<span>No photo</span>') + '</button><button class="ophb" data-ph="' + i + '">' + (o.photo ? 'Change photo' : 'Add photo') + '</button>' + (o.photo ? '<button class="ophb" data-rph="' + i + '">Remove photo</button>' : '') + '</div>' +
             '<input data-n="' + i + '" value="' + esc(o.name) + '" placeholder="Colour name, e.g. Black" maxlength="24" aria-label="Colour name">' +
             '<label class="switch"><input type="checkbox" data-out="' + i + '"' + (o.out ? ' checked' : '') + '> Sold out</label>' +
             '<div class="obtn"><button data-mv="' + i + '" data-d="-1" aria-label="Move up"' + (i ? '' : ' disabled') + '>↑</button><button data-mv="' + i + '" data-d="1" aria-label="Move down"' + (i < arr.length - 1 ? '' : ' disabled') + '>↓</button><button data-rmo="' + i + '" aria-label="Remove">✕</button></div></div>';
         }).join('') : '<div class="muted" style="font-size:14px;padding:10px 0">No colours yet. Click “+ Add colour”.</div>';
         qa('[data-n]').forEach(function (i) { i.oninput = function () { arr[+i.dataset.n].name = i.value; }; });
         qa('[data-out]').forEach(function (i) { i.onchange = function () { arr[+i.dataset.out].out = i.checked; }; });
+        qa('[data-rph]').forEach(function (b) { b.onclick = function () { arr[+b.dataset.rph].photo = null; render(); }; });
         qa('[data-ph]').forEach(function (b) { b.onclick = function () { tgt = +b.dataset.ph; q('#oPhoto').value = ''; q('#oPhoto').click(); }; });
         qa('[data-mv]').forEach(function (b) { b.onclick = function () { var i = +b.dataset.mv, j = i + +b.dataset.d; if (j < 0 || j >= arr.length) return; var t = arr[i]; arr[i] = arr[j]; arr[j] = t; render(); }; });
         qa('[data-rmo]').forEach(function (b) { b.onclick = function () { arr.splice(+b.dataset.rmo, 1); render(); }; });
