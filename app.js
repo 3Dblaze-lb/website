@@ -855,7 +855,7 @@
   function viewHome(anchor) {
     var s = Store.settings(), all = Store.products();
     var leb = all.filter(function (p) { return p.col === 'lebanon'; }), xm = all.filter(function (p) { return p.col === 'xmas'; }), wg = all.filter(function (p) { return p.col === 'woggles'; });
-    var vp = leb.filter(function (p) { return (p.art || p.id) === 'my-village' && !p.blurred; })[0], others = leb.filter(function (p) { return p !== vp; });
+    var vp = leb.filter(function (p) { return (p.art || p.id) === 'my-village' && !p.blurred; })[0], others = leb.filter(function (p) { return p !== vp && !isOffer(p); }), lebOffers = leb.filter(isOffer);
     var fee = (+s.feeBeirut === +s.feeMount && +s.feeMount === +s.feeOther) ? money(s.feeOther) + ' anywhere in Lebanon' + (s.freeOver ? ', free over ' + money(s.freeOver) : '') : (s.feeMount === s.feeBeirut ? money(s.feeBeirut) + ' in Beirut &amp; Mount Lebanon' : money(s.feeBeirut) + ' in Beirut, ' + money(s.feeMount) + ' in Mount Lebanon') + ', ' + money(s.feeOther) + ' elsewhere' + (s.freeOver ? ', free over ' + money(s.freeOver) : '');
     app.innerHTML =
       '<section class="hero2"><div class="wrap">' +
@@ -867,17 +867,18 @@
 
       '<section class="blk2" id="sec-shop"><div class="wrap">' +
         '<div class="shead"><h2>Lebanon drop</h2>' + (soonCol('lebanon') ? '<span class="soonlbl">Coming soon</span>' : '<span class="muted">' + leb.length + ' piece' + (leb.length === 1 ? '' : 's') + '</span>') + '</div>' +
-        '<div class="pgrid">' + (vp ? villageFeature(vp) : '') + others.map(card2).join('') + (vp ? villageCompact(vp) : '') + '</div>' +
+        (lebOffers.length ? '<h3 class="dsub">Products</h3>' : '') + '<div class="pgrid">' + (vp ? villageFeature(vp) : '') + others.map(card2).join('') + (vp ? villageCompact(vp) : '') + '</div>' +
+        (lebOffers.length ? '<h3 class="dsub">Offers</h3><div class="pgrid">' + lebOffers.map(card2).join('') + '</div>' : '') +
         '<div class="cdline" id="countdown"></div>' +
       '</div></section>' +
 
       '<section class="blk2" id="sec-christmas"><div class="wrap"><div class="shead"><h2>Christmas collection <small class="custhint">Click to customize yours</small></h2><span class="soonlbl">' + (xm.length && !soonCol('xmas') ? 'Order by ' + new Date(s.xmasCutoff).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }) : 'Coming soon') + '</span></div>' +
-        (xm.length ? '<div class="xrow" role="list">' + xm.map(function (p) { return '<a class="xc" role="listitem" href="#p-' + p.id + '"><div class="xc-img' + (p.blurred ? ' soonc' : '') + '">' + thumb(p) + '</div><b>' + esc(p.name) + '</b><span>' + (p.priceText ? esc(p.priceText) : money(p.price)) + '</span></a>'; }).join('') + '</div>'
+        (xm.length ? dropGrid(xm)
           : '<div class="xempty"><b>New Christmas pieces are on the way.</b><span class="muted">Personalized gifts with your name on them — follow <a href="https://instagram.com/3dblaze.lb" target="_blank" rel="noopener">@3dblaze.lb</a> to see them first.</span></div>') + '</div></section>' +
 
       (wg.length ? '<section class="blk2" id="sec-woggles"><div class="wrap"><div class="shead"><h2>Scout woggles</h2>' + (soonCol('woggles') ? '<span class="soonlbl">Coming soon</span>' : '<span class="muted">' + wg.length + ' piece' + (wg.length === 1 ? '' : 's') + '</span>') + '</div>' +
         '<p class="wogsub">Send us your patrol’s totem animal, or anything you want, and we’ll put it on your woggle.</p>' +
-        '<div class="xrow" role="list">' + wg.map(function (p) { return '<a class="xc" role="listitem" href="#p-' + p.id + '"><div class="xc-img' + (p.blurred ? ' soonc' : '') + '">' + thumb(p) + '</div><b>' + esc(p.name) + '</b><span>' + (p.priceText ? esc(p.priceText) : money(p.price)) + '</span></a>'; }).join('') + '</div></div></section>' : '') +
+        dropGrid(wg) + '</div></section>' : '') +
 
       '<section class="blk2" id="sec-how"><div class="wrap"><div class="shead"><h2>How it works</h2></div><div class="steps2">' +
         step2(1, 'Pick', 'A piece and a colour') + step2(2, 'Confirm', 'We WhatsApp you') + step2(3, 'Print', 'Ready in 2–4 days') + step2(4, 'Deliver', 'Cash or Whish') +
@@ -936,6 +937,14 @@
       (out ? '<span class="tag out">Sold out</span>' : p.tag ? '<span class="tag">' + esc(p.tag) + '</span>' : '') + '</a>' +
       (out || p.contactOnly || p.comingSoon || isDoor(p) ? '' : '<button type="button" class="qadd" data-q="' + p.id + '" aria-label="Add ' + esc(p.name) + ' to cart">+</button>') + '</div>' +
       '<a class="pc-info" href="#p-' + p.id + '"><h3>' + esc(p.name) + '</h3><div class="pc-row"><span class="price">' + (p.priceText ? esc(p.priceText) : money(p.price) + (p.was ? '<s>' + money(p.was) + '</s>' : '')) + '</span>' + pdots(p) + '</div></a></div>';
+  }
+  // drops: products first, then offers (packs), each under its own label; grid = max 6 per row on PC, 2 on phone
+  function isOffer(p) { return !!p.pack; }
+  function xcard(p) { return '<a class="xc" role="listitem" href="#p-' + p.id + '"><div class="xc-img' + (p.blurred ? ' soonc' : '') + '">' + thumb(p) + '</div><b>' + esc(p.name) + '</b><span>' + (p.priceText ? esc(p.priceText) : money(p.price) + (p.was ? ' <s>' + money(p.was) + '</s>' : '')) + '</span></a>'; }
+  function dropGrid(list) {
+    var pr = list.filter(function (p) { return !isOffer(p); }), of = list.filter(isOffer);
+    return (pr.length ? (of.length ? '<h3 class="dsub">Products</h3>' : '') + '<div class="dgrid" role="list">' + pr.map(xcard).join('') + '</div>' : '') +
+      (of.length ? '<h3 class="dsub">Offers</h3><div class="dgrid" role="list">' + of.map(xcard).join('') + '</div>' : '');
   }
   function isDoor(p) { return p.art === 'door-xmas' || p.art === 'door-plain'; }
   function quickAdd(id, btn) {
