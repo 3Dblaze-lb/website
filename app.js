@@ -533,6 +533,12 @@
         if (!fb) return rest('GET', 'tracking/' + code).then(Clean.track);
         return fb.ref('tracking/' + code).once('value').then(function (s) { return Clean.track(s.val()); });
       },
+      deleteOrder: function (code) {
+        var o = state.orders[code]; if (!o || o.status !== 'cancelled') return Promise.reject(new Error('only cancelled orders'));
+        if (!live) { delete state.orders[code]; ls('orders', state.orders); var tr = ls('tracking') || {}; delete tr[code]; ls('tracking', tr); emit(); return Promise.resolve(); }
+        if (!sockOrders) { delete state.orders[code]; emit(); return restWrite('DELETE', 'orders/' + code, null).then(function () { return restWrite('DELETE', 'tracking/' + code, null).catch(function () {}); }); }
+        return fb.ref('orders/' + code).remove().then(function () { return fb.ref('tracking/' + code).remove().catch(function () {}); });
+      },
       updateOrder: function (code, patch) {
         var o = state.orders[code]; if (!o) return Promise.reject();
         var now = Date.now();
@@ -1551,11 +1557,11 @@
     });
     $('#admBody').innerHTML = '<div class="filters">' + [['active', 'Active'], ['new', 'New'], ['confirmed', 'Confirmed'], ['printing', 'Printing'], ['ready', 'Ready'], ['out', 'Out'], ['delivered', 'Delivered'], ['cancelled', 'Cancelled'], ['all', 'All']].map(function (f) {
         return '<button class="fchip' + (adm.filter === f[0] ? ' on' : '') + '" data-f="' + f[0] + '">' + f[1] + '<em>' + (counts[f[0]] || 0) + '</em></button>'; }).join('') +
-      '<input class="search" id="oq" placeholder="Search name, phone, code, town" value="' + esc(adm.q) + '"><button class="btn pri" id="newO" style="min-height:42px;padding:8px 14px;font-size:14px">+ New order</button><button class="btn sec" id="csv" style="min-height:42px;padding:8px 14px;font-size:14px">Copy as CSV</button></div>' +
+      '<input class="search" id="oq" placeholder="Search name, phone, code, town" value="' + esc(adm.q) + '"><button class="btn pri" id="newO" style="min-height:42px;padding:8px 14px;font-size:14px">+ New order</button><button class="btn sec" id="soldO" style="min-height:42px;padding:8px 14px;font-size:14px">+ Sold (no order)</button><button class="btn sec" id="csv" style="min-height:42px;padding:8px 14px;font-size:14px">Copy as CSV</button>' + (adm.filter === 'cancelled' && counts.cancelled ? '<button class="btn sec" id="delC" style="min-height:42px;padding:8px 14px;font-size:14px;color:var(--red);border-color:var(--red)">Delete all cancelled (' + counts.cancelled + ')</button>' : '') + '</div>' +
       '<div class="olist">' + (list.length ? list.map(function (o) {
         var n = o.items.reduce(function (a, i) { return a + i.qty; }, 0);
         return '<div class="orow" data-o="' + esc(o.code) + '"><div><div class="c">' + esc(o.code) + (priceCheck(o) ? ' <span title="Price doesn’t match" style="color:#C8102E">⚠</span>' : '') + '</div><small class="muted">' + fmtDate(o.createdAt) + '</small></div>' +
-          '<div class="n"><b>' + esc(o.customer.name) + '</b><small>' + esc(o.method === 'pickup' ? 'Pickup' : [o.customer.town, o.customer.region].filter(Boolean).join(' · ')) + '</small><small class="ph">' + esc(fmtPhone(o.customer.phone)) + '</small></div>' +
+          '<div class="n"><b>' + esc(o.customer.name) + '</b><small>' + esc(isDirect(o) ? 'Sold direct' : o.method === 'pickup' ? 'Pickup' : [o.customer.town, o.customer.region].filter(Boolean).join(' · ')) + '</small><small class="ph">' + esc(fmtPhone(o.customer.phone)) + '</small></div>' +
           '<div class="it"><small>' + n + ' item' + (n > 1 ? 's' : '') + ' · ' + esc(o.items.map(function (i) { return i.name; }).join(', ')) + '</small></div>' +
           '<div class="pm"><small class="' + (o.paid ? 'paid' : 'unpaid') + '">' + (o.payment === 'whish' ? 'Whish' : 'Cash') + (o.paid ? ' ✓' : '') + '</small></div>' +
           '<div>' + statusBadge(o.status) + '</div><div class="tt">' + money(o.total) + '</div></div>';
@@ -1564,12 +1570,97 @@
     var q = $('#oq'); q.oninput = function () { adm.q = q.value; var pos = q.selectionStart; admOrders(); var nq = $('#oq'); nq.focus(); nq.setSelectionRange(pos, pos); };
     $$('[data-o]').forEach(function (r) { r.onclick = function () { orderModal(r.dataset.o); }; });
     $('#newO').onclick = function () { adm.tab = 'calc'; renderAdmin(); toast('Price it, then press “Turn into order”'); };
+    $('#soldO').onclick = soldModal;
+    var dc = $('#delC'); if (dc) dc.onclick = function () {
+      var cs = orders.filter(function (o) { return o.status === 'cancelled'; });
+      confirmBox('Delete all ' + cs.length + ' cancelled order' + (cs.length > 1 ? 's' : '') + ' for good?', 'Delete all', function () {
+        cs.reduce(function (pr, o) { return pr.then(function () { return Store.deleteOrder(o.code); }); }, Promise.resolve()).then(function () { renderAdmin(); toast('Cancelled orders deleted'); }).catch(function () { renderAdmin(); toast('Some couldn’t be deleted — try again'); });
+      });
+    };
     $('#csv').onclick = function () {
       var rows = [['code', 'date', 'status', 'name', 'phone', 'region', 'town', 'address', 'items', 'subtotal', 'delivery', 'total', 'payment', 'paid']].concat(orders.map(function (o) {
         return [o.code, new Date(o.createdAt).toISOString().slice(0, 16).replace('T', ' '), o.status, o.customer.name, o.customer.phone, o.customer.region, o.customer.town, o.customer.address, o.items.map(function (i) { return i.qty + 'x ' + i.name + (i.color ? ' ' + i.color : '') + (i.text ? ' "' + i.text + '"' : ''); }).join('; '), o.subtotal, o.delivery, o.total, o.payment, o.paid ? 'yes' : 'no'];
       }));
       copy(rows.map(function (r) { return r.map(function (c) { c = String(c == null ? '' : c); return /[",\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(','); }).join('\n'), 'CSV copied — paste into Sheets or Excel');
     };
+  }
+
+
+  // ---------- a sale made without an order (in person, by phone…) → counts in sales & profit ----------
+  var DIRECT = 'Sold without an order';
+  function isDirect(o) { return o.source === 'manual' && o.customer && o.customer.notes === DIRECT; }
+  function soldModal() {
+    var prods = Store.products().filter(function (p) { return p && p.id && p.price != null; });
+    var lines = [{ id: prods[0] ? prods[0].id : 'other', qty: 1 }];
+    var today = new Date(), iso = function (d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); };
+    modal('<h3 style="font-size:20px;margin:0 44px 4px 0">Add a sale (no order)</h3><p class="muted" style="margin:0 0 14px;font-size:14px">Something you sold in person or by message. It goes straight to Delivered + Paid and counts in sales & profit.</p>' +
+      '<form id="sf" style="display:grid;gap:12px"><div id="sl" style="display:grid;gap:10px"></div><button type="button" class="upl" id="sAdd" style="justify-self:start">+ Add another item</button>' +
+      '<div class="grid2"><label class="field">Date<input name="date" type="date" value="' + iso(today) + '" max="' + iso(today) + '"></label><label class="field">Paid by<select name="payment"><option value="cash">Cash</option><option value="whish">Whish</option></select></label></div>' +
+      '<div class="grid2"><label class="field">Buyer name (optional)<input name="name" maxlength="60"></label><label class="field">Phone (optional)<input name="phone" type="tel" maxlength="20"></label></div>' +
+      '<label class="field">Note (optional)<input name="note" maxlength="200" placeholder="e.g. sold at the school fair"></label>' +
+      '<div class="sum" id="sSum"></div><div class="err" id="sErr"></div><button class="btn pri">Save sale</button></form>', function (box, close) {
+      var sl = box.querySelector('#sl');
+      function prod(id) { return prods.filter(function (p) { return p.id === id; })[0]; }
+      function lineCost(l) { if (l.id === 'other') return l.cost === '' || l.cost == null ? null : +l.cost; var p = prod(l.id); return p && p.grams != null ? pieceCost(p.grams, p.printMin) : null; }
+      function price(l) { return l.price === '' || l.price == null ? (prod(l.id) || { price: 0 }).price : +l.price; }
+      function sum() {
+        var sub = 0, cost = 0, known = true;
+        lines.forEach(function (l) { sub += price(l) * (l.qty || 1); var c = lineCost(l); if (c == null) known = false; else cost += c * (l.qty || 1); });
+        box.querySelector('#sSum').innerHTML = '<div><span>Sale</span><b>' + money(sub) + '</b></div><div><span>Cost · profit</span><b style="color:var(--green)">' + (known ? money(cost) + ' · ' + money(sub - cost) : '<span class="muted" style="font-weight:400">cost unknown for an item → profit not counted</span>') + '</b></div>';
+      }
+      function draw() {
+        sl.innerHTML = lines.map(function (l, n) {
+          var p = prod(l.id), cols = p && p.colors && p.colors.length > 1 ? p.colors : null;
+          return '<div class="panel" style="padding:12px;display:grid;gap:8px;background:var(--card2)" data-l="' + n + '">' +
+            '<div style="display:flex;gap:8px;align-items:end"><label class="field" style="flex:1">Item<select data-k="id">' + prods.map(function (q) { return '<option value="' + esc(q.id) + '"' + (q.id === l.id ? ' selected' : '') + '>' + esc(q.name) + ' — ' + money(q.price) + '</option>'; }).join('') + '<option value="other"' + (l.id === 'other' ? ' selected' : '') + '>Other / custom…</option></select></label>' +
+            (lines.length > 1 ? '<button type="button" class="upl" data-rm style="min-height:44px">✕</button>' : '') + '</div>' +
+            (l.id === 'other' ? '<label class="field">What was it<input data-k="name" maxlength="80" value="' + esc(l.name || '') + '" placeholder="e.g. Custom name plate"></label>' : '') +
+            '<div style="display:grid;grid-template-columns:' + (cols ? '1fr ' : '') + '80px 1fr' + (l.id === 'other' ? ' 1fr' : '') + ';gap:8px">' +
+            (cols ? '<label class="field">Colour<select data-k="color"><option value="">—</option>' + cols.map(function (c) { return '<option' + (c === l.color ? ' selected' : '') + '>' + esc(c) + '</option>'; }).join('') + '</select></label>' : '') +
+            '<label class="field">Qty<input data-k="qty" type="number" min="1" max="999" value="' + (l.qty || 1) + '"></label>' +
+            '<label class="field">Price each ($)<input data-k="price" type="number" min="0" step="0.5" value="' + (l.price != null && l.price !== '' ? l.price : l.id === 'other' ? '' : (p ? p.price : '')) + '"></label>' +
+            (l.id === 'other' ? '<label class="field">Cost each ($, optional)<input data-k="cost" type="number" min="0" step="0.1" value="' + (l.cost != null ? l.cost : '') + '"></label>' : '') + '</div></div>';
+        }).join('');
+        $$('[data-l]', sl).forEach(function (row) {
+          var l = lines[+row.dataset.l];
+          $$('[data-k]', row).forEach(function (el) {
+            el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', function () {
+              var k = el.dataset.k;
+              if (k === 'id') { l.id = el.value; l.price = null; l.color = null; l.cost = null; draw(); return; }
+              l[k] = k === 'qty' ? Math.max(1, Math.min(999, Math.round(+el.value || 1))) : el.value; sum();
+            });
+          });
+          var rm = row.querySelector('[data-rm]'); if (rm) rm.onclick = function () { lines.splice(+row.dataset.l, 1); draw(); };
+        });
+        sum();
+      }
+      box.querySelector('#sAdd').onclick = function () { lines.push({ id: prods[0] ? prods[0].id : 'other', qty: 1 }); draw(); };
+      draw();
+      box.querySelector('#sf').onsubmit = function (e) {
+        e.preventDefault(); var f = e.target, err = box.querySelector('#sErr');
+        for (var i = 0; i < lines.length; i++) {
+          var l = lines[i];
+          if (l.id === 'other' && !(l.name || '').trim()) { err.textContent = 'Say what the custom item was.'; return; }
+          if (!(price(l) >= 0) || l.price === '' && l.id === 'other') { err.textContent = 'Add a price for every item.'; return; }
+        }
+        var d = f.date.value ? new Date(f.date.value + 'T12:00:00') : new Date(), now = Date.now();
+        var t = !f.date.value || f.date.value === iso(new Date()) ? now : Math.min(d.getTime(), now);
+        var items = lines.map(function (l) {
+          var p = prod(l.id), c = lineCost(l), it = { id: l.id === 'other' ? 'custom' : l.id, name: l.id === 'other' ? l.name.trim().slice(0, 80) : p.name, price: Math.round(price(l) * 100) / 100, qty: l.qty || 1 };
+          if (l.color) it.color = l.color;
+          if (c != null) it.unitCost = Math.round(c * 100) / 100;
+          if (p && p.printMin != null) it.printMin = p.printMin;
+          return it;
+        });
+        var sub = Math.round(items.reduce(function (n, i) { return n + i.price * i.qty; }, 0) * 100) / 100;
+        var o = { code: newCode(), createdAt: t, status: 'delivered', paid: true, payment: f.payment.value, method: 'pickup', source: 'manual',
+          customer: { name: f.name.value.trim().slice(0, 60) || 'Direct sale', phone: f.phone.value.replace(/[^\d+]/g, '').slice(0, 20), region: '', town: '', address: '', notes: DIRECT },
+          items: items, subtotal: sub, delivery: 0, total: sub, history: [{ s: 'delivered', t: t }] };
+        if (f.note.value.trim()) o.note = f.note.value.trim().slice(0, 200);
+        Store.placeOrder(o).then(function () { close(); adm.tab = 'orders'; adm.filter = 'delivered'; renderAdmin(); toast('Sale saved · ' + money(sub)); })
+          .catch(function () { err.textContent = 'Couldn’t save — check the internet and try again.'; });
+      };
+    });
   }
 
   var CUSTOMER_MSG = {
@@ -1685,13 +1776,13 @@
       '<div class="kv">' +
       '<span>Payment</span><b>' + (o.payment === 'whish' ? 'Whish' : 'Cash on delivery') + ' · <label class="switch" style="display:inline-flex"><input type="checkbox" id="mPaid"' + (o.paid ? ' checked' : '') + '> paid</label></b>' +
       '<span>Internal note</span><input id="mNote" class="search" style="min-width:0" placeholder="Only you see this" value="' + esc(o.note || '') + '"></div>' +
-      '<div class="actions">' + (needsFile(o) ? '<button class="btn pri" id="mReq">Request 3MF</button>' : '') + '<a class="btn wa" id="mWa" target="_blank" rel="noopener">WhatsApp customer</a><button class="btn sec" id="mCpMsg">Copy message</button></div>' +
+      '<div class="actions">' + (needsFile(o) ? '<button class="btn pri" id="mReq">Request 3MF</button>' : '') + '<a class="btn wa" id="mWa" target="_blank" rel="noopener">WhatsApp customer</a><button class="btn sec" id="mCpMsg">Copy message</button><button class="btn sec' + (o.status === 'cancelled' ? '' : ' hidden') + '" id="mDel" style="color:var(--red);border-color:var(--red)">Delete order</button></div>' +
       '<p class="muted" style="font-size:13px;margin:12px 0 0" id="mMsgPrev"></p>', function (box, close) {
         var setWa = function () { var msg = CUSTOMER_MSG[o.status](o); box.querySelector('#mWa').href = waLink(c.phone, msg); box.querySelector('#mMsgPrev').textContent = 'Message for “' + (STATUSES.filter(function (s) { return s.k === o.status; })[0].l) + '”: ' + msg; return msg; };
         setWa();
         $$('[data-s]', box).forEach(function (b) {
           b.onclick = function () {
-            var go = function () { Store.updateOrder(o.code, { status: b.dataset.s }).then(function () { o.status = b.dataset.s; $$('[data-s]', box).forEach(function (x) { x.classList.toggle('on', x === b); }); setWa(); renderAdmin(); toast('Moved to ' + b.textContent); }); };
+            var go = function () { Store.updateOrder(o.code, { status: b.dataset.s }).then(function () { o.status = b.dataset.s; $$('[data-s]', box).forEach(function (x) { x.classList.toggle('on', x === b); }); setWa(); box.querySelector('#mDel').classList.toggle('hidden', o.status !== 'cancelled'); renderAdmin(); toast('Moved to ' + b.textContent); }); };
             if (b.dataset.s === 'cancelled') confirmBox('Cancel order ' + o.code + '?', 'Cancel order', go); else go();
           };
         });
@@ -1699,6 +1790,7 @@
         var nt; box.querySelector('#mNote').oninput = function (e) { clearTimeout(nt); nt = setTimeout(function () { Store.updateOrder(o.code, { note: e.target.value }); }, 600); };
         var rqb = box.querySelector('#mReq'); if (rqb) rqb.onclick = function () { makeOrderRequest(o, function () { close(); adm.tab = 'requests'; renderAdmin(); }); };
         box.querySelector('#mCpMsg').onclick = function () { copy(setWa(), 'Message copied'); };
+        box.querySelector('#mDel').onclick = function () { confirmBox('Delete ' + o.code + ' for good? This can’t be undone.', 'Delete', function () { Store.deleteOrder(o.code).then(function () { close(); renderAdmin(); toast(o.code + ' deleted'); }).catch(function () { toast('Couldn’t delete — try again'); }); }); };
         var setDrv = function () { box.querySelector('#mDrv').href = 'https://wa.me/?text=' + encodeURIComponent(driverText(o)); };
         setDrv();
         box.querySelector('#mPaid').addEventListener('change', setDrv);
