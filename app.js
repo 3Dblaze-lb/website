@@ -633,7 +633,7 @@
   function thumb(p, opts) {
     var a = p.art || p.id, k = modelKind(p);
     if (k === 'map') {
-      if (!opts || !opts.text) return '<img src="img/my-village.jpg" alt="' + esc(p.name) + ' — real printed piece">';
+      if (!opts || !opts.text) return '<img src="' + (p.photo || 'img/my-village.jpg') + '" alt="' + esc(p.name) + ' — real printed piece">';   // My Village keeps its uploaded photo on the card
       return '<div class="mapart">' + BlazeArt.draw('my-village', opts) + '</div>';
     }
     if (k === 'art') return artHTML(p, opts);
