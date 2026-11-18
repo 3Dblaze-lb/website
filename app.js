@@ -2065,36 +2065,59 @@
     var iso = function (t) { var x = new Date(t || Date.now()); return x.getFullYear() + '-' + ('0' + (x.getMonth() + 1)).slice(-2) + '-' + ('0' + x.getDate()).slice(-2); };
     var n = function (v) { return Math.max(0, +v || 0); };
     var unit = function (x) { return n(x.qty) ? n(x.paid) / n(x.qty) : 0; };
+    // supplies: each line is one purchase; the cost per sale uses the LATEST purchase of each item (by name)
+    function latestSup() {
+      var by = {};
+      d.sup.forEach(function (x, i) {
+        var k = (x.name || '').trim().toLowerCase() || '#' + i, t = x.date ? new Date(x.date + 'T12:00:00').getTime() : 0;
+        if (!by[k] || t > by[k].t || (t === by[k].t && i > by[k].i)) by[k] = { i: i, t: t };
+      });
+      var cur = {}; Object.keys(by).forEach(function (k) { cur[by[k].i] = true; }); return cur;
+    }
     function derive() {
-      var kg = 0, paid = 0, piece = 0, order = 0;
+      var kg = 0, paid = 0, order = 0, cur = latestSup();
       d.fil.forEach(function (x) { if (n(x.kg) && n(x.paid)) { kg += n(x.kg); paid += n(x.paid); } });
-      d.sup.forEach(function (x) { order += unit(x) * (n(x.per) || 1); });
-      return { pla: kg ? Math.round(paid / kg * 100) / 100 : null, piece: Math.round(piece * 100) / 100, order: Math.round(order * 100) / 100 };
+      d.sup.forEach(function (x, i) { if (cur[i]) order += unit(x) * (n(x.per) || 1); });
+      return { pla: kg ? Math.round(paid / kg * 100) / 100 : null, order: Math.round(order * 100) / 100, cur: cur };
     }
     var inp = function (k, i, f, v, type, extra) { return '<input data-s="' + k + '" data-i="' + i + '" data-f="' + f + '" type="' + (type || 'number') + '" value="' + esc(v == null ? '' : v) + '"' + (type ? '' : ' min="0" step="any"') + (extra || '') + '>'; };
-    function stats() {
-      var D = derive(), S = Store.settings(), monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime();
-      var all = d.fil.concat(d.sup, d.ads, d.exp), spentAll = all.reduce(function (t, x) { return t + n(x.paid); }, 0);
-      var spentMonth = all.filter(function (x) { return x.date && new Date(x.date + 'T12:00:00').getTime() >= monthStart; }).reduce(function (t, x) { return t + n(x.paid); }, 0);
-      var profAll = Store.orders().filter(function (o) { return o.status !== 'cancelled' && !o.demo; }).reduce(function (t, o) { var c = orderCost(o); return t + (c == null ? 0 : (o.subtotal || 0) - c); }, 0);
-      var other = d.exp.concat(d.ads).reduce(function (t, x) { return t + n(x.paid); }, 0), adsAll = d.ads.reduce(function (t, x) { return t + n(x.paid); }, 0), adsMonth = d.ads.filter(function (x) { return x.date && new Date(x.date + 'T12:00:00').getTime() >= monthStart; }).reduce(function (t, x) { return t + n(x.paid); }, 0);
-      return '<div class="stat"><div class="k">Filament (average)</div><div class="v">' + money(D.pla != null ? D.pla : S.calcPla) + '/kg</div></div><div class="stat"><div class="k">Supplies per product / offer</div><div class="v">' + money(D.order) + '</div></div><div class="stat"><div class="k">Spent this month · total</div><div class="v">' + money(spentMonth) + ' · ' + money(spentAll) + '</div></div><div class="stat"><div class="k">Ads this month · total</div><div class="v">' + money(adsMonth) + ' · ' + money(adsAll) + '</div></div><div class="stat"><div class="k">Profit so far − ads & other expenses</div><div class="v' + (profAll - other >= 0 ? ' good' : '') + '">' + (profAll - other < 0 ? '−' : '') + money(Math.abs(profAll - other)) + '</div></div>';
+    var PER = [['week', 'This week'], ['month', 'This month'], ['year', 'This year'], ['all', 'All time']];
+    function perStart() {
+      var now = new Date(), p = ls('costPeriod') || 'month';
+      if (p === 'week') { var w = new Date(now.getFullYear(), now.getMonth(), now.getDate()); w.setDate(w.getDate() - ((w.getDay() + 6) % 7)); return w.getTime(); }
+      if (p === 'month') return new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+      if (p === 'year') return new Date(now.getFullYear(), 0, 1).getTime();
+      return 0;
     }
-    // Balance = real cash: everything you paid out vs the money actually received from paid orders/sales
+    function stats() {
+      var D = derive(), S = Store.settings();
+      return '<div class="stat"><div class="k">Filament (average)</div><div class="v">' + money(D.pla != null ? D.pla : S.calcPla) + '/kg</div></div><div class="stat"><div class="k">Supplies per product / offer (latest prices)</div><div class="v">' + money(D.order) + '</div></div>';
+    }
+    // Balance = real cash for the chosen period: money received from paid orders/sales vs everything paid out
     function balance() {
-      var spent = d.fil.concat(d.sup, d.ads, d.exp).reduce(function (t, x) { return t + n(x.paid); }, 0);
-      var os = Store.orders().filter(function (o) { return o.status !== 'cancelled' && !o.demo; });
+      var p = ls('costPeriod') || 'month', st = perStart(), lbl = PER.filter(function (x) { return x[0] === p; })[0][1].toLowerCase();
+      var inP = function (x) { return st === 0 || (x.date && new Date(x.date + 'T12:00:00').getTime() >= st); };
+      var sum = function (a) { return a.filter(inP).reduce(function (t, x) { return t + n(x.paid); }, 0); };
+      var sF = sum(d.fil), sS = sum(d.sup), sA = sum(d.ads), sE = sum(d.exp), spent = sF + sS + sA + sE;
+      var os = Store.orders().filter(function (o) { return o.status !== 'cancelled' && !o.demo && o.createdAt >= st; });
       var got = os.filter(function (o) { return o.paid; }).reduce(function (t, o) { return t + (o.subtotal || 0); }, 0);
       var due = os.filter(function (o) { return !o.paid; }).reduce(function (t, o) { return t + (o.subtotal || 0); }, 0);
-      var bal = got - spent, sg = function (v) { return (v < 0 ? '−' : '+') + money(Math.abs(v)); };
-      return '<b style="font-family:var(--head)">Balance</b><div class="muted" style="font-size:14px">Real cash: money received from paid orders and sales (without delivery fees) minus everything you paid (filament, supplies, ads, other expenses).</div>' +
-        '<div class="stats" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))"><div class="stat"><div class="k">Cash received</div><div class="v good">' + money(got) + '</div></div><div class="stat"><div class="k">Total spent</div><div class="v">' + money(spent) + '</div></div>' +
-        '<div class="stat" style="background:' + (bal >= 0 ? '#E8F7EE' : '#FDECEC') + '"><div class="k">Balance now</div><div class="v" style="color:' + (bal >= 0 ? 'var(--green)' : 'var(--red)') + '">' + sg(bal) + '</div></div><div class="stat"><div class="k">Still to collect</div><div class="v">' + money(due) + '</div></div><div class="stat"><div class="k">Balance once collected</div><div class="v" style="color:' + (bal + due >= 0 ? 'var(--green)' : 'var(--red)') + '">' + sg(bal + due) + '</div></div></div>' +
-        '<div style="font-size:14px;font-weight:600;color:' + (bal >= 0 ? 'var(--green)' : 'var(--red)') + '">' + (bal >= 0 ? 'You’re up ' + money(bal) + ' overall — you’ve made back everything you spent.' : 'You’re down ' + money(-bal) + ' overall — ' + (bal + due >= 0 ? 'collecting what’s owed puts you back in profit.' : 'still ' + money(-(bal + due)) + ' to earn back after collecting.')) + '</div>';
+      var prof = os.reduce(function (t, o) { var c = orderCost(o); return t + (c == null ? 0 : (o.subtotal || 0) - c); }, 0);
+      var bal = got - spent, sg = function (v) { return (v < 0 ? '−' : '+') + money(Math.abs(v)); }, col = function (v) { return v >= 0 ? 'var(--green)' : 'var(--red)'; };
+      var st2 = function (k, v, extra) { return '<div class="stat"' + (extra || '') + '><div class="k">' + k + '</div><div class="v">' + v + '</div></div>'; };
+      return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><b style="font-family:var(--head)">Balance</b><div class="tabs" style="margin:0">' + PER.map(function (x) { return '<button type="button" data-per="' + x[0] + '" class="' + (p === x[0] ? 'on' : '') + '">' + x[1] + '</button>'; }).join('') + '</div></div>' +
+        '<div class="muted" style="font-size:14px;margin-top:6px">Real cash ' + lbl + ': money received from paid orders and sales (without delivery fees) minus everything you paid, by purchase date.</div>' +
+        '<div class="stats" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">' +
+          st2('Cash received', '<span style="color:var(--green)">' + money(got) + '</span>') + st2('Spent', money(spent)) +
+          st2('Balance', '<span style="color:' + col(bal) + '">' + sg(bal) + '</span>', ' style="background:' + (bal >= 0 ? '#E8F7EE' : '#FDECEC') + '"') +
+          st2('Still to collect', money(due)) + st2('Balance once collected', '<span style="color:' + col(bal + due) + '">' + sg(bal + due) + '</span>') +
+        '</div><div class="stats" style="grid-template-columns:repeat(auto-fit,minmax(120px,1fr));margin-top:0">' +
+          st2('Filament', money(sF)) + st2('Supplies', money(sS)) + st2('Ads', money(sA)) + st2('Other', money(sE)) + st2('Profit on orders', '<span style="color:' + col(prof) + '">' + sg(prof) + '</span>') +
+        '</div><div style="font-size:14px;font-weight:600;color:' + col(bal) + '">' + (bal >= 0 ? 'You’re up ' + money(bal) + ' ' + lbl + '.' : 'You’re down ' + money(-bal) + ' ' + lbl + ' — ' + (bal + due >= 0 ? 'collecting what’s owed puts you back up.' : 'still ' + money(-(bal + due)) + ' to earn back after collecting.')) + '</div>';
     }
     function out(k, x) {
       if (k === 'fil') return n(x.kg) ? '<b>' + money(n(x.paid) / n(x.kg)) + '/kg</b>' : '—';
-      if (k === 'sup') { var u = unit(x), per = n(x.per) || 1; return u ? money(u) + ' each<br><b>' + money(u * per) + ' per sale</b>' : '—'; }
+      if (k === 'sup') { var u = unit(x), per = n(x.per) || 1, cur = derive().cur[d.sup.indexOf(x)]; return u ? money(u) + ' each<br>' + (cur ? '<b>' + money(u * per) + ' per sale</b>' : '<span class="muted">older purchase</span>') : '—'; }
       return '';
     }
     function draw() {
@@ -2109,8 +2132,8 @@
         d.fil.map(function (x, i) { return row({ cols: '2fr 1fr 1fr 1.2fr 1fr', html: L('Filament', inp('fil', i, 'name', x.name, 'text', ' placeholder="Black PLA"')) + L('Paid $', inp('fil', i, 'paid', x.paid)) + L('Weight kg', inp('fil', i, 'kg', x.kg == null ? 1 : x.kg)) + L('Date', inp('fil', i, 'date', x.date || iso(), 'date')) + '<div style="font-size:13px;padding-bottom:12px" id="co_fil_' + i + '">' + out('fil', x) + '</div>' }, 'fil', i); }).join('') +
         '<button type="button" class="upl" data-add="fil">+ Add filament</button></div>' +
 
-        '<div class="panel" style="margin-bottom:14px"><b style="font-family:var(--head)">Supplies</b><div class="muted" style="font-size:13px;margin-bottom:10px">Cards, bags, stickers, boxes… e.g. Cards · $50 · 54 bought. Used once per product or offer sold (a pack of 3 = one bag, one card).</div>' +
-        d.sup.map(function (x, i) { return row({ cols: '1.8fr .9fr .9fr .9fr 1.2fr', html: L('Item', inp('sup', i, 'name', x.name, 'text', ' placeholder="Cards"')) + L('Paid $', inp('sup', i, 'paid', x.paid)) + L('How many', inp('sup', i, 'qty', x.qty)) + L('Used per sale', inp('sup', i, 'per', x.per == null ? 1 : x.per)) + '<div style="font-size:13px;padding-bottom:6px;line-height:1.3" id="co_sup_' + i + '">' + out('sup', x) + '</div>' }, 'sup', i); }).join('') +
+        '<div class="panel" style="margin-bottom:14px"><b style="font-family:var(--head)">Supplies</b><div class="muted" style="font-size:13px;margin-bottom:10px">Cards, bags, stickers, boxes… e.g. Cards · $50 · 54 bought. Add a new line every time you buy (with the date) — the cost per sale always uses your latest price for each item. Used once per product or offer sold (a pack of 3 = one bag, one card).</div>' +
+        d.sup.map(function (x, i) { return row({ cols: '1.6fr .8fr .8fr .8fr 1.2fr 1.1fr', html: L('Item', inp('sup', i, 'name', x.name, 'text', ' placeholder="Cards"')) + L('Paid $', inp('sup', i, 'paid', x.paid)) + L('How many', inp('sup', i, 'qty', x.qty)) + L('Used per sale', inp('sup', i, 'per', x.per == null ? 1 : x.per)) + L('Bought on', inp('sup', i, 'date', x.date || iso(), 'date')) + '<div style="font-size:13px;padding-bottom:6px;line-height:1.3" id="co_sup_' + i + '">' + out('sup', x) + '</div>' }, 'sup', i); }).join('') +
         '<button type="button" class="upl" data-add="sup">+ Add supply</button></div>' +
 
         '<div class="panel" style="margin-bottom:14px"><b style="font-family:var(--head)">Ads</b><div class="muted" style="font-size:13px;margin-bottom:10px">Instagram / Facebook boosts, flyers… Not added to product cost — counted in “spent” and the balance.</div>' +
@@ -2127,10 +2150,12 @@
         var x = d[el.dataset.s][+el.dataset.i], f = el.dataset.f;
         el.addEventListener(el.tagName === 'SELECT' || el.type === 'date' ? 'change' : 'input', function () {
           x[f] = el.type === 'number' ? (el.value === '' ? null : +el.value) : el.value;
-          var o = $('#co_' + el.dataset.s + '_' + el.dataset.i); if (o) o.innerHTML = out(el.dataset.s, x);
+          if (el.dataset.s === 'sup') d.sup.forEach(function (y, j) { var o = $('#co_sup_' + j); if (o) o.innerHTML = out('sup', y); });
+          else { var o = $('#co_' + el.dataset.s + '_' + el.dataset.i); if (o) o.innerHTML = out(el.dataset.s, x); }
           $('#cStats').innerHTML = stats(); $('#cBal').innerHTML = balance();
         });
       });
+      $('#cBal').onclick = function (e) { var b = e.target.closest('[data-per]'); if (!b) return; ls('costPeriod', b.dataset.per); $('#cBal').innerHTML = balance(); };
       $$('[data-add]').forEach(function (b) { b.onclick = function () { var k = b.dataset.add; d[k].push(k === 'fil' ? { name: '', paid: null, kg: 1, date: iso() } : k === 'sup' ? { name: '', paid: null, qty: null, per: 1, date: iso() } : { name: '', paid: null, date: iso() }); draw(); var r = $$('[data-s="' + k + '"][data-f="name"]'); if (r.length) r[r.length - 1].focus(); }; });
       $$('[data-rm]').forEach(function (b) { b.onclick = function () { d[b.dataset.rm].splice(+b.dataset.i, 1); draw(); }; });
       $('#cSave').onclick = function () {
