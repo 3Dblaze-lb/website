@@ -326,7 +326,7 @@
     var nm = plainName(o.text || 'Maria'), F = nameFit(nm, 'LoraBI3DB', 16, 68, 0.8), yb = 5.7, l = -F.half, r = F.half;   // svg y = -mm
     var sw = 'M-41 ' + (yb + 9) + 'C-34 ' + (yb + 4) + ' ' + (l - 8).toFixed(2) + ' ' + yb + ' ' + l.toFixed(2) + ' ' + yb + 'L' + r.toFixed(2) + ' ' + yb + 'C' + (r + 9).toFixed(2) + ' ' + yb + ' 34 ' + (yb - 2) + ' 41 ' + (yb - 8);
     return '<svg viewBox="-55 -63 110 116" class="orn" role="img" aria-label="Bow name ornament"><image href="img/bow-ornament.webp?v=95040001" x="-54" y="-62" width="108" height="114"/>' +
-      '<path d="' + sw + '" fill="none" stroke="#E60705" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>' + nameText(nm, 'LoraBI3DB, Lora, Georgia, serif', F, -5, '#FFFFFF') + '</svg>';
+      '<path d="' + sw + '" fill="none" stroke="#E60705" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>' + nameText(nm, 'LoraBI3DB, Lora, Georgia, serif', F, -5, '#E60705') + '</svg>';
   };
   function nameRefit() { NFIT = {}; if (g.document) { var e = document.querySelectorAll('svg .nmorn'); if (e.length && g.dispatchEvent) try { g.dispatchEvent(new Event('blazeart:fonts')); } catch (x) {} } }
   try { if (g.document && document.fonts) { Promise.all([document.fonts.load('100px Caladea3DB'), document.fonts.load('100px LoraBI3DB')]).then(nameRefit, function () {}); } } catch (e) {}

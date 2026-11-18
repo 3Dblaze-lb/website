@@ -84,9 +84,9 @@
       specs: ['10 cm round (about 12 cm with the loop), 3 mm thick', 'All red, the name in big letters across the middle', 'Name up to 12 letters', 'Hanging loop for string or ribbon'] },
     { id: 'bow-ornament', col: 'xmas', name: 'Bow Name Ornament', price: 0, priceText: 'Coming soon', comingSoon: true, tag: 'Personalized', printMin: 85, grams: 17,
       text: { label: 'Name on the ornament', max: 12, ph: 'e.g. Maria', required: true },
-      blurb: 'A red frame with bows, holly and a name in white.',
-      desc: 'An oval frame with a big bow on top, holly and a small bow below, and the name of your choice in white on a red swash. Type the name and see it before you order.',
-      specs: ['10 × 8 cm oval (about 11 cm with the loop)', 'Red, with the bow and holly raised and the name in white', 'Name up to 12 letters', 'Hanging loop for string or ribbon'] },
+      blurb: 'A red frame with bows, holly and a name.',
+      desc: 'An oval frame with a big bow on top, holly and a small bow below, and the name of your choice on a swash, all in red. Type the name and see it before you order.',
+      specs: ['10 × 8 cm oval (about 11 cm with the loop)', 'All red, with the bow, holly and name raised', 'Name up to 12 letters', 'Hanging loop for string or ribbon'] },
     { id: 'woggle-white', col: 'woggles', name: 'Woggle — white', price: 4, img: 'img/woggle-white.webp', model: 'woggle-plain', modelColors: ['white', 'white'], printMin: 40, grams: 4.1,
       blurb: 'The classic braided woggle, all white.',
       desc: 'A braided scout woggle in white. Turn it around in 3D before you order.',
@@ -1590,7 +1590,7 @@
   var ORN_TOOL = {
     holy: { name: 'Holy Night Ornament', sample: 'Christmass\\3DBlaze Holy Night Ornament - Gabriel - sample.3mf', tool: 'Christmass\\3DBlaze ornament tool.zip → python3 make_holy.py "Name" "3DBlaze Holy Night Ornament - Name.3mf"', spec: '10 cm red ornament (slot 4 red), 3 mm, name in white Pacifico RAISED 0.8 mm on the banner (slot 2 white)' },
     snowflake: { name: 'Snowflake Name Ornament', sample: 'Christmass\\3DBlaze Snowflake Ornament - Joseph - sample.3mf', tool: 'Christmass\\3DBlaze name ornaments tool.zip → python3 make_orn.py snowflake "Name" "3DBlaze Snowflake Ornament - Name.3mf"', spec: '10 cm, 3 mm flat, all red (slot 4, name part too), name UPPERCASE Caladea Bold' },
-    bow: { name: 'Bow Name Ornament', sample: 'Christmass\\3DBlaze Bow Ornament - Maria - sample.3mf', tool: 'Christmass\\3DBlaze name ornaments tool.zip → python3 make_orn.py bow "Name" "3DBlaze Bow Ornament - Name.3mf"', spec: 'oval 10 × 8 cm, red 3 mm base with raised bow/holly, name white Lora Bold Italic raised 0.8 mm (slot 4 red body, slot 2 white name)' }
+    bow: { name: 'Bow Name Ornament', sample: 'Christmass\\3DBlaze Bow Ornament - Maria - sample.3mf', tool: 'Christmass\\3DBlaze name ornaments tool.zip → python3 make_orn.py bow "Name" "3DBlaze Bow Ornament - Name.3mf"', spec: 'oval 10 × 8 cm, red 3 mm base with raised bow/holly, ALL RED (slot 4, name part too), name Lora Bold Italic raised 0.8 mm' }
   };
   var REQ_STATUS = [['new', 'New'], ['sent', 'Sent to Claude'], ['ready', 'File ready'], ['done', 'Printed']];
   function requestText(r) {
