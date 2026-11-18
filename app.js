@@ -2080,6 +2080,18 @@
       var other = d.exp.reduce(function (t, x) { return t + n(x.paid); }, 0);
       return '<div class="stat"><div class="k">Filament (average)</div><div class="v">' + money(D.pla != null ? D.pla : S.calcPla) + '/kg</div></div><div class="stat"><div class="k">Supplies per product / offer</div><div class="v">' + money(D.order) + '</div></div><div class="stat"><div class="k">Spent this month · total</div><div class="v">' + money(spentMonth) + ' · ' + money(spentAll) + '</div></div><div class="stat"><div class="k">Profit so far − other expenses</div><div class="v' + (profAll - other >= 0 ? ' good' : '') + '">' + (profAll - other < 0 ? '−' : '') + money(Math.abs(profAll - other)) + '</div></div>';
     }
+    // Balance = real cash: everything you paid out vs the money actually received from paid orders/sales
+    function balance() {
+      var spent = d.fil.concat(d.sup, d.exp).reduce(function (t, x) { return t + n(x.paid); }, 0);
+      var os = Store.orders().filter(function (o) { return o.status !== 'cancelled' && !o.demo; });
+      var got = os.filter(function (o) { return o.paid; }).reduce(function (t, o) { return t + (o.subtotal || 0); }, 0);
+      var due = os.filter(function (o) { return !o.paid; }).reduce(function (t, o) { return t + (o.subtotal || 0); }, 0);
+      var bal = got - spent, sg = function (v) { return (v < 0 ? '−' : '+') + money(Math.abs(v)); };
+      return '<b style="font-family:var(--head)">Balance</b><div class="muted" style="font-size:14px">Real cash: money received from paid orders and sales (without delivery fees) minus everything you paid (filament, supplies, other expenses).</div>' +
+        '<div class="stats" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))"><div class="stat"><div class="k">Cash received</div><div class="v good">' + money(got) + '</div></div><div class="stat"><div class="k">Total spent</div><div class="v">' + money(spent) + '</div></div>' +
+        '<div class="stat" style="background:' + (bal >= 0 ? '#E8F7EE' : '#FDECEC') + '"><div class="k">Balance now</div><div class="v" style="color:' + (bal >= 0 ? 'var(--green)' : 'var(--red)') + '">' + sg(bal) + '</div></div><div class="stat"><div class="k">Still to collect</div><div class="v">' + money(due) + '</div></div><div class="stat"><div class="k">Balance once collected</div><div class="v" style="color:' + (bal + due >= 0 ? 'var(--green)' : 'var(--red)') + '">' + sg(bal + due) + '</div></div></div>' +
+        '<div style="font-size:14px;font-weight:600;color:' + (bal >= 0 ? 'var(--green)' : 'var(--red)') + '">' + (bal >= 0 ? 'You’re up ' + money(bal) + ' overall — you’ve made back everything you spent.' : 'You’re down ' + money(-bal) + ' overall — ' + (bal + due >= 0 ? 'collecting what’s owed puts you back in profit.' : 'still ' + money(-(bal + due)) + ' to earn back after collecting.')) + '</div>';
+    }
     function out(k, x) {
       if (k === 'fil') return n(x.kg) ? '<b>' + money(n(x.paid) / n(x.kg)) + '/kg</b>' : '—';
       if (k === 'sup') { var u = unit(x), per = n(x.per) || 1; return u ? money(u) + ' each<br><b>' + money(u * per) + ' per sale</b>' : '—'; }
@@ -2092,6 +2104,7 @@
         '<div class="panel" style="margin-bottom:14px"><b style="font-family:var(--head)">Costs</b><div class="muted" style="font-size:14px">Write what you paid. Filament sets the PLA price (× every piece in a pack), supplies are added once to every product or offer, so profit everywhere (products, orders, calculator, sales) is real. Press <b>Save</b> when done.</div>' +
         '<div class="stats" id="cStats" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">' + stats() + '</div></div>' +
 
+        '<div class="panel" id="cBal" style="margin-bottom:14px">' + balance() + '</div>' +
         '<div class="panel" style="margin-bottom:14px"><b style="font-family:var(--head)">Filament</b><div class="muted" style="font-size:13px;margin-bottom:10px">One line per spool you bought, e.g. Black PLA · $20 · 1 kg.</div>' +
         d.fil.map(function (x, i) { return row({ cols: '2fr 1fr 1fr 1.2fr 1fr', html: L('Filament', inp('fil', i, 'name', x.name, 'text', ' placeholder="Black PLA"')) + L('Paid $', inp('fil', i, 'paid', x.paid)) + L('Weight kg', inp('fil', i, 'kg', x.kg == null ? 1 : x.kg)) + L('Date', inp('fil', i, 'date', x.date || iso(), 'date')) + '<div style="font-size:13px;padding-bottom:12px" id="co_fil_' + i + '">' + out('fil', x) + '</div>' }, 'fil', i); }).join('') +
         '<button type="button" class="upl" data-add="fil">+ Add filament</button></div>' +
@@ -2111,7 +2124,7 @@
         el.addEventListener(el.tagName === 'SELECT' || el.type === 'date' ? 'change' : 'input', function () {
           x[f] = el.type === 'number' ? (el.value === '' ? null : +el.value) : el.value;
           var o = $('#co_' + el.dataset.s + '_' + el.dataset.i); if (o) o.innerHTML = out(el.dataset.s, x);
-          $('#cStats').innerHTML = stats();
+          $('#cStats').innerHTML = stats(); $('#cBal').innerHTML = balance();
         });
       });
       $$('[data-add]').forEach(function (b) { b.onclick = function () { var k = b.dataset.add; d[k].push(k === 'fil' ? { name: '', paid: null, kg: 1, date: iso() } : k === 'sup' ? { name: '', paid: null, qty: null, per: 1, date: iso() } : { name: '', paid: null, date: iso() }); draw(); var r = $$('[data-s="' + k + '"][data-f="name"]'); if (r.length) r[r.length - 1].focus(); }; });
