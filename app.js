@@ -223,7 +223,8 @@
         var s = Math.min(1, max / Math.max(img.width, img.height)), c = document.createElement('canvas');
         c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
         c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-        cb(c.toDataURL('image/jpeg', 0.82));
+        var u = c.toDataURL('image/jpeg', 0.9); if (u.length > 1400000) u = c.toDataURL('image/jpeg', 0.8);
+        cb(u);
       };
       img.onerror = function () { toast('Can’t open this photo — save it as JPG or PNG (iPhone: Settings → Camera → Most Compatible) and try again'); };
       img.src = r.result;
@@ -395,6 +396,21 @@
       if (c) { state.photos[ref] = c; return; }
       if (photoKeys) setTimeout(function () { fetchPhoto(ref); }, 0); else loadPhotoKeys();
     }
+    // full-size photo for big views (product page); cards keep the light copy
+    var fullCache = {};
+    function fullOf(url, cb) {
+      if (typeof url !== 'string' || url.indexOf('data:image/') !== 0 || window.BLAZE_ADMIN) return;
+      var pm = /;ph=([^;]+);/.exec(url), ref = pm ? pm[1] : Object.keys(state.photos).filter(function (k) { return state.photos[k] === url; })[0];
+      if (!ref) return;
+      if (fullCache[ref]) { cb(fullCache[ref]); return; }
+      var go = function () {
+        if (!photoKeys || !photoKeys[ref + '_m']) return;   // already showing the full photo
+        fetch(cfg.databaseURL.replace(/\/$/, '') + '/photos/' + ref + '.json').then(function (r) { return r.json(); }).then(function (u) {
+          if (typeof u === 'string' && u.indexOf('data:image/') === 0) { fullCache[ref] = u; cb(u); }
+        }).catch(function () {});
+      };
+      if (photoKeys) go(); else if (loadPhotoKeys()) loadPhotoKeys().then(go);
+    }
     function photoOf(v) {
       if (typeof v !== 'string' || v.charAt(0) !== '@') return v;
       var ref = v.slice(1); if (state.photos[ref]) return state.photos[ref];
@@ -484,6 +500,7 @@
       products: products,
       product: function (id) { return products().filter(function (p) { return p.id === id; })[0]; },
       settings: function () { return state.settings; },
+      fullPhoto: fullOf,
       orders: function () { return Object.keys(state.orders).map(function (k) { return state.orders[k]; }).filter(Boolean).sort(function (a, b) { return b.createdAt - a.createdAt; }); },
       user: function () { return state.user; },
       requests: function () { return Object.keys(state.requests).map(function (k) { return Object.assign({ id: k }, state.requests[k]); }).sort(function (a, b) { return b.createdAt - a.createdAt; }); },
@@ -1136,7 +1153,10 @@
     var artBox = function (h, keepView) { if (!hasReal) { $('#pArt').innerHTML = h; return; } var ph = curPh(); if (ph) $('.realph').src = ph; if (!keepView && $('#pLive').classList.contains('hidden')) $('[data-v=live]').click(); $('#pLive').innerHTML = h; };
     var v3 = null;
     if (mk === '3d' && window.Blaze3D) { var host = hasReal ? $('#pLive') : $('#pArt'); host.classList.add('w3dbox'); v3 = Blaze3D.mount(host, { src: 'models/' + p.model + '.bin?v=94858834', colors: slots.length ? st.picks.map(function (k) { return col3d(k.color); }) : (p.modelColors || ['white']).map(col3d), pitch: -50, poster: p.img }); }
+    var sharpen = function () { var b = document.getElementById('pArt'); if (!b) return; [].forEach.call(b.querySelectorAll('img'), function (im) { var was = im.src; Store.fullPhoto(was, function (u) { if (im.src === was) im.src = u; }); }); };
+    setTimeout(sharpen, 0);
     var draw = function () {
+      setTimeout(sharpen, 0);
       if (!document.getElementById('pArt')) return;   // customer already left this page (late map search)
       if (p.priceSame != null && !soon && $('#pPrice')) $('#pPrice').textContent = money(unitPrice(p, { picks: st.picks }));
       if (v3) { if (slots.length) v3.setColors(st.picks.map(function (k) { return col3d(k.color); })); if (hasReal && curPh()) $('.realph').src = curPh(); return; }
@@ -1958,13 +1978,13 @@
             text: f.tq.value.trim() ? { label: f.tq.value.trim(), max: (p.text && p.text.max) || 20, ph: '', required: true } : null }).then(function () { close(); toast('Saved'); admProducts(); });
         };
       }); }; });
-    $('#photoIn').onchange = function (e) { var f = e.target.files[0]; if (!f || !target) return; resizeImage(f, 900, function (url) { Store.saveProduct(target, { photo: url }).then(function () { toast('Photo saved'); admProducts(); }); }); };
+    $('#photoIn').onchange = function (e) { var f = e.target.files[0]; if (!f || !target) return; resizeImage(f, 1600, function (url) { Store.saveProduct(target, { photo: url }).then(function () { toast('Photo saved'); admProducts(); }); }); };
     $('#addP').onclick = function () {
       modal('<h3 style="font-size:20px;margin-bottom:16px">New product</h3><form id="np" style="display:grid;gap:12px"><label class="field">Name<input name="name" required></label><div class="grid2"><label class="field">Price $<input name="price" type="number" min="0" step="0.5" required></label><label class="field">Collection' + colSelect('lebanon') + '</label></div><label class="field">Short line<input name="blurb"></label><label class="field">Description<textarea name="desc"></textarea></label><label class="field">Photo<input name="photo" type="file" accept="image/*"></label><div class="err" id="npErr"></div><button class="btn pri">Add product</button></form>', function (box, close) {
         box.querySelector('#np').onsubmit = function (e) {
           e.preventDefault(); var f = e.target; if (!f.name.value.trim() || !(+f.price.value > 0)) { box.querySelector('#npErr').textContent = 'Name and price are needed.'; return; }
           var save = function (photo) { Store.addProduct({ name: f.name.value.trim(), price: +f.price.value, col: f.col.value, blurb: f.blurb.value.trim(), desc: f.desc.value.trim(), photo: photo || null, printMin: 60, specs: [] }).then(function () { close(); toast('Product added'); admProducts(); }); };
-          if (f.photo.files[0]) resizeImage(f.photo.files[0], 900, save); else save(null);
+          if (f.photo.files[0]) resizeImage(f.photo.files[0], 1600, save); else save(null);
         };
       });
     };
@@ -2054,7 +2074,7 @@
           (p ? Store.saveProduct(p.id, data) : Store.addProduct(data)).then(function () { close(); toast(p ? 'Offer saved' : 'Offer created — it’s live in the shop'); if (after) after(); })
             .catch(function (e2) { err.textContent = 'Could not save: ' + (e2 && e2.message || e2); });
         };
-        if (f.photo.files[0]) resizeImage(f.photo.files[0], 900, save); else save(null);
+        if (f.photo.files[0]) resizeImage(f.photo.files[0], 1600, save); else save(null);
       };
     });
   }
@@ -2083,7 +2103,7 @@
         qa('[data-rmo]').forEach(function (b) { b.onclick = function () { arr.splice(+b.dataset.rmo, 1); render(); }; });
       };
       render();
-      q('#oPhoto').onchange = function (e) { var f = e.target.files[0]; if (!f || tgt == null) return; var i = tgt; resizeImage(f, 800, function (url) { arr[i].photo = url; render(); }); };
+      q('#oPhoto').onchange = function (e) { var f = e.target.files[0]; if (!f || tgt == null) return; var i = tgt; resizeImage(f, 1600, function (url) { arr[i].photo = url; render(); }); };
       q('#oAdd').onclick = function () { arr.push({ name: '', photo: null, out: false }); render(); var ins = qa('[data-n]'); ins[ins.length - 1].focus(); };
       q('#oSave').onclick = function () {
         var clean = arr.map(function (o) { return { name: String(o.name || '').trim(), photo: o.photo || null, out: !!o.out }; });
