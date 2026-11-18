@@ -326,9 +326,10 @@
     // Coming soon: a whole drop (settings.soonCols), one product or one offer (p.soon, set in the manager) can be
     // "Coming soon". With no manager choice, a catalogue "coming soon" product goes on sale once it has a price.
     function saleOf(p) {
-      var sc = (state.settings && state.settings.soonCols) || {};
-      var soon = sc[p.col] ? true : p.soon === true ? true : p.soon === false ? !(+p.price > 0) : !!(p.comingSoon && !(+p.price > 0));
-      p = Object.assign({}, p, { comingSoon: soon });
+      var sc = (state.settings && state.settings.soonCols) || {}, bc = (state.settings && state.settings.blurCols) || {};
+      var blurred = !!(bc[p.col] || p.blur);
+      var soon = blurred || sc[p.col] ? true : p.soon === true ? true : p.soon === false ? !(+p.price > 0) : !!(p.comingSoon && !(+p.price > 0));
+      p = Object.assign({}, p, { comingSoon: soon, blurred: blurred });
       if (soon) { if (!p.contactOnly) p.priceText = 'Coming soon'; }
       else if (p.priceText === 'Coming soon') delete p.priceText;
       return p;
@@ -845,7 +846,7 @@
 
   function card(p) {
     var out = p.soldOut || p.available === false || allOptsOut(p);
-    return '<a class="pcard" href="#p-' + p.id + '"><div class="art">' + thumb(p) +
+    return '<a class="pcard" href="#p-' + p.id + '"><div class="art' + (p.blurred ? ' soonc' : '') + '">' + thumb(p) +
       (out ? '<span class="tag out">Sold out</span>' : p.tag ? '<span class="tag">' + esc(p.tag) + '</span>' : '') +
       '</div><div class="info"><h3>' + esc(p.name) + '</h3><div class="muted" style="font-size:14px">' + esc(p.blurb || '') + '</div>' +
       '<div class="row"><span class="price">' + (p.priceText ? esc(p.priceText) : money(p.price)) + (p.was ? '<s>' + money(p.was) + '</s>' : '') + '</span><span class="add">' + (out ? 'View' : 'Order') + '</span></div></div></a>';
@@ -854,7 +855,7 @@
   function viewHome(anchor) {
     var s = Store.settings(), all = Store.products();
     var leb = all.filter(function (p) { return p.col === 'lebanon'; }), xm = all.filter(function (p) { return p.col === 'xmas'; }), wg = all.filter(function (p) { return p.col === 'woggles'; });
-    var vp = leb.filter(function (p) { return (p.art || p.id) === 'my-village'; })[0], others = leb.filter(function (p) { return p !== vp; });
+    var vp = leb.filter(function (p) { return (p.art || p.id) === 'my-village' && !p.blurred; })[0], others = leb.filter(function (p) { return p !== vp; });
     var fee = (+s.feeBeirut === +s.feeMount && +s.feeMount === +s.feeOther) ? money(s.feeOther) + ' anywhere in Lebanon' + (s.freeOver ? ', free over ' + money(s.freeOver) : '') : (s.feeMount === s.feeBeirut ? money(s.feeBeirut) + ' in Beirut &amp; Mount Lebanon' : money(s.feeBeirut) + ' in Beirut, ' + money(s.feeMount) + ' in Mount Lebanon') + ', ' + money(s.feeOther) + ' elsewhere' + (s.freeOver ? ', free over ' + money(s.freeOver) : '');
     app.innerHTML =
       '<section class="hero2"><div class="wrap">' +
@@ -871,12 +872,12 @@
       '</div></section>' +
 
       '<section class="blk2" id="sec-christmas"><div class="wrap"><div class="shead"><h2>Christmas collection <small class="custhint">Click to customize yours</small></h2><span class="soonlbl">' + (xm.length && !soonCol('xmas') ? 'Order by ' + new Date(s.xmasCutoff).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }) : 'Coming soon') + '</span></div>' +
-        (xm.length ? '<div class="xrow" role="list">' + xm.map(function (p) { return '<a class="xc" role="listitem" href="#p-' + p.id + '"><div class="xc-img">' + thumb(p) + '</div><b>' + esc(p.name) + '</b><span>' + (p.priceText ? esc(p.priceText) : money(p.price)) + '</span></a>'; }).join('') + '</div>'
+        (xm.length ? '<div class="xrow" role="list">' + xm.map(function (p) { return '<a class="xc" role="listitem" href="#p-' + p.id + '"><div class="xc-img' + (p.blurred ? ' soonc' : '') + '">' + thumb(p) + '</div><b>' + esc(p.name) + '</b><span>' + (p.priceText ? esc(p.priceText) : money(p.price)) + '</span></a>'; }).join('') + '</div>'
           : '<div class="xempty"><b>New Christmas pieces are on the way.</b><span class="muted">Personalized gifts with your name on them — follow <a href="https://instagram.com/3dblaze.lb" target="_blank" rel="noopener">@3dblaze.lb</a> to see them first.</span></div>') + '</div></section>' +
 
       (wg.length ? '<section class="blk2" id="sec-woggles"><div class="wrap"><div class="shead"><h2>Scout woggles</h2>' + (soonCol('woggles') ? '<span class="soonlbl">Coming soon</span>' : '<span class="muted">' + wg.length + ' piece' + (wg.length === 1 ? '' : 's') + '</span>') + '</div>' +
         '<p class="wogsub">Send us your patrol’s totem animal, or anything you want, and we’ll put it on your woggle.</p>' +
-        '<div class="xrow" role="list">' + wg.map(function (p) { return '<a class="xc" role="listitem" href="#p-' + p.id + '"><div class="xc-img">' + thumb(p) + '</div><b>' + esc(p.name) + '</b><span>' + (p.priceText ? esc(p.priceText) : money(p.price)) + '</span></a>'; }).join('') + '</div></div></section>' : '') +
+        '<div class="xrow" role="list">' + wg.map(function (p) { return '<a class="xc" role="listitem" href="#p-' + p.id + '"><div class="xc-img' + (p.blurred ? ' soonc' : '') + '">' + thumb(p) + '</div><b>' + esc(p.name) + '</b><span>' + (p.priceText ? esc(p.priceText) : money(p.price)) + '</span></a>'; }).join('') + '</div></div></section>' : '') +
 
       '<section class="blk2" id="sec-how"><div class="wrap"><div class="shead"><h2>How it works</h2></div><div class="steps2">' +
         step2(1, 'Pick', 'A piece and a colour') + step2(2, 'Confirm', 'We WhatsApp you') + step2(3, 'Print', 'Ready in 2–4 days') + step2(4, 'Deliver', 'Cash or Whish') +
@@ -931,7 +932,7 @@
   }
   function card2(p) {
     var out = isOut(p);
-    return '<div class="pc"><div class="pc-media"><a class="pc-img" href="#p-' + p.id + '">' + thumb(p) +
+    return '<div class="pc"><div class="pc-media"><a class="pc-img' + (p.blurred ? ' soonc' : '') + '" href="#p-' + p.id + '">' + thumb(p) +
       (out ? '<span class="tag out">Sold out</span>' : p.tag ? '<span class="tag">' + esc(p.tag) + '</span>' : '') + '</a>' +
       (out || p.contactOnly || p.comingSoon || isDoor(p) ? '' : '<button type="button" class="qadd" data-q="' + p.id + '" aria-label="Add ' + esc(p.name) + ' to cart">+</button>') + '</div>' +
       '<a class="pc-info" href="#p-' + p.id + '"><h3>' + esc(p.name) + '</h3><div class="pc-row"><span class="price">' + (p.priceText ? esc(p.priceText) : money(p.price) + (p.was ? '<s>' + money(p.was) + '</s>' : '')) + '</span>' + pdots(p) + '</div></a></div>';
@@ -969,6 +970,7 @@
   // drops (collections) — the manager can set a whole drop to "Coming soon"
   var COLS = [['lebanon', 'Lebanon drop'], ['xmas', 'Christmas'], ['woggles', 'Scout woggles']];
   function soonCol(c) { var sc = Store.settings().soonCols || {}; return !!sc[c]; }
+  function blurCol(c) { var bc = Store.settings().blurCols || {}; return !!bc[c]; }
   function colSelect(v) { return '<select name="col">' + COLS.map(function (c) { return '<option value="' + c[0] + '"' + ((v || 'lebanon') === c[0] ? ' selected' : '') + '>' + c[1] + '</option>'; }).join('') + '</select>'; }
   function colName(c) { return (COLS.filter(function (x) { return x[0] === c; })[0] || COLS[0])[1]; }
   function colHash(p) { return p.col === 'xmas' ? 'christmas' : p.col === 'woggles' ? 'woggles' : 'shop'; }
@@ -1030,8 +1032,9 @@
       (xm ? '<div class="opt drow">' + field('dDad', 'Dad (Santa)', o.dad, 12) + field('dMom', 'Mom (Mama Claus)', o.mom, 12) + '</div>' +
         '<div class="opt"><span class="lab">Kids (elves)</span><div class="swatches" id="dN">' + [1, 2, 3, 4, 5].map(function (k) { return '<button type="button" class="sw' + (k === 3 ? ' on' : '') + '" data-n="' + k + '">' + k + '</button>'; }).join('') + '</div><div class="drow" id="dKids"></div></div>' : '') +
       (sale ? '<div class="buyrow"><button class="btn pri" id="dAdd">Add to cart</button></div>' : '<div class="buyrow"><button class="btn pri" disabled>Coming soon</button></div>') +
-      '<div class="specs">' + (p.specs || []).map(function (x) { return '<div>' + esc(x) + '</div>'; }).join('') + (sale ? '' : '<div>Not for sale yet — you can already try your names</div>') + '</div>' +
+      '<div class="specs">' + (p.specs || []).map(function (x) { return '<div>' + esc(x) + '</div>'; }).join('') + (sale ? '' : '<div>Not for sale yet' + (p.blurred ? '' : ' — you can already try your names') + '</div>') + '</div>' +
       '</div></div></div>';
+    if (p.blurred) { $('#pArt').classList.add('soonbig'); $('.ppage').classList.add('soonpage'); }
     var draw = function () { $('#pArt').innerHTML = BlazeArt.draw(p.art, o); };
     var kidsUI = function () {
       if (!xm) return;
@@ -1092,8 +1095,9 @@
       (p.text && !slots.length ? '<div class="opt"><label class="field">' + esc(p.text.label) + '<input id="pText" maxlength="' + p.text.max + '" placeholder="' + esc(p.text.ph) + '" value="' + esc(st.text) + '"></label><div class="err" id="pErr"></div></div>' : '') +
       '<div class="opt"><span class="lab">Quantity</span><div class="qty"><button data-q="-1" aria-label="Less">−</button><span id="pQty">1</span><button data-q="1" aria-label="More">+</button></div></div>' +
       '<div class="buyrow"><button class="btn pri" id="pAdd"' + (out ? ' disabled' : '') + '>' + (soon ? 'Coming soon' : out ? 'Sold out' : 'Add to cart') + '</button>' + (out ? '' : '<button class="btn sec" id="pBuy">Buy now</button>') + '</div>' +
-      '<div class="specs">' + (p.specs || []).map(function (s) { return '<div>' + esc(s) + '</div>'; }).join('') + (soon ? '<div>Not for sale yet' + (p.text ? ' — you can already try your name' : '') + '</div>' : '<div>Made to order · ready in 2–4 days</div><div>Cash on delivery or Whish</div>') + '</div>' +
+      '<div class="specs">' + (p.specs || []).map(function (s) { return '<div>' + esc(s) + '</div>'; }).join('') + (soon ? '<div>Not for sale yet' + (p.text && !p.blurred ? ' — you can already try your name' : '') + '</div>' : '<div>Made to order · ready in 2–4 days</div><div>Cash on delivery or Whish</div>') + '</div>' +
       '</div></div></div>';
+    if (p.blurred) { $('#pArt').classList.add('soonbig'); $('.ppage').classList.add('soonpage'); }
     var isMapP = (p.art || p.id) === 'my-village', mlive = null;
     if (isMapP) {
       $('#pArt').classList.add('mapbig');
@@ -1891,8 +1895,8 @@
   function admProducts() {
     var list = Store.products();
     $('#admBody').innerHTML = '<div class="panel" style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><b style="font-family:var(--head)">Products</b><div class="muted" style="font-size:14px">These are <b>example items</b> to show the layout. Edit, remove or replace them with what you actually sell, and upload real photos.</div></div><button class="btn pri" id="addP" style="min-height:44px;padding:10px 16px;font-size:14px">+ Add product</button></div>' +
-      '<div class="panel" style="margin-bottom:14px"><b style="font-family:var(--head)">Drops</b><div class="muted" style="font-size:14px;margin-bottom:8px">Set a whole drop to <b>Coming soon</b>: every product and offer in it shows “Coming soon” and can’t be ordered (customers can still try their names).</div><div class="droprow">' +
-      COLS.map(function (c) { return '<label class="switch"><input type="checkbox" data-dsoon="' + c[0] + '"' + (soonCol(c[0]) ? ' checked' : '') + '> ' + c[1] + ' — Coming soon</label>'; }).join('') + '</div></div>' +
+      '<div class="panel" style="margin-bottom:14px"><b style="font-family:var(--head)">Drops</b><div class="muted" style="font-size:14px;margin-bottom:8px"><b>Coming soon</b>: shown clearly but can’t be ordered (people can still try their names). <b>Blur</b>: shown blurred with “Coming soon” on it, can’t be ordered. Choose it for a whole drop here, or for one product / offer with its own switches.</div><div class="droprow">' +
+      COLS.map(function (c) { return '<div class="dropc"><b>' + c[1] + '</b><label class="switch"><input type="checkbox" data-dsoon="' + c[0] + '"' + (soonCol(c[0]) ? ' checked' : '') + '> Coming soon</label><label class="switch"><input type="checkbox" data-dblur="' + c[0] + '"' + (blurCol(c[0]) ? ' checked' : '') + '> Blur</label></div>'; }).join('') + '</div></div>' +
       list.map(function (p) {
         var pc = p.grams != null ? pieceCost(p.grams, p.printMin) : null;
         var costLine = pc == null ? '<div class="muted" style="font-size:12px;margin-top:3px">No print file yet — add one to see cost & profit</div>' :
@@ -1901,7 +1905,8 @@
           '<label class="field" style="font-size:12px">Price $<input type="number" min="0" step="0.5" value="' + p.price + '" data-price="' + p.id + '"></label>' +
           '<label class="switch"><input type="checkbox" data-av="' + p.id + '"' + (p.available === false ? '' : ' checked') + '> On sale</label>' +
           '<div class="swcol"><label class="switch"><input type="checkbox" data-so="' + p.id + '"' + (p.soldOut ? ' checked' : '') + '> Sold out</label>' +
-          '<label class="switch"><input type="checkbox" data-cs="' + p.id + '"' + (p.comingSoon ? ' checked' : '') + (soonCol(p.col) ? ' disabled title="The whole drop is Coming soon"' : '') + '> Coming soon</label></div></div>';
+          '<label class="switch"><input type="checkbox" data-cs="' + p.id + '"' + (p.comingSoon ? ' checked' : '') + (soonCol(p.col) || p.blurred ? ' disabled title="' + (p.blurred ? 'Blurred items are always Coming soon' : 'The whole drop is Coming soon') + '"' : '') + '> Coming soon</label>' +
+          '<label class="switch"><input type="checkbox" data-blur="' + p.id + '"' + (p.blurred ? ' checked' : '') + (blurCol(p.col) ? ' disabled title="The whole drop is blurred"' : '') + '> Blur</label></div></div>';
       }).join('') + '<input type="file" accept="image/*" id="photoIn" class="hidden"><input type="file" accept=".3mf,.gcode,.stl,.obj" id="bambuIn" class="hidden">';
     var target = null;
     $$('[data-price]').forEach(function (i) { i.onchange = function () { Store.saveProduct(i.dataset.price, { price: Math.max(0, +i.value || 0) }).then(function () { toast('Price saved'); }); }; });
@@ -1949,6 +1954,10 @@
   function soonHandlers(after) {
     $$('[data-dsoon]').forEach(function (i) { i.onchange = function () { var sc = Object.assign({}, Store.settings().soonCols || {}); if (i.checked) sc[i.dataset.dsoon] = true; else delete sc[i.dataset.dsoon];
       Store.saveSettings({ soonCols: Object.keys(sc).length ? sc : null }).then(function () { toast(colName(i.dataset.dsoon) + (i.checked ? ' is now Coming soon' : ' is open again')); after(); }); }; });
+    $$('[data-dblur]').forEach(function (i) { i.onchange = function () { var bc = Object.assign({}, Store.settings().blurCols || {}); if (i.checked) bc[i.dataset.dblur] = true; else delete bc[i.dataset.dblur];
+      Store.saveSettings({ blurCols: Object.keys(bc).length ? bc : null }).then(function () { toast(colName(i.dataset.dblur) + (i.checked ? ' is blurred' : ' is no longer blurred')); after(); }); }; });
+    $$('[data-blur]').forEach(function (i) { i.onchange = function () { var p = Store.product(i.dataset.blur);
+      Store.saveProduct(p.id, { blur: i.checked }).then(function () { toast(i.checked ? '“' + p.name + '” is blurred' : '“' + p.name + '” is no longer blurred'); after(); }); }; });
     $$('[data-cs]').forEach(function (i) { i.onchange = function () { var p = Store.product(i.dataset.cs);
       if (!i.checked && !(+p.price > 0)) { i.checked = true; toast('Set a price first, then turn Coming soon off'); return; }
       Store.saveProduct(p.id, { soon: i.checked }).then(function () { toast(i.checked ? '“' + p.name + '” is Coming soon' : '“' + p.name + '” is on sale'); after(); }); }; });
@@ -1963,8 +1972,9 @@
           '<div style="font-size:13px;margin-top:3px">' + Object.keys(cnt).map(function (k) { return cnt[k] + ' × ' + esc(k); }).join(' + ') + '</div>' +
           '<div class="muted" style="font-size:12px;margin-top:3px">' + money(p.price) + (p.was ? ' (was ' + money(p.was) + ')' : '') + ' · bought one by one: ' + money(single) + '</div>' +
           '<div style="margin-top:4px"><button class="upl" data-oe="' + p.id + '">Edit offer</button> · ' + (p.photo ? '<button class="upl" data-rmph="' + p.id + '">Remove photo</button> · ' : '') + '<button class="upl" data-od="' + p.id + '">Remove</button></div></div>' +
-          '<span></span><label class="switch"><input type="checkbox" data-oav="' + p.id + '"' + (p.available === false ? '' : ' checked') + '> On sale</label>' +
-          '<label class="switch"><input type="checkbox" data-cs="' + p.id + '"' + (p.comingSoon ? ' checked' : '') + (soonCol(p.col) ? ' disabled title="The whole drop is Coming soon"' : '') + '> Coming soon</label></div>';
+          '<span></span><label class="switch"><input type="checkbox" data-oav="' + p.id + '"' + (p.available === false ? '' : ' checked') + '> On sale</label><div class="swcol">' +
+          '<label class="switch"><input type="checkbox" data-cs="' + p.id + '"' + (p.comingSoon ? ' checked' : '') + (soonCol(p.col) || p.blurred ? ' disabled title="' + (p.blurred ? 'Blurred items are always Coming soon' : 'The whole drop is Coming soon') + '"' : '') + '> Coming soon</label>' +
+          '<label class="switch"><input type="checkbox" data-blur="' + p.id + '"' + (p.blurred ? ' checked' : '') + (blurCol(p.col) ? ' disabled title="The whole drop is blurred"' : '') + '> Blur</label></div></div>';
       }).join('') : '<div class="panel empty"><p class="muted">No offers yet. Tap “+ New offer”.</p></div>');
     $('#addO').onclick = function () { offerModal(null, admOffers); };
     $$('[data-oe]').forEach(function (b) { b.onclick = function () { offerModal(b.dataset.oe, admOffers); }; });
