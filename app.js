@@ -77,16 +77,26 @@
       blurb: 'Three ornaments, three names.',
       desc: 'Three Holy Night ornaments, each with its own name. Perfect for the family tree or as gifts.',
       specs: ['3 ornaments, 10 cm each', 'A different name on each one', 'Red with white names'] },
-    { id: 'snowflake-ornament', col: 'xmas', name: 'Snowflake Name Ornament', price: 0, priceText: 'Coming soon', comingSoon: true, tag: 'Personalized', printMin: 85, grams: 17,
+    { id: 'snowflake-ornament', col: 'xmas', name: 'Snowflake Name Ornament', price: 4, tag: 'Personalized', printMin: 67, grams: 14.7,
       text: { label: 'Name on the ornament', max: 12, ph: 'e.g. Joseph', required: true },
       blurb: 'Snowflakes, scrolls and a name in big letters.',
       desc: 'Our snowflake ornament with the name of your choice in big letters across the middle, between swirls and snowflakes. Type the name and see it on the ornament before you order.',
       specs: ['10 cm round (about 12 cm with the loop), 3 mm thick', 'All red, the name in big letters across the middle', 'Name up to 12 letters', 'Hanging loop for string or ribbon'] },
-    { id: 'bow-ornament', col: 'xmas', name: 'Bow Name Ornament', price: 0, priceText: 'Coming soon', comingSoon: true, tag: 'Personalized', printMin: 85, grams: 17,
+    { id: 'bow-ornament', col: 'xmas', name: 'Bow Name Ornament', price: 4, tag: 'Personalized', printMin: 43, grams: 12.4,
       text: { label: 'Name on the ornament', max: 12, ph: 'e.g. Maria', required: true },
       blurb: 'A red frame with bows, holly and a name.',
       desc: 'An oval frame with a big bow on top, holly and a small bow below, and the name of your choice on a swash, all in red. Type the name and see it before you order.',
       specs: ['10 × 8 cm oval (about 11 cm with the loop)', 'All red, with the bow, holly and name raised', 'Name up to 12 letters', 'Hanging loop for string or ribbon'] },
+    { id: 'bow-ornament-3', col: 'xmas', name: 'Bow Name Ornament - Pack of 3', price: 10, was: 12, tag: 'Save 2$', printMin: 129, grams: 37.2,
+      pack: [{ of: 'bow-ornament' }, { of: 'bow-ornament' }, { of: 'bow-ornament' }],
+      blurb: 'Three bow ornaments, three names.',
+      desc: 'Three Bow Name Ornaments, each with its own name. Type the names and see them on the ornaments before you order.',
+      specs: ['3 ornaments, 10 × 8 cm each', 'A different name on each one', 'All red'] },
+    { id: 'bow-ornament-5', col: 'xmas', name: 'Bow Name Ornament - Buy 4 get 1 free', price: 16, was: 20, tag: 'Save 4$', printMin: 215, grams: 62,
+      pack: [{ of: 'bow-ornament' }, { of: 'bow-ornament' }, { of: 'bow-ornament' }, { of: 'bow-ornament' }, { of: 'bow-ornament' }],
+      blurb: 'Five bow ornaments for the whole family — one is free.',
+      desc: 'Five Bow Name Ornaments, each with its own name. Type the names and see them on the ornaments before you order.',
+      specs: ['5 ornaments, 10 × 8 cm each', 'A different name on each one', 'All red'] },
     { id: 'woggle-white', col: 'woggles', name: 'Woggle — white', price: 4, img: 'img/woggle-white.webp', model: 'woggle-plain', modelColors: ['white', 'white'], printMin: 40, grams: 4.1,
       blurb: 'The classic braided woggle, all white.',
       desc: 'A braided scout woggle in white. Turn it around in 3D before you order.',
@@ -338,7 +348,7 @@
     function packArtOf(p) {
       if (p.art || !p.pack || BLAZE_ART_IDS.indexOf(p.id) >= 0) return p;
       var pk = Array.isArray(p.pack) ? p.pack : Object.keys(p.pack).map(function (k) { return p.pack[k]; });
-      if (pk.length > 1 && pk.every(function (x) { return x && x.of === 'holy-ornament'; })) return Object.assign({}, p, { art: 'holy-ornament-' + pk.length });
+      if (pk.length > 1 && pk[0] && /^(holy|snowflake|bow)-ornament$/.test(pk[0].of) && pk.every(function (x) { return x && x.of === pk[0].of; })) return Object.assign({}, p, { art: pk[0].of + '-' + pk.length });
       return p;
     }
     // ---- shop data straight over HTTPS (≈4 KB) so the page shows before the Firebase library has even loaded ----

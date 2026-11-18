@@ -373,7 +373,26 @@
       return '<svg viewBox="-99 ' + (top - 38) + ' 198 ' + h + '" class="orn" role="img" aria-label="' + n + ' Holy Night ornaments">' + out + '</svg>';
     };
   }
-  function packArt(id) { var m = /^holy-ornament-(\d+)$/.exec(id || ''); if (m && !ART[id] && +m[1] > 1 && +m[1] <= 12) ART[id] = ornPack(+m[1]); return !!ART[id]; }
+  // packs of name ornaments (any count): rows of up to 3, each piece shows its own name — used by every ornament offer
+  function namePack(base, n) {
+    return function (o) {
+      var t = o.texts || (o.text ? String(o.text).split(' · ') : []), rows = Math.ceil(n / 3), gx = 64, gy = 74, out = '';
+      var top = -((rows - 1) * gy) / 2;
+      for (var i = 0; i < n; i++) {
+        var r = Math.floor(i / 3), inRow = Math.min(3, n - r * 3), c = i - r * 3;
+        var x = (c - (inRow - 1) / 2) * gx, y = top + r * gy;
+        var one = ART[base]({ text: t[i] || ORN_NAMES[i % ORN_NAMES.length] });
+        out += one.replace('<svg ', '<svg x="' + (x - 31) + '" y="' + (y - 36) + '" width="62" height="72" ');
+      }
+      var h = (rows - 1) * gy + 78;
+      return '<svg viewBox="-99 ' + (top - 39) + ' 198 ' + h + '" class="orn" role="img" aria-label="' + n + ' name ornaments">' + out + '</svg>';
+    };
+  }
+  function packArt(id) {
+    var m = /^holy-ornament-(\d+)$/.exec(id || ''); if (m && !ART[id] && +m[1] > 1 && +m[1] <= 12) ART[id] = ornPack(+m[1]);
+    var k = /^(snowflake|bow)-ornament-(\d+)$/.exec(id || ''); if (k && !ART[id] && +k[2] > 1 && +k[2] <= 12) ART[id] = namePack(k[1] + '-ornament', +k[2]);
+    return !!ART[id];
+  }
   g.BlazeArt = {
     village: villageLive, villagePin: vpinmm,
     inLebanon: function (lat, lon) { var x = lon, y = lat, inside = false; for (var i = 0, j = LB.length - 1; i < LB.length; j = i++) { var a = LB[i], b = LB[j]; if ((a[1] > y) !== (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]) inside = !inside; } return inside; },
