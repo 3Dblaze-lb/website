@@ -2081,13 +2081,20 @@
       return { pla: kg ? Math.round(paid / kg * 100) / 100 : null, order: Math.round(order * 100) / 100, cur: cur };
     }
     var inp = function (k, i, f, v, type, extra) { return '<input data-s="' + k + '" data-i="' + i + '" data-f="' + f + '" type="' + (type || 'number') + '" value="' + esc(v == null ? '' : v) + '"' + (type ? '' : ' min="0" step="any"') + (extra || '') + '>'; };
-    var PER = [['week', 'This week'], ['month', 'This month'], ['year', 'This year'], ['all', 'All time']];
-    function perStart() {
-      var now = new Date(), p = ls('costPeriod') || 'month';
-      if (p === 'week') { var w = new Date(now.getFullYear(), now.getMonth(), now.getDate()); w.setDate(w.getDate() - ((w.getDay() + 6) % 7)); return w.getTime(); }
-      if (p === 'month') return new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-      if (p === 'year') return new Date(now.getFullYear(), 0, 1).getTime();
-      return 0;
+    var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    // chosen period → [start, end) + label. Only the choice is remembered (in this browser), nothing extra is stored online.
+    function perRange() {
+      var now = new Date(), p = ls('costPeriod') || 'month', y = +ls('costYear') || now.getFullYear(), m = ls('costMonth') != null ? +ls('costMonth') : now.getMonth();
+      if (p === 'week') { var w = new Date(now.getFullYear(), now.getMonth(), now.getDate()); w.setDate(w.getDate() - ((w.getDay() + 6) % 7)); return { st: w.getTime(), en: Infinity, lbl: 'this week' }; }
+      if (p === 'month') return { st: new Date(y, m, 1).getTime(), en: new Date(y, m + 1, 1).getTime(), lbl: 'in ' + MONTHS[m] + ' ' + y };
+      if (p === 'year') return { st: new Date(y, 0, 1).getTime(), en: new Date(y + 1, 0, 1).getTime(), lbl: 'in ' + y };
+      return { st: 0, en: Infinity, lbl: 'overall' };
+    }
+    function years() {
+      var t = new Date().getFullYear(), lo = Math.min(2026, t);
+      d.fil.concat(d.sup, d.ads, d.exp).forEach(function (x) { if (x.date) lo = Math.min(lo, +x.date.slice(0, 4) || lo); });
+      Store.orders().forEach(function (o) { if (o.createdAt) lo = Math.min(lo, new Date(o.createdAt).getFullYear()); });
+      var a = []; for (var y = t; y >= lo; y--) a.push(y); return a;
     }
     function stats() {
       var D = derive(), S = Store.settings();
@@ -2095,17 +2102,19 @@
     }
     // Balance = real cash for the chosen period: money received from paid orders/sales vs everything paid out
     function balance() {
-      var p = ls('costPeriod') || 'month', st = perStart(), lbl = PER.filter(function (x) { return x[0] === p; })[0][1].toLowerCase();
-      var inP = function (x) { return st === 0 || (x.date && new Date(x.date + 'T12:00:00').getTime() >= st); };
+      var p = ls('costPeriod') || 'month', R = perRange(), st = R.st, lbl = R.lbl, now = new Date();
+      var inP = function (x) { if (st === 0 && R.en === Infinity) return true; var t = x.date ? new Date(x.date + 'T12:00:00').getTime() : NaN; return t >= st && t < R.en; };
       var sum = function (a) { return a.filter(inP).reduce(function (t, x) { return t + n(x.paid); }, 0); };
       var sF = sum(d.fil), sS = sum(d.sup), sA = sum(d.ads), sE = sum(d.exp), spent = sF + sS + sA + sE;
-      var os = Store.orders().filter(function (o) { return o.status !== 'cancelled' && !o.demo && o.createdAt >= st; });
+      var os = Store.orders().filter(function (o) { return o.status !== 'cancelled' && !o.demo && o.createdAt >= st && o.createdAt < R.en; });
       var got = os.filter(function (o) { return o.paid; }).reduce(function (t, o) { return t + (o.subtotal || 0); }, 0);
       var due = os.filter(function (o) { return !o.paid; }).reduce(function (t, o) { return t + (o.subtotal || 0); }, 0);
       var prof = os.reduce(function (t, o) { var c = orderCost(o); return t + (c == null ? 0 : (o.subtotal || 0) - c); }, 0);
       var bal = got - spent, sg = function (v) { return (v < 0 ? '−' : '+') + money(Math.abs(v)); }, col = function (v) { return v >= 0 ? 'var(--green)' : 'var(--red)'; };
       var st2 = function (k, v, extra) { return '<div class="stat"' + (extra || '') + '><div class="k">' + k + '</div><div class="v">' + v + '</div></div>'; };
-      return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><b style="font-family:var(--head)">Balance</b><div class="tabs" style="margin:0">' + PER.map(function (x) { return '<button type="button" data-per="' + x[0] + '" class="' + (p === x[0] ? 'on' : '') + '">' + x[1] + '</button>'; }).join('') + '</div></div>' +
+      return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><b style="font-family:var(--head)">Balance</b><div class="tabs" style="margin:0">' + [['week', 'This week'], ['month', 'Month'], ['year', 'Year'], ['all', 'All time']].map(function (x) { return '<button type="button" data-per="' + x[0] + '" class="' + (p === x[0] ? 'on' : '') + '">' + x[1] + '</button>'; }).join('') + '</div></div>' +
+        (p === 'month' || p === 'year' ? '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">' + (p === 'month' ? '<select data-pm style="padding:8px 10px;border-radius:10px;border:1px solid var(--line2);font:inherit">' + MONTHS.map(function (mn, k) { return '<option value="' + k + '"' + (k === (ls('costMonth') != null ? +ls('costMonth') : now.getMonth()) ? ' selected' : '') + '>' + mn + '</option>'; }).join('') + '</select>' : '') +
+          '<select data-py style="padding:8px 10px;border-radius:10px;border:1px solid var(--line2);font:inherit">' + years().map(function (y) { return '<option' + (y === (+ls('costYear') || now.getFullYear()) ? ' selected' : '') + '>' + y + '</option>'; }).join('') + '</select></div>' : '') +
         '<div class="muted" style="font-size:14px;margin-top:6px">Real cash ' + lbl + ': money received from paid orders and sales (without delivery fees) minus everything you paid, by purchase date.</div>' +
         '<div class="stats" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">' +
           st2('Cash received', '<span style="color:var(--green)">' + money(got) + '</span>') + st2('Spent', money(spent)) +
@@ -2156,6 +2165,7 @@
         });
       });
       $('#cBal').onclick = function (e) { var b = e.target.closest('[data-per]'); if (!b) return; ls('costPeriod', b.dataset.per); $('#cBal').innerHTML = balance(); };
+      $('#cBal').onchange = function (e) { var t = e.target; if (t.hasAttribute('data-pm')) ls('costMonth', +t.value); else if (t.hasAttribute('data-py')) ls('costYear', +t.value); else return; $('#cBal').innerHTML = balance(); };
       $$('[data-add]').forEach(function (b) { b.onclick = function () { var k = b.dataset.add; d[k].push(k === 'fil' ? { name: '', paid: null, kg: 1, date: iso() } : k === 'sup' ? { name: '', paid: null, qty: null, per: 1, date: iso() } : { name: '', paid: null, date: iso() }); draw(); var r = $$('[data-s="' + k + '"][data-f="name"]'); if (r.length) r[r.length - 1].focus(); }; });
       $$('[data-rm]').forEach(function (b) { b.onclick = function () { d[b.dataset.rm].splice(+b.dataset.i, 1); draw(); }; });
       $('#cSave').onclick = function () {
