@@ -865,7 +865,7 @@
   function viewHome(anchor) {
     var s = Store.settings(), all = Store.products();
     var leb = all.filter(function (p) { return p.col === 'lebanon'; }), xm = all.filter(function (p) { return p.col === 'xmas'; }), wg = all.filter(function (p) { return p.col === 'woggles'; });
-    var vp = leb.filter(function (p) { return (p.art || p.id) === 'my-village' && !p.blurred; })[0], others = leb.filter(function (p) { return p !== vp && !isOffer(p); }), lebOffers = leb.filter(isOffer);
+    var vp = leb.filter(function (p) { return (p.art || p.id) === 'my-village' && !p.blurred; })[0], split = leb.length > 4, others = leb.filter(function (p) { return p !== vp && (!split || !isOffer(p)); }), lebOffers = split ? leb.filter(isOffer) : [];
     var fee = (+s.feeBeirut === +s.feeMount && +s.feeMount === +s.feeOther) ? money(s.feeOther) + ' anywhere in Lebanon' + (s.freeOver ? ', free over ' + money(s.freeOver) : '') : (s.feeMount === s.feeBeirut ? money(s.feeBeirut) + ' in Beirut &amp; Mount Lebanon' : money(s.feeBeirut) + ' in Beirut, ' + money(s.feeMount) + ' in Mount Lebanon') + ', ' + money(s.feeOther) + ' elsewhere' + (s.freeOver ? ', free over ' + money(s.freeOver) : '');
     app.innerHTML =
       '<section class="hero2"><div class="wrap">' +
@@ -952,6 +952,7 @@
   function isOffer(p) { return !!p.pack; }
   function xcard(p) { return '<a class="xc" role="listitem" href="#p-' + p.id + '"><div class="xc-img' + (p.blurred ? ' soonc' : '') + '">' + thumb(p) + '</div><b>' + esc(p.name) + '</b><span>' + (p.priceText ? esc(p.priceText) : money(p.price) + (p.was ? ' <s>' + money(p.was) + '</s>' : '')) + '</span></a>'; }
   function dropGrid(list) {
+    if (list.length <= 4) return '<div class="dgrid" role="list">' + list.map(xcard).join('') + '</div>';   // small drop: one row, no labels
     var pr = list.filter(function (p) { return !isOffer(p); }), of = list.filter(isOffer);
     return (pr.length ? (of.length ? '<h3 class="dsub">Products</h3>' : '') + '<div class="dgrid" role="list">' + pr.map(xcard).join('') + '</div>' : '') +
       (of.length ? '<h3 class="dsub">Offers</h3><div class="dgrid" role="list">' + of.map(xcard).join('') + '</div>' : '');
