@@ -1144,8 +1144,15 @@
       '<div class="specs">' + (p.specs || []).map(function (x) { return '<div>' + esc(x) + '</div>'; }).join('') + (sale ? '' : '<div>Not for sale yet' + (p.blurred ? '' : ' — you can already try your names') + '</div>') + '</div>' +
       '</div></div></div>';
     if (p.blurred) { $('#pArt').classList.add('soonbig'); $('.ppage').classList.add('soonpage'); }
+    // uploaded photo (main or the chosen colour's) = 2nd view "Real picture", like every other product
+    var dPh = function () { var c = optList(p).filter(function (x) { return String(x.name).toLowerCase() === o.color && x.photo; })[0]; return (c && c.photo) || realPhoto(p); };
+    if (dPh()) {
+      $('#pArt').classList.add('realbig');
+      $('#pArt').innerHTML = '<div class="livebox" id="pLive"></div><img class="realph hidden" src="' + dPh() + '" alt="' + esc('Real picture of the ' + p.name) + '"><div class="viewsw" role="group" aria-label="View"><button type="button" class="on" data-v="live">Your preview</button><button type="button" data-v="photo">Real picture</button></div>';
+      $$('[data-v]').forEach(function (b) { b.onclick = function () { var ph = b.dataset.v === 'photo'; $$('[data-v]').forEach(function (x) { x.classList.toggle('on', x === b); }); $('#pLive').classList.toggle('hidden', ph); $('.realph').classList.toggle('hidden', !ph); }; });
+    }
     var tt = function (v) { return String(v || '').trim(); };
-    var draw = function () { $('#pArt').innerHTML = BlazeArt.draw(p.art, { color: o.color, family: tt(o.family) || EX.family, dad: tt(o.dad) || EX.dad, mom: tt(o.mom) || EX.mom, kids: o.kids.map(function (k, i) { return tt(k) || EX.kids[i]; }) }); };
+    var draw = function () { var box = $('#pLive') || $('#pArt'); if ($('#pLive')) { if ($('#pLive').classList.contains('hidden')) $('[data-v=live]').click(); var ph = dPh(); if (ph && $('.realph').getAttribute('data-src0') !== ph) { $('.realph').setAttribute('data-src0', ph); $('.realph').src = ph; Store.fullPhoto(ph, function (u) { if ($('.realph')) $('.realph').src = u; }); } } box.innerHTML = BlazeArt.draw(p.art, { color: o.color, family: tt(o.family) || EX.family, dad: tt(o.dad) || EX.dad, mom: tt(o.mom) || EX.mom, kids: o.kids.map(function (k, i) { return tt(k) || EX.kids[i]; }) }); };
     var kidsUI = function () {
       if (!xm) return;
       var names = EX.kids;
