@@ -136,7 +136,7 @@
   ];
   var DEFAULT_SETTINGS = {
     whatsapp: '96178801186', whish: '', whishName: '3DBlaze', instagram: '3dblaze.lb',
-    feeBeirut: 5, feeMount: 5, feeOther: 5, freeOver: 40, pickup: true, open: true,
+    feeBeirut: 5, feeMount: 5, feeOther: 5, freeOver: 0, pickup: true, open: true,
     banner: '🇱🇧 Independence Day drop is live — order by 19 Nov for delivery before the 22nd',
     xmasCutoff: '2026-12-18',
     calcPla: 25, calcMachine: 0.35, calcPack: 0.25, calcFail: 10, calcMarkup: 3, calcMin: 5, calcInfill: 15, calcGph: 15, calcOrderPack: 0
