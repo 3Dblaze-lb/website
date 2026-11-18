@@ -601,7 +601,7 @@
     add: function (p, qty, color, text, geo, picks) {
       var cp = p && Store.product(p.id); if (cp && cp.comingSoon) { toast('Coming soon — not for sale yet'); return; }
       if (!p) return;
-      var key = p.id + '|' + (color || '') + '|' + (text || '');
+      var key = p.id + '|' + (color || '') + '|' + (text || '') + (geo && geo.picked ? '|' + geo.lat + ',' + geo.lon : '');   // two villages with the same name stay two lines
       var ex = this.items.filter(function (i) { return i.key === key; })[0];
       if (ex) ex.qty += qty; else { var it = { key: key, id: p.id, qty: qty, color: color || null, text: text || null, geo: geo || null }; if (picks) it.picks = picks; this.items.push(it); }
       this.save();
@@ -706,6 +706,13 @@
     var inp = document.getElementById(b.dataset.for); if (!inp) return;
     inp.value = b.dataset.usename; inp.dispatchEvent(new Event('input', { bubbles: true })); inp.focus();
   });
+  // same-name villages: the customer taps the right one (or changes their mind)
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('[data-geopick],[data-geounpick]'); if (!b) return;
+    if (b.dataset.geopick) Places.picks[b.dataset.k] = b.dataset.geopick; else delete Places.picks[b.dataset.geounpick];
+    var inp = document.getElementById(b.dataset.for); if (!inp) return;
+    inp.dispatchEvent(new Event('input', { bubbles: true }));
+  });
   // ---------- village lookup for the pin ----------
   // 1) our own list of every Lebanese city / town / village (places.txt, from OpenStreetMap: name|arabic|other spellings|lat|lon|type)
   //    matched forgivingly: "bicharre" → Bcharre, "al arz" → El Arz, Arabic works too.
@@ -733,7 +740,19 @@
     return prev[b.length];
   }
   var Places = {
-    list: null, p: null,
+    list: null, p: null, picks: {},
+    km: function (a, b) { var dy = (a.lat - b.lat) * 111, dx = (a.lon - b.lon) * 92; return Math.sqrt(dx * dx + dy * dy); },
+    // the nearest well-known city or town, to tell two villages with the same name apart ("Sarba · near Jounieh")
+    near: function (pl, townOnly) {
+      var self = this, best = null, bd = 1e9, city = null, cd = 1e9;
+      this.list.forEach(function (x) {
+        if (x === pl || (x.t !== 'c' && x.t !== 't') || x.en === pl.en) return; var d = self.km(x, pl);
+        if (d < bd) { bd = d; best = x; }
+        if (x.t === 'c' && d < cd) { cd = d; city = x; }
+      });
+      if (!townOnly && city && cd <= 18) return city.en;   // a city everyone knows, when one is close enough
+      return best ? best.en : '';
+    },
     load: function () {
       if (this.p) return this.p;
       var self = this;
@@ -750,11 +769,11 @@
     },
     match: function (q) {
       var qk = pfold(q), qs = pskel(qk); if (qk.length < 2 || !this.list) return null;
-      var tol = qk.length <= 5 ? 1 : qk.length <= 8 ? 2 : 3, bonus = { d: 7, c: 6, t: 4, v: 2, s: 1, h: 0 }, best = null;
+      var tol = qk.length <= 5 ? 1 : qk.length <= 8 ? 2 : 3, bonus = { d: 7, c: 6, t: 4, v: 2, s: 1, h: 0 }, best = null, same = [], self = this;
       this.list.forEach(function (pl) {
         pl.v.forEach(function (v) {
           var sc = 0, d;
-          if (v.k === qk) sc = 100;
+          if (v.k === qk) { sc = 100; if (same.indexOf(pl) < 0 && !same.some(function (x) { return self.km(x, pl) < 2; })) same.push(pl); }
           else {
             if (v.s === qs && qs.length >= 2) { d = plev(v.k, qk, 3); if (d <= 3) sc = 80 - 4 * d; }
             d = plev(v.k, qk, tol); if (d <= tol) sc = Math.max(sc, 78 - 8 * d);
@@ -767,21 +786,34 @@
         });
       });
       if (!best || best.sc < 60) return null;
-      var pl = best.pl, name = (best.sc >= 100 && !best.v.ar) ? best.v.n : pl.en;
+      var pl = best.pl, name = (best.sc >= 100 && !best.v.ar) ? best.v.n : pl.en, picked = false;
+      // several villages share this exact name: the customer chooses which one, we never guess
+      if (same.length > 1) {
+        var alts = same.map(function (x) { return { id: x.lat + ',' + x.lon, pl: x, name: x.en, ar: x.ar || '', near: self.near(x) }; });
+        var clash = function (a) { return alts.some(function (b) { return b !== a && b.near === a.near; }); };
+        alts.filter(clash).forEach(function (a) { a.near2 = self.near(a.pl, true); }); alts.forEach(function (a) { if (a.near2) a.near = a.near2; });
+        alts.forEach(function (a) { if (alts.some(function (b) { return b !== a && b.near === a.near; })) { var o = alts.filter(function (b) { return b !== a && b.near === a.near; })[0]; a.tag = (Math.abs(a.pl.lat - o.pl.lat) > Math.abs(a.pl.lon - o.pl.lon)) ? (a.pl.lat > o.pl.lat ? 'north' : 'south') : (a.pl.lon > o.pl.lon ? 'east' : 'west'); } });
+        alts.forEach(function (a) { a.where = a.near ? 'near ' + a.near + (a.tag ? ', ' + a.tag : '') : (a.pl.lat.toFixed(2) + ', ' + a.pl.lon.toFixed(2)); });
+        var ch = alts.filter(function (a) { return a.id === self.picks[qk]; })[0];
+        if (!ch) return { alts: alts.map(function (a) { return { id: a.id, name: a.name, ar: a.ar, where: a.where }; }), key: qk };
+        pl = ch.pl; picked = true;
+        if (best.pl !== pl) name = pl.en;
+        return { lat: pl.lat, lon: pl.lon, label: name + ' (' + ch.where + ')', name: name, ar: pl.ar || null, exact: true, picked: qk };
+      }
       return { lat: pl.lat, lon: pl.lon, label: name + (name !== pl.en ? ' (' + pl.en + ')' : ''), name: name, ar: pl.ar || null, exact: best.sc >= 100 };
     }
   };
   var Geo = {
-    cache: ls('geo4') || {}, t: null, seq: 0, eleC: ls('ele') || {},
+    cache: ls('geo5') || {}, t: null, seq: 0, alts: null, eleC: ls('ele') || {},
     find: function (q, cb) {
-      q = (q || '').trim(); var key = q.toLowerCase();
+      q = (q || '').trim(); var key = q.toLowerCase() + (Places.picks[pfold(q)] ? '#' + Places.picks[pfold(q)] : '');
       clearTimeout(this.t);
       if (q.length < 2) { cb(null, q.length ? 'typing' : ''); return; }
       var self = this, my = ++this.seq;
       var done = function (hit) {
         if (my !== self.seq) return;
-        self.cache[key] = hit; ls('geo4', self.cache); cb(hit, hit ? 'found' : 'none');
-        if (hit && hit.ele == null) self.elev(hit.lat, hit.lon, function (e) { if (e == null) return; hit.ele = e; ls('geo4', self.cache); if (my === self.seq) cb(hit, 'found'); });
+        self.cache[key] = hit; ls('geo5', self.cache); cb(hit, hit ? 'found' : 'none');
+        if (hit && hit.ele == null) self.elev(hit.lat, hit.lon, function (e) { if (e == null) return; hit.ele = e; ls('geo5', self.cache); if (my === self.seq) cb(hit, 'found'); });
       };
       if (this.cache[key] !== undefined) { cb(this.cache[key], this.cache[key] ? 'found' : 'none'); return; }
       cb(null, 'searching');
@@ -789,6 +821,7 @@
         Places.load().then(function () {
           if (my !== self.seq) return;
           var hit = Places.match(q);
+          if (hit && hit.alts) { self.alts = hit; cb(null, 'pick'); return; }
           if (hit) { done(hit); return; }
           if (q.length < 3) { done(null); return; }
           // not in our list: OpenStreetMap, settlements only
@@ -819,9 +852,14 @@
       }).catch(function () { cb(null); });
     },
     status: function (hit, st, forId, typed) {
+      if (st === 'pick' && this.alts) {
+        var A = this.alts;
+        return '<span style="font-weight:600">There’s more than one ' + esc(A.alts[0].name) + ' — which one is yours?</span><span class="geopicks">' + A.alts.map(function (a) { return '<button type="button" class="usename" data-geopick="' + esc(a.id) + '" data-k="' + esc(A.key) + '" data-for="' + esc(forId || '') + '">' + esc(a.name) + ' · ' + esc(a.where) + '</button>'; }).join('') + '</span>';
+      }
+      var unBtn = (st === 'found' && hit.picked && forId) ? ' <button type="button" class="usename alt" data-geounpick="' + esc(hit.picked) + '" data-for="' + forId + '">Not this one?</button>' : '';
       var useBtn = (st === 'found' && forId && hit.name && pfold(hit.name) !== pfold(typed)) ? ' <button type="button" class="usename" data-usename="' + esc(hit.name) + '" data-for="' + forId + '">Use “' + esc(hit.name) + '”</button>' : '';
       return st === 'searching' ? '<span class="muted">Finding it on the map…</span>' :
-        st === 'found' ? '<span style="color:var(--green)">📍 ' + (hit.exact === false ? 'Closest match: ' : '') + esc(hit.label) + (hit.ar ? ' · <bdi>' + esc(hit.ar) + '</bdi>' : '') + (hit.ele != null ? ' · ' + hit.ele + ' m' : '') + '</span>' + useBtn :
+        st === 'found' ? '<span style="color:var(--green)">📍 ' + (hit.exact === false ? 'Closest match: ' : '') + esc(hit.label) + (hit.ar ? ' · <bdi>' + esc(hit.ar) + '</bdi>' : '') + (hit.ele != null ? ' · ' + hit.ele + ' m' : '') + '</span>' + useBtn + unBtn :
         st === 'none' ? '<span class="muted">We couldn’t find it on the map — no problem, we’ll place the pin by hand.</span>' :
         st === 'offline' ? '<span class="muted">Map search is unavailable right now — we’ll place the pin by hand.</span>' : '';
     }
@@ -1186,7 +1224,7 @@
       $$('.ptx').forEach(function (t) { t.oninput = function () { var i = +t.dataset.s; st.picks[i].text = t.value.trim(); st.focus = i; $('#packErr').textContent = ''; draw(); }; });
     } else $$('.sw').forEach(function (b) { b.onclick = function () { st.color = b.dataset.c; st.keep = true; $$('.sw').forEach(function (x) { x.classList.toggle('on', x === b); }); draw(); }; });
     var isMap = (p.art || p.id) === 'my-village';
-    var geoLook = function () { Geo.find(st.text, function (hit, gs) { st.geo = gs === 'searching' ? null : hit; draw(); var g = $('#pGeo'); if (g) g.innerHTML = Geo.status(hit, gs, 'pText', st.text); }); };
+    var geoLook = function () { Geo.find(st.text, function (hit, gs) { st.geo = gs === 'searching' ? null : hit; st.needPick = gs === 'pick'; draw(); var g = $('#pGeo'); if (g) g.innerHTML = Geo.status(hit, gs, 'pText', st.text); }); };
     var ti = $('#pText'); if (ti) ti.oninput = function () { st.text = ti.value.trim(); $('#pErr').textContent = ''; if (isMap) geoLook(); else draw(); };
     if (isMap && ti) { ti.insertAdjacentHTML('afterend', '<div class="geo" id="pGeo"></div>'); if (st.text) geoLook(); }
     $$('[data-q]').forEach(function (b) { b.onclick = function () { st.qty = Math.max(1, Math.min(50, st.qty + +b.dataset.q)); $('#pQty').textContent = st.qty; }; });
@@ -1204,6 +1242,7 @@
       }
       var so = optFor(p, st.color); if (so && so.out) { toast(so.name + ' is sold out'); return false; }
       if (p.text && p.text.required && !st.text) { $('#pErr').textContent = 'Please fill in “' + p.text.label + '”.'; ti.focus(); return false; }
+      if (isMap && st.needPick) { $('#pErr').textContent = 'Please choose which one is yours (buttons above), so the pin goes on the right village.'; return false; }
       Cart.add(p, st.qty, st.color, st.text, isMap ? st.geo : null); return true;
     };
     if (!out) {
@@ -1214,7 +1253,7 @@
   }
 
   function lineHTML(l, ctl) {
-    var opts = [l.color ? l.color : '', l.text ? '“' + l.text + '”' : ''].filter(Boolean).join(' · ');
+    var opts = [l.color ? l.color : '', l.text ? '“' + l.text + '”' : '', l.geo && l.geo.label && l.geo.label.indexOf('(near ') > 0 ? l.geo.label.replace(/^.*\((near [^)]*)\)$/, '$1') : ''].filter(Boolean).join(' · ');
     return '<div class="line"><div class="th">' + thumb(l.p, { color: l.color, text: l.text, lat: l.geo && l.geo.lat, lon: l.geo && l.geo.lon, ar: l.geo && l.geo.ar, ele: l.geo && l.geo.ele }) + '</div><div><div class="nm">' + esc(l.p.name) + '</div><div class="meta">' + esc(opts) + (ctl ? '' : (opts ? ' · ' : '') + '× ' + l.qty) + '</div>' +
       (ctl ? '<div class="ctl"><button data-k="' + esc(l.key) + '" data-d="-1">−</button><b>' + l.qty + '</b><button data-k="' + esc(l.key) + '" data-d="1">+</button><button class="rm" data-rm="' + esc(l.key) + '">Remove</button></div>' : '') +
       '</div><div class="price" style="font-size:17px">' + money(l.total) + '</div></div>';
@@ -1291,7 +1330,7 @@
   }
 
   function orderText(o) {
-    return 'Hi 3DBlaze! I just ordered ⚡\nOrder: ' + o.code + '\n' + o.items.map(function (i) { return '• ' + i.name + (i.color ? ' (' + i.color + ')' : '') + (i.text ? ' “' + i.text + '”' : '') + ' × ' + i.qty; }).join('\n') +
+    return 'Hi 3DBlaze! I just ordered ⚡\nOrder: ' + o.code + '\n' + o.items.map(function (i) { return '• ' + i.name + (i.color ? ' (' + i.color + ')' : '') + (i.text ? ' “' + i.text + '”' : '') + (i.geo && i.geo.label && i.geo.label.indexOf('(near ') > 0 ? ' — ' + i.geo.label : '') + ' × ' + i.qty; }).join('\n') +
       '\nTotal: ' + money(o.total) + ' — ' + (o.payment === 'whish' ? 'Whish' : 'cash on delivery') + '\nName: ' + o.customer.name + (o.customer.town ? '\nTo: ' + o.customer.town + ', ' + o.customer.region : '\nPickup');
   }
 
@@ -1534,7 +1573,7 @@
   }
 
   var CUSTOMER_MSG = {
-    new: function (o) { return 'Hi ' + o.customer.name.split(' ')[0] + '! This is 3DBlaze ⚡ We got your order ' + o.code + ':\n' + o.items.map(function (i) { return '• ' + i.name + (i.color ? ' (' + i.color + ')' : '') + (i.text ? ' “' + i.text + '”' : '') + ' × ' + i.qty; }).join('\n') + '\nTotal ' + money(o.total) + '. Can you confirm the details are right?'; },
+    new: function (o) { return 'Hi ' + o.customer.name.split(' ')[0] + '! This is 3DBlaze ⚡ We got your order ' + o.code + ':\n' + o.items.map(function (i) { return '• ' + i.name + (i.color ? ' (' + i.color + ')' : '') + (i.text ? ' “' + i.text + '”' : '') + (i.geo && i.geo.label && i.geo.label.indexOf('(near ') > 0 ? ' — ' + i.geo.label : '') + ' × ' + i.qty; }).join('\n') + '\nTotal ' + money(o.total) + '. Can you confirm the details are right?'; },
     confirmed: function (o) { return 'Confirmed ✅ Your order ' + o.code + ' is in the print queue. We’ll message you when it’s ready.\nTrack it any time: https://3dblazelb.com/#track-' + o.code + (o.payment === 'whish' && !o.paid ? '\nWhish: please send ' + money(o.total) + ' to ' + (Store.settings().whish || '[our Whish number]') + ' with the note ' + o.code + '.' : ''); },
     printing: function (o) { return 'Your 3DBlaze order ' + o.code + ' is printing right now 🖨️'; },
     ready: function (o) { return 'Your order ' + o.code + ' is ready! ' + (o.method === 'pickup' ? 'When can you pass by to pick it up?' : 'It goes out with the driver soon.'); },
