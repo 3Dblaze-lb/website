@@ -1579,9 +1579,9 @@
     Store.saveRequest(null, data).then(function (id) { data.id = id; copy(requestText(data), 'Copied — paste it in your Claude chat'); if (done) done(); });
   }
   var ORN_TOOL = {
-    holy: { name: 'Holy Night Ornament', sample: 'Christmass\\3DBlaze Holy Night Ornament - Gabriel - sample.3mf', tool: 'Christmass\\3DBlaze ornament tool.zip → python3 make_holy.py "Name" "3DBlaze Holy Night Ornament - Name.3mf"', spec: '10 cm red ornament, 3 mm, name in white Pacifico RAISED 0.8 mm on the banner' },
-    snowflake: { name: 'Snowflake Name Ornament', sample: 'Christmass\\3DBlaze Snowflake Ornament - Joseph - sample.3mf', tool: 'Christmass\\3DBlaze name ornaments tool.zip → python3 make_orn.py snowflake "Name" "3DBlaze Snowflake Ornament - Name.3mf"', spec: '10 cm, 3 mm flat, all red (name part on slot 1), name UPPERCASE Caladea Bold' },
-    bow: { name: 'Bow Name Ornament', sample: 'Christmass\\3DBlaze Bow Ornament - Maria - sample.3mf', tool: 'Christmass\\3DBlaze name ornaments tool.zip → python3 make_orn.py bow "Name" "3DBlaze Bow Ornament - Name.3mf"', spec: 'oval 10 × 8 cm, red 3 mm base with raised bow/holly, name white Lora Bold Italic raised 0.8 mm (slot 2)' }
+    holy: { name: 'Holy Night Ornament', sample: 'Christmass\\3DBlaze Holy Night Ornament - Gabriel - sample.3mf', tool: 'Christmass\\3DBlaze ornament tool.zip → python3 make_holy.py "Name" "3DBlaze Holy Night Ornament - Name.3mf"', spec: '10 cm red ornament (slot 4 red), 3 mm, name in white Pacifico RAISED 0.8 mm on the banner (slot 2 white)' },
+    snowflake: { name: 'Snowflake Name Ornament', sample: 'Christmass\\3DBlaze Snowflake Ornament - Joseph - sample.3mf', tool: 'Christmass\\3DBlaze name ornaments tool.zip → python3 make_orn.py snowflake "Name" "3DBlaze Snowflake Ornament - Name.3mf"', spec: '10 cm, 3 mm flat, all red (slot 4, name part too), name UPPERCASE Caladea Bold' },
+    bow: { name: 'Bow Name Ornament', sample: 'Christmass\\3DBlaze Bow Ornament - Maria - sample.3mf', tool: 'Christmass\\3DBlaze name ornaments tool.zip → python3 make_orn.py bow "Name" "3DBlaze Bow Ornament - Name.3mf"', spec: 'oval 10 × 8 cm, red 3 mm base with raised bow/holly, name white Lora Bold Italic raised 0.8 mm (slot 4 red body, slot 2 white name)' }
   };
   var REQ_STATUS = [['new', 'New'], ['sent', 'Sent to Claude'], ['ready', 'File ready'], ['done', 'Printed']];
   function requestText(r) {
