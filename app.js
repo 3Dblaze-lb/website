@@ -137,7 +137,6 @@
   var DEFAULT_SETTINGS = {
     whatsapp: '96178801186', whish: '', whishName: '3DBlaze', instagram: '3dblaze.lb',
     feeBeirut: 5, feeMount: 5, feeOther: 5, freeOver: 40, pickup: true, open: true,
-    localFee: 2, localTowns: 'Bsalim, بصاليم, Zalka, الزلقا, Jal el Dib, جل الديب, Biaqout, بياقوت, Bqennaya, بقنايا',
     banner: '🇱🇧 Independence Day drop is live — order by 19 Nov for delivery before the 22nd',
     xmasCutoff: '2026-12-18',
     calcPla: 25, calcMachine: 0.35, calcPack: 0.25, calcFail: 10, calcMarkup: 3, calcMin: 5, calcInfill: 15, calcGph: 15
@@ -676,13 +675,6 @@
     var ph = realPhoto(p, opts && opts.color);
     if (ph) return '<img src="' + ph + '" alt="' + esc(p.name) + '">';
     return '<div class="ph"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="13" width="36" height="26" rx="6" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M17 13 l3-5 h8 l3 5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><circle cx="24" cy="26" r="7" fill="none" stroke="currentColor" stroke-width="2.5"/></svg><span>' + esc(p.name) + '</span><small>Photo coming soon</small></div>';
-  }
-  // local delivery rate: the typed town is one of the nearby towns (spelling-tolerant, English or Arabic)
-  function lfold(x) { return pfold(x).replace(/(.)\1+/g, '$1').replace(/[^a-z\u0600-\u06ff]/g, '').replace(/[aeiouy]/g, '').replace(/[اويه]/g, '').replace(/q/g, 'k'); }
-  function isLocalTown(town) {
-    var s = Store.settings(), t = lfold(town);
-    if (!t || t.length < 2 || !(+s.localFee >= 0) || s.localFee === '' || s.localFee == null) return false;
-    return String(s.localTowns || '').split(/[,،\n]/).some(function (x) { var f = lfold(x); return f && f === t; });
   }
   function fee(region) {
     var s = Store.settings(), g = (REGIONS.filter(function (r) { return r[0] === region; })[0] || [0, 'other'])[1];
@@ -1266,16 +1258,14 @@
     var f = $('#co');
     var calc = function () {
       var sub = Cart.subtotal(), method = f.method.value, del = method === 'pickup' ? 0 : fee(f.region.value);
-      var local = method !== 'pickup' && isLocalTown(f.town.value) && +s.localFee < del;
-      if (local) del = +s.localFee;
       if (s.freeOver && sub >= s.freeOver) del = 0;
-      $('#sumBox').innerHTML = '<div><span>Items</span><b>' + money(sub) + '</b></div><div><span>Delivery' + (local && del ? ' <small style="color:var(--green);font-weight:600">local rate ✓</small>' : '') + '</span><b>' + (del ? money(del) : 'Free') + '</b></div><div class="tot"><span>Total</span><span>' + money(sub + del) + '</span></div>';
+      $('#sumBox').innerHTML = '<div><span>Items</span><b>' + money(sub) + '</b></div><div><span>Delivery</span><b>' + (del ? money(del) : 'Free') + '</b></div><div class="tot"><span>Total</span><span>' + money(sub + del) + '</span></div>';
       $('#addr').style.display = method === 'pickup' ? 'none' : '';
       $('#whishNote').classList.toggle('hidden', f.payment.value !== 'whish');
       $$('.paysel label', f).forEach(function (l) { l.classList.toggle('on', l.querySelector('input').checked); });
       return { sub: sub, del: del };
     };
-    f.addEventListener('change', calc); f.town.addEventListener('input', calc); calc();
+    f.addEventListener('change', calc); calc();
     f.addEventListener('submit', function (e) {
       e.preventDefault();
       var method = f.method.value, err = '';
@@ -1575,7 +1565,6 @@
       sub += up * i.qty;
     });
     var s = Store.settings(), fees = [0, +s.feeBeirut, +s.feeMount, +s.feeOther];
-    if (o.customer && isLocalTown(o.customer.town)) fees.push(+s.localFee);
     if (Math.abs(sub - o.subtotal) > 0.001) bad.push('items should be ' + money(sub) + ', order says ' + money(o.subtotal));
     if (fees.indexOf(o.delivery) < 0) bad.push('delivery fee ' + money(o.delivery) + ' isn’t one of yours');
     if (o.delivery === 0 && o.method !== 'pickup' && !(s.freeOver && sub >= s.freeOver)) bad.push('free delivery but under ' + money(s.freeOver || 0));
@@ -2148,7 +2137,7 @@
     var f = function (k, l, t, ph) { return '<label class="field">' + l + '<input name="' + k + '" type="' + (t || 'text') + '" value="' + esc(s[k]) + '" placeholder="' + esc(ph || '') + '"' + (t === 'number' ? ' min="0" step="0.5"' : '') + '></label>'; };
     $('#admBody').innerHTML = '<form class="panel" id="st" style="display:grid;gap:18px;max-width:760px">' +
       '<div><b style="font-family:var(--head)">Contact & payment</b><div class="grid2" style="margin-top:12px">' + f('whatsapp', 'WhatsApp number (orders go here)', 'tel', '70 123 456') + f('instagram', 'Instagram handle', 'text') + f('whish', 'Whish number', 'tel', '70 123 456') + f('whishName', 'Whish account name') + '</div></div>' +
-      '<div><b style="font-family:var(--head)">Delivery</b><div class="grid2" style="margin-top:12px">' + f('feeOther', 'Delivery fee $ (same everywhere in Lebanon)', 'number') + f('freeOver', 'Free delivery over $ (0 = never)', 'number') + f('localFee', 'Local delivery fee $ (nearby towns)', 'number') + f('localTowns', 'Nearby towns (comma-separated, English and Arabic)') + '</div>' +
+      '<div><b style="font-family:var(--head)">Delivery</b><div class="grid2" style="margin-top:12px">' + f('feeOther', 'Delivery fee $ (same everywhere in Lebanon)', 'number') + f('freeOver', 'Free delivery over $ (0 = never)', 'number') + '</div>' +
         '<label class="switch" style="margin-top:12px"><input type="checkbox" name="pickup"' + (s.pickup ? ' checked' : '') + '> Offer free pickup</label></div>' +
       '<div><b style="font-family:var(--head)">Shop</b><div style="display:grid;gap:12px;margin-top:12px">' + f('banner', 'Top banner text') + f('xmasCutoff', 'Christmas order cut-off', 'date') +
         '<label class="switch"><input type="checkbox" name="open"' + (s.open !== false ? ' checked' : '') + '> Shop open for orders</label></div></div>' +
@@ -2156,7 +2145,7 @@
     $('#st').onsubmit = function (e) {
       e.preventDefault(); var t = e.target, out = {};
       ['whatsapp', 'instagram', 'whish', 'whishName', 'banner', 'xmasCutoff'].forEach(function (k) { out[k] = t[k].value.trim(); });
-      ['feeOther', 'freeOver', 'localFee'].forEach(function (k) { out[k] = Math.max(0, +t[k].value || 0); }); out.localTowns = t.localTowns.value.trim(); out.feeBeirut = out.feeMount = out.feeOther;
+      ['feeOther', 'freeOver'].forEach(function (k) { out[k] = Math.max(0, +t[k].value || 0); }); out.feeBeirut = out.feeMount = out.feeOther;
       out.pickup = t.pickup.checked; out.open = t.open.checked; out.instagram = out.instagram.replace(/^@/, '');
       Store.saveSettings(out).then(function () { toast('Settings saved'); renderAdmin(); });
     };
