@@ -510,7 +510,7 @@
         if (!sockOrders) { state.requests[id] = Object.assign(state.requests[id] || {}, data); emit(); return restWrite('PATCH', 'requests/' + id, data).then(function () { return id; }); }
         return fb.ref('requests/' + id).update(data).then(function () { return id; });
       },
-      costs: function () { var c = state.requests._costs || {}; var a = function (x) { return x ? Object.keys(x).map(function (k) { return x[k]; }).filter(Boolean) : []; }; return { fil: a(c.fil), sup: a(c.sup), exp: a(c.exp) }; },
+      costs: function () { var c = state.requests._costs || {}; var a = function (x) { return x ? Object.keys(x).map(function (k) { return x[k]; }).filter(Boolean) : []; }; return { fil: a(c.fil), sup: a(c.sup), ads: a(c.ads), exp: a(c.exp) }; },
       saveCosts: function (c) {
         if (!live) { state.requests._costs = c; ls('requests', state.requests); emit(); return Promise.resolve(); }
         if (!sockOrders) { state.requests._costs = c; emit(); return restWrite('PUT', 'requests/_costs', c); }
@@ -2061,7 +2061,7 @@
   // ---------- costs: what Pierre pays for filament, supplies (cards, bags, stickers…) and other expenses ----------
   var costDraft = null;
   function admCosts() {
-    var C = Store.costs(), d = costDraft || { fil: C.fil.map(function (x) { return Object.assign({}, x); }), sup: C.sup.map(function (x) { return Object.assign({}, x); }), exp: C.exp.map(function (x) { return Object.assign({}, x); }) }; costDraft = d;
+    var C = Store.costs(), d = costDraft || { fil: C.fil.map(function (x) { return Object.assign({}, x); }), sup: C.sup.map(function (x) { return Object.assign({}, x); }), ads: C.ads.map(function (x) { return Object.assign({}, x); }), exp: C.exp.map(function (x) { return Object.assign({}, x); }) }; costDraft = d;
     var iso = function (t) { var x = new Date(t || Date.now()); return x.getFullYear() + '-' + ('0' + (x.getMonth() + 1)).slice(-2) + '-' + ('0' + x.getDate()).slice(-2); };
     var n = function (v) { return Math.max(0, +v || 0); };
     var unit = function (x) { return n(x.qty) ? n(x.paid) / n(x.qty) : 0; };
@@ -2074,20 +2074,20 @@
     var inp = function (k, i, f, v, type, extra) { return '<input data-s="' + k + '" data-i="' + i + '" data-f="' + f + '" type="' + (type || 'number') + '" value="' + esc(v == null ? '' : v) + '"' + (type ? '' : ' min="0" step="any"') + (extra || '') + '>'; };
     function stats() {
       var D = derive(), S = Store.settings(), monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime();
-      var all = d.fil.concat(d.sup, d.exp), spentAll = all.reduce(function (t, x) { return t + n(x.paid); }, 0);
+      var all = d.fil.concat(d.sup, d.ads, d.exp), spentAll = all.reduce(function (t, x) { return t + n(x.paid); }, 0);
       var spentMonth = all.filter(function (x) { return x.date && new Date(x.date + 'T12:00:00').getTime() >= monthStart; }).reduce(function (t, x) { return t + n(x.paid); }, 0);
       var profAll = Store.orders().filter(function (o) { return o.status !== 'cancelled' && !o.demo; }).reduce(function (t, o) { var c = orderCost(o); return t + (c == null ? 0 : (o.subtotal || 0) - c); }, 0);
-      var other = d.exp.reduce(function (t, x) { return t + n(x.paid); }, 0);
-      return '<div class="stat"><div class="k">Filament (average)</div><div class="v">' + money(D.pla != null ? D.pla : S.calcPla) + '/kg</div></div><div class="stat"><div class="k">Supplies per product / offer</div><div class="v">' + money(D.order) + '</div></div><div class="stat"><div class="k">Spent this month · total</div><div class="v">' + money(spentMonth) + ' · ' + money(spentAll) + '</div></div><div class="stat"><div class="k">Profit so far − other expenses</div><div class="v' + (profAll - other >= 0 ? ' good' : '') + '">' + (profAll - other < 0 ? '−' : '') + money(Math.abs(profAll - other)) + '</div></div>';
+      var other = d.exp.concat(d.ads).reduce(function (t, x) { return t + n(x.paid); }, 0), adsAll = d.ads.reduce(function (t, x) { return t + n(x.paid); }, 0), adsMonth = d.ads.filter(function (x) { return x.date && new Date(x.date + 'T12:00:00').getTime() >= monthStart; }).reduce(function (t, x) { return t + n(x.paid); }, 0);
+      return '<div class="stat"><div class="k">Filament (average)</div><div class="v">' + money(D.pla != null ? D.pla : S.calcPla) + '/kg</div></div><div class="stat"><div class="k">Supplies per product / offer</div><div class="v">' + money(D.order) + '</div></div><div class="stat"><div class="k">Spent this month · total</div><div class="v">' + money(spentMonth) + ' · ' + money(spentAll) + '</div></div><div class="stat"><div class="k">Ads this month · total</div><div class="v">' + money(adsMonth) + ' · ' + money(adsAll) + '</div></div><div class="stat"><div class="k">Profit so far − ads & other expenses</div><div class="v' + (profAll - other >= 0 ? ' good' : '') + '">' + (profAll - other < 0 ? '−' : '') + money(Math.abs(profAll - other)) + '</div></div>';
     }
     // Balance = real cash: everything you paid out vs the money actually received from paid orders/sales
     function balance() {
-      var spent = d.fil.concat(d.sup, d.exp).reduce(function (t, x) { return t + n(x.paid); }, 0);
+      var spent = d.fil.concat(d.sup, d.ads, d.exp).reduce(function (t, x) { return t + n(x.paid); }, 0);
       var os = Store.orders().filter(function (o) { return o.status !== 'cancelled' && !o.demo; });
       var got = os.filter(function (o) { return o.paid; }).reduce(function (t, o) { return t + (o.subtotal || 0); }, 0);
       var due = os.filter(function (o) { return !o.paid; }).reduce(function (t, o) { return t + (o.subtotal || 0); }, 0);
       var bal = got - spent, sg = function (v) { return (v < 0 ? '−' : '+') + money(Math.abs(v)); };
-      return '<b style="font-family:var(--head)">Balance</b><div class="muted" style="font-size:14px">Real cash: money received from paid orders and sales (without delivery fees) minus everything you paid (filament, supplies, other expenses).</div>' +
+      return '<b style="font-family:var(--head)">Balance</b><div class="muted" style="font-size:14px">Real cash: money received from paid orders and sales (without delivery fees) minus everything you paid (filament, supplies, ads, other expenses).</div>' +
         '<div class="stats" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))"><div class="stat"><div class="k">Cash received</div><div class="v good">' + money(got) + '</div></div><div class="stat"><div class="k">Total spent</div><div class="v">' + money(spent) + '</div></div>' +
         '<div class="stat" style="background:' + (bal >= 0 ? '#E8F7EE' : '#FDECEC') + '"><div class="k">Balance now</div><div class="v" style="color:' + (bal >= 0 ? 'var(--green)' : 'var(--red)') + '">' + sg(bal) + '</div></div><div class="stat"><div class="k">Still to collect</div><div class="v">' + money(due) + '</div></div><div class="stat"><div class="k">Balance once collected</div><div class="v" style="color:' + (bal + due >= 0 ? 'var(--green)' : 'var(--red)') + '">' + sg(bal + due) + '</div></div></div>' +
         '<div style="font-size:14px;font-weight:600;color:' + (bal >= 0 ? 'var(--green)' : 'var(--red)') + '">' + (bal >= 0 ? 'You’re up ' + money(bal) + ' overall — you’ve made back everything you spent.' : 'You’re down ' + money(-bal) + ' overall — ' + (bal + due >= 0 ? 'collecting what’s owed puts you back in profit.' : 'still ' + money(-(bal + due)) + ' to earn back after collecting.')) + '</div>';
@@ -2113,7 +2113,11 @@
         d.sup.map(function (x, i) { return row({ cols: '1.8fr .9fr .9fr .9fr 1.2fr', html: L('Item', inp('sup', i, 'name', x.name, 'text', ' placeholder="Cards"')) + L('Paid $', inp('sup', i, 'paid', x.paid)) + L('How many', inp('sup', i, 'qty', x.qty)) + L('Used per sale', inp('sup', i, 'per', x.per == null ? 1 : x.per)) + '<div style="font-size:13px;padding-bottom:6px;line-height:1.3" id="co_sup_' + i + '">' + out('sup', x) + '</div>' }, 'sup', i); }).join('') +
         '<button type="button" class="upl" data-add="sup">+ Add supply</button></div>' +
 
-        '<div class="panel" style="margin-bottom:14px"><b style="font-family:var(--head)">Other expenses</b><div class="muted" style="font-size:13px;margin-bottom:10px">One-off things (nozzle, build plate, tools, ads…). Not added to product cost — only counted in “spent”.</div>' +
+        '<div class="panel" style="margin-bottom:14px"><b style="font-family:var(--head)">Ads</b><div class="muted" style="font-size:13px;margin-bottom:10px">Instagram / Facebook boosts, flyers… Not added to product cost — counted in “spent” and the balance.</div>' +
+        d.ads.map(function (x, i) { return row({ cols: '2fr 1fr 1.2fr', html: L('Ad', inp('ads', i, 'name', x.name, 'text', ' placeholder="Instagram boost — My Village"')) + L('Paid $', inp('ads', i, 'paid', x.paid)) + L('Date', inp('ads', i, 'date', x.date || iso(), 'date')) }, 'ads', i); }).join('') +
+        '<button type="button" class="upl" data-add="ads">+ Add ad</button></div>' +
+
+        '<div class="panel" style="margin-bottom:14px"><b style="font-family:var(--head)">Other expenses</b><div class="muted" style="font-size:13px;margin-bottom:10px">One-off things (nozzle, build plate, tools…). Not added to product cost — only counted in “spent”.</div>' +
         d.exp.map(function (x, i) { return row({ cols: '2fr 1fr 1.2fr', html: L('What', inp('exp', i, 'name', x.name, 'text', ' placeholder="Spare nozzle"')) + L('Paid $', inp('exp', i, 'paid', x.paid)) + L('Date', inp('exp', i, 'date', x.date || iso(), 'date')) }, 'exp', i); }).join('') +
         '<button type="button" class="upl" data-add="exp">+ Add expense</button></div>' +
 
@@ -2131,10 +2135,10 @@
       $$('[data-rm]').forEach(function (b) { b.onclick = function () { d[b.dataset.rm].splice(+b.dataset.i, 1); draw(); }; });
       $('#cSave').onclick = function () {
         var clean = function (a, keys) { return a.filter(function (x) { return (x.name || '').trim() || n(x.paid); }).map(function (x) { var o = {}; keys.forEach(function (k) { var v = x[k]; if (v == null || v === '') return; o[k] = typeof v === 'string' ? v.trim().slice(0, 80) : Math.round(n(v) * 1000) / 1000; }); return o; }); };
-        var out = { fil: clean(d.fil, ['name', 'paid', 'kg', 'date']), sup: clean(d.sup, ['name', 'paid', 'qty', 'per', 'date']), exp: clean(d.exp, ['name', 'paid', 'date']), updatedAt: Date.now() };
+        var out = { fil: clean(d.fil, ['name', 'paid', 'kg', 'date']), sup: clean(d.sup, ['name', 'paid', 'qty', 'per', 'date']), ads: clean(d.ads, ['name', 'paid', 'date']), exp: clean(d.exp, ['name', 'paid', 'date']), updatedAt: Date.now() };
         var bad = out.sup.filter(function (x) { return !n(x.qty); })[0]; if (bad) { toast('Add “How many” for ' + (bad.name || 'each supply')); return; }
         var bf = out.fil.filter(function (x) { return !n(x.kg); })[0]; if (bf) { toast('Add the weight (kg) for ' + (bf.name || 'each filament')); return; }
-        d = costDraft = { fil: out.fil, sup: out.sup, exp: out.exp };
+        d = costDraft = { fil: out.fil, sup: out.sup, ads: out.ads, exp: out.exp };
         var D = derive(), set = { calcOrderPack: D.order };
         if (D.pla != null) set.calcPla = D.pla;
         if (out.sup.length) set.calcPack = 0;
