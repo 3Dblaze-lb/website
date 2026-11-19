@@ -270,10 +270,13 @@
     return 'x="' + L.dx.toFixed(2) + '" y="' + (-L.dy).toFixed(2) + '" font-size="' + L.size.toFixed(2) + '" stroke-width="' + (2 * L.emb).toFixed(2) + '"';
   }
   function ornament(o, gx) {
-    var nm = ornName(o.text || 'Gabriel'), L = ornLayout(nm), rn = /^red/i.test(o.color || '');   // colour = the NAME colour ("White name" / "Red name"); the ornament is always red
-    return '<g' + (gx ? ' transform="' + gx + '"' : '') + '><image href="img/holy-ornament.webp?v=94852778" x="-46" y="-54" width="92" height="100"/>' +
-      (L ? '<text class="ornname" data-n="' + esc2(nm) + '" ' + ornTextAttrs(L) + ' font-family="' + OFONT + ', Pacifico, cursive" fill="' + (rn ? '#5A0201' : '#7A0402') + '" stroke="' + (rn ? '#5A0201' : '#7A0402') + '" stroke-linejoin="round" transform="translate(.35 .45)" opacity="' + (rn ? '.9' : '.55') + '">' + esc2(nm) + '</text>' +
-        '<text class="ornname" data-n="' + esc2(nm) + '" ' + ornTextAttrs(L) + ' font-family="' + OFONT + ', Pacifico, cursive" fill="' + (rn ? '#F4443E' : '#FFFFFF') + '" stroke="' + (rn ? '#F4443E' : '#FFFFFF') + '" stroke-linejoin="round">' + esc2(nm) + '</text>' : '') + '</g>';
+    // colour = "Ornament · Name", e.g. "White · Red name" (older: "Red name" / "White name" = red ornament; nothing = red + white name)
+    var nm = ornName(o.text || 'Gabriel'), L = ornLayout(nm), c = o.color || '', wb = /^white\s*·/i.test(c), rn = /red name/i.test(c) || (wb && !/white name/i.test(c));
+    var same = wb !== rn, FC = rn ? (same ? '#F4443E' : '#E60705') : '#FFFFFF', SC = rn ? (same ? '#5A0201' : '#7A0402') : (same ? '#7C8696' : '#7A0402'), SO = same ? '.9' : '.55';   // same colour as the ornament → drawn embossed
+    var img = '<image href="img/holy-ornament.webp?v=94852778" x="-46" y="-54" width="92" height="100"/>';
+    return '<g' + (gx ? ' transform="' + gx + '"' : '') + '>' + (wb ? '<defs>' + WHITE_F + '</defs><g filter="url(#ornW)">' + img + '</g>' : img) +
+      (L ? '<text class="ornname" data-n="' + esc2(nm) + '" ' + ornTextAttrs(L) + ' font-family="' + OFONT + ', Pacifico, cursive" fill="' + SC + '" stroke="' + SC + '" stroke-linejoin="round" transform="translate(.35 .45)" opacity="' + SO + '">' + esc2(nm) + '</text>' +
+        '<text class="ornname" data-n="' + esc2(nm) + '" ' + ornTextAttrs(L) + ' font-family="' + OFONT + ', Pacifico, cursive" fill="' + FC + '" stroke="' + FC + '" stroke-linejoin="round">' + esc2(nm) + '</text>' : '') + '</g>';
   }
   // once Pacifico has loaded, re-fit any name drawn with the fallback metrics
   function ornRefit() {

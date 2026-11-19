@@ -69,16 +69,17 @@
       specs: ['About 23 × 17.5 cm (hangs from a cord)', 'Green or red, with the letters raised in white'] },
     { id: 'holy-ornament', col: 'xmas', name: 'Holy Night Ornament', price: 4, tag: 'Personalized', printMin: 62, grams: 14,
       text: { label: 'Name on the ornament', max: 14, ph: 'e.g. Gabriel', required: true },
-      // ornament colours (Pierre, 19 Nov): Holy Night is always red, the customer picks the NAME colour; white is the default
-      optLabel: 'Name colour', options: [{ name: 'White name' }, { name: 'Red name' }],
+      // ornament colours (Pierre, 19 Nov): the customer picks the ORNAMENT colour and the NAME colour, each red or white
+      // ("Ornament · Name" → two rows of buttons, see dualOpts). First one = the classic red with a white name.
+      optLabel: 'Ornament colour', optLabel2: 'Name colour', options: [{ name: 'Red · White name' }, { name: 'Red · Red name' }, { name: 'White · Red name' }, { name: 'White · White name' }],
       blurb: 'The star of Christmas, the Holy Family, and a name.',
-      desc: 'Our own design: the star of Bethlehem shining over Mary, Joseph and baby Jesus in the manger, with the name of your choice raised on the banner, in white or in red. Type the name and see it on the ornament before you order. One for every person in the family.',
-      specs: ['10 cm round, 3 mm thick (name raised 0.8 mm)', 'Red ornament, name raised on the banner in white or red', 'Name up to 14 letters', 'Hanging loop for string or ribbon'] },
+      desc: 'Our own design: the star of Bethlehem shining over Mary, Joseph and baby Jesus in the manger, with the name of your choice raised on the banner. Choose a red or a white ornament, and the name in white or red. Type the name and see it on the ornament before you order. One for every person in the family.',
+      specs: ['10 cm round, 3 mm thick (name raised 0.8 mm)', 'Red or white ornament, name raised on the banner in white or red', 'Name up to 14 letters', 'Hanging loop for string or ribbon'] },
     { id: 'holy-ornament-3', col: 'xmas', name: 'Holy Night Ornament — 3 for $10', price: 10, was: 12, tag: 'Save $2', printMin: 185, grams: 42,
       pack: [{ of: 'holy-ornament' }, { of: 'holy-ornament' }, { of: 'holy-ornament' }],
       blurb: 'Three ornaments, three names.',
       desc: 'Three Holy Night ornaments, each with its own name. Perfect for the family tree or as gifts.',
-      specs: ['3 ornaments, 10 cm each', 'A different name on each one', 'Red ornaments, all three names in white or all in red'] },
+      specs: ['3 ornaments, 10 cm each', 'A different name on each one', 'One look for the whole set: red or white ornaments, names in white or red'] },
     { id: 'snowflake-ornament', col: 'xmas', name: 'Snowflake Name Ornament', price: 4, tag: 'Personalized', printMin: 67, grams: 14.7,
       text: { label: 'Name on the ornament', max: 12, ph: 'e.g. Joseph', required: true },
       optLabel: 'Ornament colour', options: [{ name: 'Red' }, { name: 'White' }],   // one colour for the whole ornament, name included
@@ -120,6 +121,18 @@
   var BLAZE_ART_IDS = ['holy-ornament-3'];
   var COLOR_HEX = { black: '#30343B', white: '#F2F3F5', red: '#E2262B', green: '#1FA14E', orange: '#FF6A1F', blue: '#1A8CFF', yellow: '#FFD23F', grey: '#9AA1AB', gray: '#9AA1AB', purple: '#7A4CC2', pink: '#F47FB0', brown: '#7A4A2A', gold: '#C9A13B', silver: '#C3C7CE', navy: '#1D2B53' };
   function hexOf(name) { var k = String(name || '').toLowerCase(); return COLOR_HEX[k] || COLOR_HEX[k.split(' ')[0]] || '#D9DDE3'; }
+  // a product whose options are "A · B" pairs with a second title (optLabel2) shows TWO rows of buttons: A, then B
+  function dualOpts(p) {
+    if (!p || !p.optLabel2) return null; var ol = optList(p), a = [], b = [];
+    if (ol.length < 2 || !ol.every(function (o) { return o.name.indexOf(' · ') > 0; })) return null;
+    ol.forEach(function (o) { var s = o.name.split(' · '); if (a.indexOf(s[0]) < 0) a.push(s[0]); if (b.indexOf(s[1]) < 0) b.push(s[1]); });
+    return { a: a, b: b };
+  }
+  function dualHTML(p, cur, extra, note) {
+    var d = dualOpts(p), s = String(cur || '').split(' · ');
+    var row = function (lab, list, sel, k) { return '<div class="opt"><span class="lab">' + lab + '</span><div class="swatches">' + list.map(function (v) { return '<button type="button" class="sw dsw' + (v === sel ? ' on' : '') + '" data-d="' + k + '" data-c="' + esc(v) + '"' + (extra || '') + '><i style="background:' + hexOf(v) + '"></i>' + esc(v) + '</button>'; }).join('') + '</div></div>'; };
+    return row(esc(p.optLabel || 'Colour') + (note || ''), d.a, s[0], 'a') + row(esc(p.optLabel2), d.b, s[1], 'b');
+  }
   function col3d(name) { var k = String(name || '').toLowerCase(); return k === 'black' ? '#23262C' : k === 'white' ? '#F4F5F7' : (COLOR_HEX[k] || '#C9CDD3'); }
   var STATUSES = [
     { k: 'new', l: 'New' }, { k: 'confirmed', l: 'Confirmed' }, { k: 'printing', l: 'Printing' },
@@ -1280,7 +1293,8 @@
     var packHTML = slots.length ? '<div class="opt packopts"><span class="lab">' + (p.parts ? 'Choose the colours' : 'Choose each piece') + '</span>' + slots.map(function (x, i) {
       var so = slotOpts(x.p), grp = ornGrp(x), same = slots.filter(function (y) { return y.of === x.of; }).length;
       var first = grp && slots.map(function (y) { return y.of; }).indexOf(x.of) === i;
-      return (first ? '<div class="pgrp" style="margin:6px 0 12px"><span class="lab" style="display:block;margin-bottom:8px">' + esc(x.p.optLabel || 'Colour') + (same > 1 ? ' — the same for all ' + same + ' ornaments' : '') + '</span><div class="swatches">' + so.map(function (o) { return swatch(o, o.name === st.picks[i].color, ' data-g="' + esc(x.of) + '"'); }).join('') + '</div></div>' : '') +
+      return (first && dualOpts(x.p) ? '<div class="pgrp" style="margin:0 0 12px">' + dualHTML(x.p, st.picks[i].color, ' data-g="' + esc(x.of) + '"', same > 1 ? ' — the same for all ' + same + ' ornaments' : '') + '</div>' :
+        first ? '<div class="pgrp" style="margin:6px 0 12px"><span class="lab" style="display:block;margin-bottom:8px">' + esc(x.p.optLabel || 'Colour') + (same > 1 ? ' — the same for all ' + same + ' ornaments' : '') + '</span><div class="swatches">' + so.map(function (o) { return swatch(o, o.name === st.picks[i].color, ' data-g="' + esc(x.of) + '"'); }).join('') + '</div></div>' : '') +
         '<div class="pslot" data-slot="' + i + '"><div class="pslot-h"><b class="n">' + (i + 1) + '</b><span>' + esc(x.p.name) + '</span></div>' +
         (so.length && !grp ? '<div class="swatches">' + so.map(function (o) { return swatch(o, o.name === st.picks[i].color, ' data-s="' + i + '"'); }).join('') + '</div>' : '') +
         (x.p.text ? '<input class="ptx" data-s="' + i + '" maxlength="' + (x.p.text.max || 20) + '" placeholder="' + esc(x.p.text.label + (x.p.text.ph ? ' — ' + x.p.text.ph : '')) + '">' : '') +
@@ -1294,7 +1308,7 @@
       '<div class="eyebrow">' + colLabel(p) + '</div>' +
       '<h1>' + esc(p.name) + '</h1><div class="price" id="pPrice">' + (soon ? '<span class="soonpill">Coming soon</span>' : money(p.price) + (p.was ? '<s>' + money(p.was) + '</s>' : '')) + '</div>' + (p.priceSame != null ? '<div class="muted" style="font-size:14px;margin-top:4px">' + money(p.priceSame) + ' if both cords are the same colour</div>' : '') +
       '<p style="color:#3A4352;font-size:17px;margin:16px 0 0">' + esc(p.desc || p.blurb || '') + '</p>' +
-      (slots.length ? packHTML : ol.length ? '<div class="opt"><span class="lab">' + esc(p.optLabel || 'Colour') + '</span><div class="swatches">' + ol.map(function (o) { return swatch(o, o.name === st.color); }).join('') + '</div></div>' :
+      (slots.length ? packHTML : dualOpts(p) ? dualHTML(p, st.color) : ol.length ? '<div class="opt"><span class="lab">' + esc(p.optLabel || 'Colour') + '</span><div class="swatches">' + ol.map(function (o) { return swatch(o, o.name === st.color); }).join('') + '</div></div>' :
        p.colors && p.colors.length > 1 ? '<div class="opt"><span class="lab">Colour</span><div class="swatches">' + p.colors.map(function (c) { return '<button class="sw' + (c === st.color ? ' on' : '') + '" data-c="' + c + '"><i style="background:' + (COLOR_HEX[c] || c) + '"></i>' + c + '</button>'; }).join('') + '</div></div>' : '') +
       (p.text && !slots.length ? '<div class="opt"><label class="field">' + esc(p.text.label) + '<input id="pText" maxlength="' + p.text.max + '" placeholder="' + esc(p.text.ph) + '" value="' + esc(st.text) + '"></label><div class="err" id="pErr"></div></div>' : '') +
       '<div class="opt"><span class="lab">Quantity</span><div class="qty"><button data-q="-1" aria-label="Less">−</button><span id="pQty">1</span><button data-q="1" aria-label="More">+</button></div></div>' +
@@ -1354,6 +1368,13 @@
       slots.forEach(function (x, i) { if (x.p.art === 'door-xmas') doorKids(i); });
 
     } else $$('.sw').forEach(function (b) { b.onclick = function () { st.color = b.dataset.c; st.keep = true; $$('.sw').forEach(function (x) { x.classList.toggle('on', x === b); }); draw(); }; });
+    $$('.dsw').forEach(function (b) { b.onclick = function () {
+      var k = b.dataset.d === 'a' ? 0 : 1, of = b.dataset.g, set = function (c) { var s = String(c || '').split(' · '); s[k] = b.dataset.c; return s.join(' · '); };
+      if (of) { var f1 = -1; slots.forEach(function (x, i) { if (x.of === of) { st.picks[i].color = set(st.picks[i].color); if (f1 < 0) f1 = i; } }); if (st.focus == null || slots[st.focus].of !== of) st.focus = f1; $('#packErr').textContent = ''; }
+      else { st.color = set(st.color); st.keep = true; }
+      $$('.dsw').forEach(function (x) { if (x.dataset.d === b.dataset.d && x.dataset.g === of) x.classList.toggle('on', x === b); });
+      draw();
+    }; });
     var isMap = (p.art || p.id) === 'my-village';
     var geoLook = function () { Geo.find(st.text, function (hit, gs) { st.geo = gs === 'searching' ? null : hit; st.needPick = gs === 'pick'; draw(); var g = $('#pGeo'); if (g) g.innerHTML = Geo.status(hit, gs, 'pText', st.text); }); };
     var ti = $('#pText'); if (ti) ti.oninput = function () { st.text = ti.value.trim(); $('#pErr').textContent = ''; if (isMap) geoLook(); else draw(); };
@@ -2013,15 +2034,18 @@
     }
     Store.saveRequest(null, data).then(function (id) { data.id = id; copy(requestText(data), 'Copied — paste it in your Claude chat'); if (done) done(); });
   }
-  // colour of one ornament in an order → what to print. Holy Night: red ornament, NAME white (default) or red.
+  // colour of one ornament in an order → what to print. Holy Night: ornament red (default) or white, NAME white (default) or red.
   // Snowflake / Bow: the whole ornament red (default) or white. AMS slots: 2 white, 4 red.
   function ornColor(kind, c) {
     var red = /^red/i.test(c || ''), white = /^white/i.test(c || '');
-    if (kind === 'holy') return red ? 'RED name (ornament slot 4 red, name part slot 4 red too)' : 'WHITE name (ornament slot 4 red, name part slot 2 white)';
+    if (kind === 'holy') {   // "White · Red name" (older orders: "Red name" / "White name" / nothing = red ornament)
+      var wb = /^white\s*·/i.test(c || ''), rn = /red name/i.test(c || '') || (wb && !/white name/i.test(c || ''));
+      return (wb ? 'WHITE ornament' : 'RED ornament') + ' + ' + (rn ? 'RED name' : 'WHITE name') + ' (ornament slot ' + (wb ? '2 white' : '4 red') + ', name part slot ' + (rn ? '4 red' : '2 white') + ')';
+    }
     return white ? 'ALL WHITE (every part slot 2 white)' : 'ALL RED (every part slot 4 red)';
   }
   var ORN_TOOL = {
-    holy: { name: 'Holy Night Ornament', sample: 'Christmass\\3DBlaze Holy Night Ornament - Gabriel - sample.3mf', tool: 'Christmass\\3DBlaze ornament tool.zip → python3 make_holy.py "Name" "3DBlaze Holy Night Ornament - Name.3mf"', spec: '10 cm red ornament (slot 4 red), 3 mm, name in Pacifico RAISED 0.8 mm on the banner — name colour per name as listed above (white = slot 2, red = slot 4)' },
+    holy: { name: 'Holy Night Ornament', sample: 'Christmass\\3DBlaze Holy Night Ornament - Gabriel - sample.3mf', tool: 'Christmass\\3DBlaze ornament tool.zip → python3 make_holy.py "Name" "3DBlaze Holy Night Ornament - Name.3mf"', spec: '10 cm ornament, 3 mm, name in Pacifico RAISED 0.8 mm on the banner — ornament colour and name colour per name as listed above (white = slot 2, red = slot 4)' },
     snowflake: { name: 'Snowflake Name Ornament', sample: 'Christmass\\3DBlaze Snowflake Ornament - Joseph - sample.3mf', tool: 'Christmass\\3DBlaze name ornaments tool.zip → python3 make_orn.py snowflake "Name" "3DBlaze Snowflake Ornament - Name.3mf"', spec: '10 cm, 3 mm flat, ONE colour for the whole ornament incl. the name part — per name as listed above (red = slot 4, white = slot 2), name UPPERCASE Caladea Bold' },
     bow: { name: 'Bow Name Ornament', sample: 'Christmass\\3DBlaze Bow Ornament - Maria - sample.3mf', tool: 'Christmass\\3DBlaze name ornaments tool.zip → python3 make_orn.py bow "Name" "3DBlaze Bow Ornament - Name.3mf"', spec: 'oval 10 × 8 cm, 3 mm base with raised bow/holly, ONE colour for the whole ornament incl. the name part — per name as listed above (red = slot 4, white = slot 2), name Lora Bold Italic raised 0.8 mm' }
   };
