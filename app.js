@@ -510,7 +510,7 @@
         if (!sockOrders) { state.requests[id] = Object.assign(state.requests[id] || {}, data); emit(); return restWrite('PATCH', 'requests/' + id, data).then(function () { return id; }); }
         return fb.ref('requests/' + id).update(data).then(function () { return id; });
       },
-      costs: function () { var c = state.requests._costs || {}; var a = function (x) { return x ? Object.keys(x).map(function (k) { return x[k]; }).filter(Boolean) : []; }; return { fil: a(c.fil), sup: a(c.sup), ads: a(c.ads), exp: a(c.exp) }; },
+      costs: function () { var c = state.requests._costs || {}; var a = function (x) { return x ? Object.keys(x).map(function (k) { return x[k]; }).filter(Boolean) : []; }; return { fil: a(c.fil), sup: a(c.sup), bag: a(c.bag), bagOf: Object.assign({}, c.bagOf || {}), ads: a(c.ads), exp: a(c.exp) }; },
       saveCosts: function (c) {
         if (!live) { state.requests._costs = c; ls('requests', state.requests); emit(); return Promise.resolve(); }
         if (!sockOrders) { state.requests._costs = c; emit(); return restWrite('PUT', 'requests/_costs', c); }
@@ -708,8 +708,9 @@
     var sl = isPack(p) ? packSlots(p) : [], pr = null;
     if (sl.length && sl.every(function (x) { return x.p && x.p.grams != null; })) pr = sl.reduce(function (t, x) { return t + pieceCost(x.p.grams, x.p.printMin); }, 0);
     else if (p.grams != null) pr = pieceCost(p.grams, p.printMin);
-    return pr == null ? null : Math.round((pr + orderPack()) * 100) / 100;
+    return pr == null ? null : Math.round((pr + orderPack() + bagCostOf(p)) * 100) / 100;
   }
+  function bagCostOf(p) { var m = Store.settings().bagCost || {}; return p && m[p.id] ? +m[p.id] || 0 : 0; }
   function isPack(p) { return !!(p && p.pack && !(p.parts && p.parts.length)); }
   function productCost(p) { return unitCostOf(p); }
   function orderCost(o) {
@@ -2068,14 +2069,14 @@
   // ---------- costs: what Pierre pays for filament, supplies (cards, bags, stickers…) and other expenses ----------
   var costDraft = null;
   function admCosts() {
-    var C = Store.costs(), d = costDraft || { fil: C.fil.map(function (x) { return Object.assign({}, x); }), sup: C.sup.map(function (x) { return Object.assign({}, x); }), ads: C.ads.map(function (x) { return Object.assign({}, x); }), exp: C.exp.map(function (x) { return Object.assign({}, x); }) }; costDraft = d;
+    var C = Store.costs(), d = costDraft || { fil: C.fil.map(function (x) { return Object.assign({}, x); }), sup: C.sup.map(function (x) { return Object.assign({}, x); }), bag: C.bag.map(function (x) { return Object.assign({}, x); }), bagOf: C.bagOf, ads: C.ads.map(function (x) { return Object.assign({}, x); }), exp: C.exp.map(function (x) { return Object.assign({}, x); }) }; costDraft = d;
     var iso = function (t) { var x = new Date(t || Date.now()); return x.getFullYear() + '-' + ('0' + (x.getMonth() + 1)).slice(-2) + '-' + ('0' + x.getDate()).slice(-2); };
     var n = function (v) { return Math.max(0, +v || 0); };
     var unit = function (x) { return n(x.qty) ? n(x.paid) / n(x.qty) : 0; };
     // supplies: each line is one purchase; the cost per sale uses the LATEST purchase of each item (by name)
-    function latestSup() {
+    function latestSup(arr) {
       var by = {};
-      d.sup.forEach(function (x, i) {
+      (arr || d.sup).forEach(function (x, i) {
         var k = (x.name || '').trim().toLowerCase() || '#' + i, t = x.date ? new Date(x.date + 'T12:00:00').getTime() : 0;
         if (!by[k] || t > by[k].t || (t === by[k].t && i > by[k].i)) by[k] = { i: i, t: t };
       });
@@ -2085,7 +2086,11 @@
       var kg = 0, paid = 0, order = 0, cur = latestSup();
       d.fil.forEach(function (x) { if (n(x.kg) && n(x.paid)) { kg += n(x.kg); paid += n(x.paid); } });
       d.sup.forEach(function (x, i) { if (cur[i]) order += unit(x) * (n(x.per) || 1); });
-      return { pla: kg ? Math.round(paid / kg * 100) / 100 : null, order: Math.round(order * 100) / 100, cur: cur };
+      // bags: latest price for each size, then each product/offer gets the price of its size
+      var bcur = latestSup(d.bag), size = {}, sizes = [];
+      d.bag.forEach(function (x, i) { var k = (x.name || '').trim(); if (bcur[i] && k) { size[k.toLowerCase()] = unit(x); sizes.push(k); } });
+      var bagCost = {}; Object.keys(d.bagOf || {}).forEach(function (id) { var v = size[(d.bagOf[id] || '').toLowerCase()]; if (v != null && !/[.#$\[\]\/]/.test(id)) bagCost[id] = Math.round(v * 1000) / 1000; });
+      return { pla: kg ? Math.round(paid / kg * 100) / 100 : null, order: Math.round(order * 100) / 100, cur: cur, bcur: bcur, sizes: sizes, bagCost: bagCost };
     }
     var inp = function (k, i, f, v, type, extra) { return '<input data-s="' + k + '" data-i="' + i + '" data-f="' + f + '" type="' + (type || 'number') + '" value="' + esc(v == null ? '' : v) + '"' + (type ? '' : ' min="0" step="any"') + (extra || '') + '>'; };
     var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -2099,7 +2104,7 @@
     }
     function years() {
       var t = new Date().getFullYear(), lo = Math.min(2026, t);
-      d.fil.concat(d.sup, d.ads, d.exp).forEach(function (x) { if (x.date) lo = Math.min(lo, +x.date.slice(0, 4) || lo); });
+      d.fil.concat(d.sup, d.bag, d.ads, d.exp).forEach(function (x) { if (x.date) lo = Math.min(lo, +x.date.slice(0, 4) || lo); });
       Store.orders().forEach(function (o) { if (o.createdAt) lo = Math.min(lo, new Date(o.createdAt).getFullYear()); });
       var a = []; for (var y = t; y >= lo; y--) a.push(y); return a;
     }
@@ -2112,7 +2117,7 @@
       var p = ls('costPeriod') || 'month', R = perRange(), st = R.st, lbl = R.lbl, now = new Date();
       var inP = function (x) { if (st === 0 && R.en === Infinity) return true; var t = x.date ? new Date(x.date + 'T12:00:00').getTime() : NaN; return t >= st && t < R.en; };
       var sum = function (a) { return a.filter(inP).reduce(function (t, x) { return t + n(x.paid); }, 0); };
-      var sF = sum(d.fil), sS = sum(d.sup), sA = sum(d.ads), sE = sum(d.exp), spent = sF + sS + sA + sE;
+      var sF = sum(d.fil), sS = sum(d.sup), sB = sum(d.bag), sA = sum(d.ads), sE = sum(d.exp), spent = sF + sS + sB + sA + sE;
       var os = Store.orders().filter(function (o) { return o.status !== 'cancelled' && !o.demo && o.createdAt >= st && o.createdAt < R.en; });
       var got = os.filter(function (o) { return o.paid; }).reduce(function (t, o) { return t + (o.subtotal || 0); }, 0);
       var due = os.filter(function (o) { return !o.paid; }).reduce(function (t, o) { return t + (o.subtotal || 0); }, 0);
@@ -2128,13 +2133,22 @@
           st2('Balance', '<span style="color:' + col(bal) + '">' + sg(bal) + '</span>', ' style="background:' + (bal >= 0 ? '#E8F7EE' : '#FDECEC') + '"') +
           st2('Still to collect', money(due)) + st2('Balance once collected', '<span style="color:' + col(bal + due) + '">' + sg(bal + due) + '</span>') +
         '</div><div class="stats" style="grid-template-columns:repeat(auto-fit,minmax(120px,1fr));margin-top:0">' +
-          st2('Filament', money(sF)) + st2('Supplies', money(sS)) + st2('Ads', money(sA)) + st2('Other', money(sE)) + st2('Profit on orders', '<span style="color:' + col(prof) + '">' + sg(prof) + '</span>') +
+          st2('Filament', money(sF)) + st2('Supplies', money(sS)) + st2('Bags', money(sB)) + st2('Ads', money(sA)) + st2('Other', money(sE)) + st2('Profit on orders', '<span style="color:' + col(prof) + '">' + sg(prof) + '</span>') +
         '</div><div style="font-size:14px;font-weight:600;color:' + col(bal) + '">' + (bal >= 0 ? 'You’re up ' + money(bal) + ' ' + lbl + '.' : 'You’re down ' + money(-bal) + ' ' + lbl + ' — ' + (bal + due >= 0 ? 'collecting what’s owed puts you back up.' : 'still ' + money(-(bal + due)) + ' to earn back after collecting.')) + '</div>';
     }
     function out(k, x) {
       if (k === 'fil') return n(x.kg) ? '<b>' + money(n(x.paid) / n(x.kg)) + '/kg</b>' : '—';
+      if (k === 'bag') { var ub = unit(x), cb = derive().bcur[d.bag.indexOf(x)]; return ub ? (cb ? '<b>' + money(ub) + ' each</b>' : '<span class="muted">' + money(ub) + ' · older purchase</span>') : '—'; }
       if (k === 'sup') { var u = unit(x), per = n(x.per) || 1, cur = derive().cur[d.sup.indexOf(x)]; return u ? money(u) + ' each<br>' + (cur ? '<b>' + money(u * per) + ' per sale</b>' : '<span class="muted">older purchase</span>') : '—'; }
       return '';
+    }
+    function bagOfHtml() {
+      var D = derive(), ps = Store.products().filter(function (p) { return p && p.id && !p.hidden; });
+      if (!D.sizes.length) return '<div class="muted" style="font-size:13px">Add a bag size above to assign products.</div>';
+      return '<b style="font-size:14px">Which bag for each product / offer</b><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px 14px;margin-top:8px">' + ps.map(function (p) {
+        var cur = (d.bagOf || {})[p.id] || '', c = D.bagCost[p.id];
+        return '<label class="field" style="margin:0;font-size:12px">' + esc(p.name) + (isPack(p) ? ' <span class="muted">(offer)</span>' : '') + '<select data-bagof="' + esc(p.id) + '"><option value="">No bag</option>' + D.sizes.map(function (z) { return '<option' + (z.toLowerCase() === cur.toLowerCase() ? ' selected' : '') + '>' + esc(z) + '</option>'; }).join('') + '</select>' + (c != null ? '<span class="muted" style="font-size:12px">+ ' + money(c) + '</span>' : '') + '</label>';
+      }).join('') + '</div>';
     }
     function draw() {
       var row = function (cells, k, i) { return '<div class="cost-row" style="--c:' + cells.cols + ' 36px">' + cells.html + '<button type="button" class="upl" data-rm="' + k + '" data-i="' + i + '" title="Remove" style="min-height:42px">✕</button></div>'; };
@@ -2148,9 +2162,14 @@
         d.fil.map(function (x, i) { return row({ cols: '2fr 1fr 1fr 1.2fr 1fr', html: L('Filament', inp('fil', i, 'name', x.name, 'text', ' placeholder="Black PLA"')) + L('Paid $', inp('fil', i, 'paid', x.paid)) + L('Weight kg', inp('fil', i, 'kg', x.kg == null ? 1 : x.kg)) + L('Date', inp('fil', i, 'date', x.date || iso(), 'date')) + '<div style="font-size:13px;padding-bottom:12px" id="co_fil_' + i + '">' + out('fil', x) + '</div>' }, 'fil', i); }).join('') +
         '<button type="button" class="upl" data-add="fil">+ Add filament</button></div>' +
 
-        '<div class="panel" style="margin-bottom:14px"><b style="font-family:var(--head)">Supplies</b><div class="muted" style="font-size:13px;margin-bottom:10px">Cards, bags, stickers, boxes… e.g. Cards · $50 · 54 bought. Add a new line every time you buy (with the date) — the cost per sale always uses your latest price for each item. Used once per product or offer sold (a pack of 3 = one bag, one card).</div>' +
+        '<div class="panel" style="margin-bottom:14px"><b style="font-family:var(--head)">Supplies</b><div class="muted" style="font-size:13px;margin-bottom:10px">Cards, stickers, boxes… (bags go in the Bags section) e.g. Cards · $50 · 54 bought. Add a new line every time you buy (with the date) — the cost per sale always uses your latest price for each item. Used once per product or offer sold (a pack of 3 = one bag, one card).</div>' +
         d.sup.map(function (x, i) { return row({ cols: '1.6fr .8fr .8fr .8fr 1.2fr 1.1fr', html: L('Item', inp('sup', i, 'name', x.name, 'text', ' placeholder="Cards"')) + L('Paid $', inp('sup', i, 'paid', x.paid)) + L('How many', inp('sup', i, 'qty', x.qty)) + L('Used per sale', inp('sup', i, 'per', x.per == null ? 1 : x.per)) + L('Bought on', inp('sup', i, 'date', x.date || iso(), 'date')) + '<div style="font-size:13px;padding-bottom:6px;line-height:1.3" id="co_sup_' + i + '">' + out('sup', x) + '</div>' }, 'sup', i); }).join('') +
         '<button type="button" class="upl" data-add="sup">+ Add supply</button></div>' +
+
+        '<div class="panel" style="margin-bottom:14px"><b style="font-family:var(--head)">Bags</b><div class="muted" style="font-size:13px;margin-bottom:10px">One line per bag purchase, by size (e.g. Small 10×15 · $5 · 100 bought). Latest price of each size is used. Then pick below which bag each product or offer goes in — one bag per product or offer sold.</div>' +
+        d.bag.map(function (x, i) { return row({ cols: '1.8fr .9fr .9fr 1.2fr 1.1fr', html: L('Size', inp('bag', i, 'name', x.name, 'text', ' placeholder="Small 10×15"')) + L('Paid $', inp('bag', i, 'paid', x.paid)) + L('How many', inp('bag', i, 'qty', x.qty)) + L('Bought on', inp('bag', i, 'date', x.date || iso(), 'date')) + '<div style="font-size:13px;padding-bottom:12px" id="co_bag_' + i + '">' + out('bag', x) + '</div>' }, 'bag', i); }).join('') +
+        '<button type="button" class="upl" data-add="bag">+ Add bag</button>' +
+        '<div id="cBagOf" style="margin-top:16px">' + bagOfHtml() + '</div></div>' +
 
         '<div class="panel" style="margin-bottom:14px"><b style="font-family:var(--head)">Ads</b><div class="muted" style="font-size:13px;margin-bottom:10px">Instagram / Facebook boosts, flyers… Not added to product cost — counted in “spent” and the balance.</div>' +
         d.ads.map(function (x, i) { return row({ cols: '2fr 1fr 1.2fr', html: L('Ad', inp('ads', i, 'name', x.name, 'text', ' placeholder="Instagram boost — My Village"')) + L('Paid $', inp('ads', i, 'paid', x.paid)) + L('Date', inp('ads', i, 'date', x.date || iso(), 'date')) }, 'ads', i); }).join('') +
@@ -2166,22 +2185,28 @@
         var x = d[el.dataset.s][+el.dataset.i], f = el.dataset.f;
         el.addEventListener(el.tagName === 'SELECT' || el.type === 'date' ? 'change' : 'input', function () {
           x[f] = el.type === 'number' ? (el.value === '' ? null : +el.value) : el.value;
-          if (el.dataset.s === 'sup') d.sup.forEach(function (y, j) { var o = $('#co_sup_' + j); if (o) o.innerHTML = out('sup', y); });
+          if (el.dataset.s === 'sup' || el.dataset.s === 'bag') d[el.dataset.s].forEach(function (y, j) { var o = $('#co_' + el.dataset.s + '_' + j); if (o) o.innerHTML = out(el.dataset.s, y); });
           else { var o = $('#co_' + el.dataset.s + '_' + el.dataset.i); if (o) o.innerHTML = out(el.dataset.s, x); }
           $('#cStats').innerHTML = stats(); $('#cBal').innerHTML = balance();
         });
       });
+      $$('[data-s="bag"]').forEach(function (el) { el.addEventListener('change', function () { $('#cBagOf').innerHTML = bagOfHtml(); }); });
+      $('#cBagOf').onchange = function (e) { var t = e.target; if (!t.hasAttribute('data-bagof')) return; d.bagOf = Object.assign({}, d.bagOf); if (t.value) d.bagOf[t.dataset.bagof] = t.value; else delete d.bagOf[t.dataset.bagof]; $('#cBagOf').innerHTML = bagOfHtml(); };
       $('#cBal').onclick = function (e) { var b = e.target.closest('[data-per]'); if (!b) return; ls('costPeriod', b.dataset.per); $('#cBal').innerHTML = balance(); };
       $('#cBal').onchange = function (e) { var t = e.target; if (t.hasAttribute('data-pm')) ls('costMonth', +t.value); else if (t.hasAttribute('data-py')) ls('costYear', +t.value); else return; $('#cBal').innerHTML = balance(); };
-      $$('[data-add]').forEach(function (b) { b.onclick = function () { var k = b.dataset.add; d[k].push(k === 'fil' ? { name: '', paid: null, kg: 1, date: iso() } : k === 'sup' ? { name: '', paid: null, qty: null, per: 1, date: iso() } : { name: '', paid: null, date: iso() }); draw(); var r = $$('[data-s="' + k + '"][data-f="name"]'); if (r.length) r[r.length - 1].focus(); }; });
+      $$('[data-add]').forEach(function (b) { b.onclick = function () { var k = b.dataset.add; d[k].push(k === 'fil' ? { name: '', paid: null, kg: 1, date: iso() } : k === 'sup' ? { name: '', paid: null, qty: null, per: 1, date: iso() } : k === 'bag' ? { name: '', paid: null, qty: null, date: iso() } : { name: '', paid: null, date: iso() }); draw(); var r = $$('[data-s="' + k + '"][data-f="name"]'); if (r.length) r[r.length - 1].focus(); }; });
       $$('[data-rm]').forEach(function (b) { b.onclick = function () { d[b.dataset.rm].splice(+b.dataset.i, 1); draw(); }; });
       $('#cSave').onclick = function () {
         var clean = function (a, keys) { return a.filter(function (x) { return (x.name || '').trim() || n(x.paid); }).map(function (x) { var o = {}; keys.forEach(function (k) { var v = x[k]; if (v == null || v === '') return; o[k] = typeof v === 'string' ? v.trim().slice(0, 80) : Math.round(n(v) * 1000) / 1000; }); return o; }); };
-        var out = { fil: clean(d.fil, ['name', 'paid', 'kg', 'date']), sup: clean(d.sup, ['name', 'paid', 'qty', 'per', 'date']), ads: clean(d.ads, ['name', 'paid', 'date']), exp: clean(d.exp, ['name', 'paid', 'date']), updatedAt: Date.now() };
+        var out = { fil: clean(d.fil, ['name', 'paid', 'kg', 'date']), sup: clean(d.sup, ['name', 'paid', 'qty', 'per', 'date']), bag: clean(d.bag, ['name', 'paid', 'qty', 'date']), ads: clean(d.ads, ['name', 'paid', 'date']), exp: clean(d.exp, ['name', 'paid', 'date']), updatedAt: Date.now() };
         var bad = out.sup.filter(function (x) { return !n(x.qty); })[0]; if (bad) { toast('Add “How many” for ' + (bad.name || 'each supply')); return; }
+        var bb = out.bag.filter(function (x) { return !n(x.qty) || !(x.name || '').trim(); })[0]; if (bb) { toast('Add the size and “How many” for each bag'); return; }
         var bf = out.fil.filter(function (x) { return !n(x.kg); })[0]; if (bf) { toast('Add the weight (kg) for ' + (bf.name || 'each filament')); return; }
-        d = costDraft = { fil: out.fil, sup: out.sup, ads: out.ads, exp: out.exp };
-        var D = derive(), set = { calcOrderPack: D.order };
+        var names = out.bag.map(function (x) { return x.name.toLowerCase(); }), bo = {};
+        Object.keys(d.bagOf || {}).forEach(function (id) { if (names.indexOf((d.bagOf[id] || '').toLowerCase()) >= 0) bo[id] = d.bagOf[id]; });
+        if (Object.keys(bo).length) out.bagOf = bo;
+        d = costDraft = { fil: out.fil, sup: out.sup, bag: out.bag, bagOf: bo, ads: out.ads, exp: out.exp };
+        var D = derive(), set = { calcOrderPack: D.order, bagCost: Object.keys(D.bagCost).length ? D.bagCost : null };
         if (D.pla != null) set.calcPla = D.pla;
         if (out.sup.length) set.calcPack = 0;
         var btn = $('#cSave'); btn.disabled = true; btn.textContent = 'Saving…';
@@ -2293,7 +2318,7 @@
       list.map(function (p) {
         var pc = productCost(p);
         var costLine = pc == null ? '<div class="muted" style="font-size:12px;margin-top:3px">No print file yet — add one to see cost & profit</div>' :
-          '<div style="font-size:12px;margin-top:3px;color:#2C3443">' + (isPack(p) && packSlots(p).length && packSlots(p).every(function (x) { return x.p && x.p.grams != null; }) ? packSlots(p).length + ' pieces — filament × ' + packSlots(p).length + ', one card/bag/sticker' : (Math.round(p.grams * 10) / 10) + ' g · ' + Math.floor(p.printMin / 60) + 'h ' + Math.round(p.printMin % 60) + 'm' + (p.printFile ? ' · ' + esc(p.printFile) : '') + (p.printExact ? ' ✓' : ' (estimate)')) + '<br>Cost ' + money(pc) + ' · <b style="color:' + (p.price - pc > 0 ? 'var(--green)' : 'var(--red)') + '">profit ' + money(p.price - pc) + ' (' + (p.price > 0 ? Math.round((p.price - pc) / p.price * 100) : 0) + '%)</b> ' + (isPack(p) ? 'per pack' : 'per piece') + (orderPack() ? ' <span class="muted">(incl. ' + money(orderPack()) + ' card/bag/sticker)</span>' : '') + '</div>';
+          '<div style="font-size:12px;margin-top:3px;color:#2C3443">' + (isPack(p) && packSlots(p).length && packSlots(p).every(function (x) { return x.p && x.p.grams != null; }) ? packSlots(p).length + ' pieces — filament × ' + packSlots(p).length + ', one card/bag/sticker' : (Math.round(p.grams * 10) / 10) + ' g · ' + Math.floor(p.printMin / 60) + 'h ' + Math.round(p.printMin % 60) + 'm' + (p.printFile ? ' · ' + esc(p.printFile) : '') + (p.printExact ? ' ✓' : ' (estimate)')) + '<br>Cost ' + money(pc) + ' · <b style="color:' + (p.price - pc > 0 ? 'var(--green)' : 'var(--red)') + '">profit ' + money(p.price - pc) + ' (' + (p.price > 0 ? Math.round((p.price - pc) / p.price * 100) : 0) + '%)</b> ' + (isPack(p) ? 'per pack' : 'per piece') + (orderPack() || bagCostOf(p) ? ' <span class="muted">(incl. ' + [orderPack() ? money(orderPack()) + ' supplies' : '', bagCostOf(p) ? money(bagCostOf(p)) + ' bag' : ''].filter(Boolean).join(' + ') + ')</span>' : '') + '</div>';
         return '<div class="prow" data-p="' + p.id + '"><div class="th">' + (realPhoto(p) && modelKind(p) ? '<img src="' + realPhoto(p) + '" alt="' + esc(p.name) + '" title="Real picture (2nd view in the shop — the model is shown first)">' : thumb(p)) + '</div><div><b>' + esc(p.name) + '</b><div class="muted" style="font-size:13px">' + colName(p.col) + (p.comingSoon ? ' · <b style="color:#B26B00">Coming soon</b>' : '') + ' · <button class="upl" data-ed="' + p.id + '">Edit</button> · <button class="upl" data-bf="' + p.id + '">' + (p.grams != null ? 'Replace Bambu file' : '+ Bambu file') + '</button> · <button class="upl" data-up="' + p.id + '">' + (p.photo ? 'Change photo' : 'Upload photo') + '</button> · ' + (p.photo ? '<button class="upl" data-rmph="' + p.id + '">Remove photo</button> · ' : '') + (packSlots(p).length ? '<button class="upl" data-offer="' + p.id + '">Edit offer (' + packSlots(p).length + ' pieces)</button>' : '<button class="upl" data-opt="' + p.id + '">Colours & photos' + (optList(p).length ? ' (' + optList(p).length + ')' : '') + '</button>') + ' · <button class="upl" data-del="' + p.id + '">Remove</button></div>' + costLine + '</div>' +
           '<label class="field" style="font-size:12px">Price $<input type="number" min="0" step="0.5" value="' + p.price + '" data-price="' + p.id + '"></label>' +
           '<label class="switch"><input type="checkbox" data-av="' + p.id + '"' + (p.available === false ? '' : ' checked') + '> On sale</label>' +
