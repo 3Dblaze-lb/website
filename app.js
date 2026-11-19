@@ -1956,8 +1956,8 @@
       '<p class="muted" style="margin:4px 0 16px;font-size:14px">' + fmtDate(o.createdAt) + '</p>' +
       (function () { var w = priceCheck(o); return w ? '<div class="panel" style="border:2px solid #E5484D;background:#FFF5F5;margin-bottom:14px;padding:12px 16px"><b style="color:#C8102E">⚠ Price doesn’t match the shop — possible fake order</b><div style="font-size:14px;margin-top:4px">' + esc(w) + '</div><div class="muted" style="font-size:13px;margin-top:4px">Call the customer before printing. Charge the real price.</div></div>' : ''; })() +
       '<div class="lab muted" style="font-size:13px">Move to</div><div class="stepper">' + STATUSES.map(function (s) { return '<button data-s="' + s.k + '" class="' + (o.status === s.k ? 'on' : '') + '">' + s.l + '</button>'; }).join('') + '</div>' +
-      '<div class="panel" style="padding:16px 18px;background:var(--card2)"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px;font-size:13px" class="muted"><span>Tick each piece when it’s done — all ticked = Ready</span><b id="mTkN" style="white-space:nowrap"></b></div>' + o.items.map(function (i, n) { var p = Store.product(i.id) || { id: i.id, name: i.name }; return '<div class="line" style="grid-template-columns:56px 1fr auto"><div class="th" style="width:56px;height:56px">' + thumb(p, { color: i.color, text: i.text, lat: i.geo && i.geo.lat, lon: i.geo && i.geo.lon, ar: i.geo && i.geo.ar, ele: i.geo && i.geo.ele }) + '</div><div><div class="nm">' + esc(i.name) + ' × ' + i.qty + '</div><div class="meta">' + esc([i.color, i.text ? '“' + i.text + '”' : ''].filter(Boolean).join(' · ')) + '</div></div><b>' + money(i.price * i.qty) + '</b></div>' +
-        '<div style="display:grid;gap:2px;margin:2px 0 12px 4px">' + orderPieces(o).filter(function (x) { return x.item === n; }).map(function (x) { var on = !!Store.ticks(o.code)[x.k]; return '<label class="switch" style="padding:7px 0;min-height:36px"><input type="checkbox" data-tk="' + x.k + '"' + (on ? ' checked' : '') + ' style="flex:none;width:22px;height:22px"><span style="' + (on ? 'text-decoration:line-through;opacity:.55' : '') + '">' + esc(x.label) + '</span></label>'; }).join('') + '</div>'; }).join('') +
+      '<div class="panel" style="padding:16px 18px;background:var(--card2)"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px;font-size:13px" class="muted"><span>Printed: first tick = Printing · Finished: all ticked = Ready</span><b id="mTkN" style="white-space:nowrap"></b></div>' + o.items.map(function (i, n) { var p = Store.product(i.id) || { id: i.id, name: i.name }; return '<div class="line" style="grid-template-columns:56px 1fr auto"><div class="th" style="width:56px;height:56px">' + thumb(p, { color: i.color, text: i.text, lat: i.geo && i.geo.lat, lon: i.geo && i.geo.lon, ar: i.geo && i.geo.ar, ele: i.geo && i.geo.ele }) + '</div><div><div class="nm">' + esc(i.name) + ' × ' + i.qty + '</div><div class="meta">' + esc([i.color, i.text ? '“' + i.text + '”' : ''].filter(Boolean).join(' · ')) + '</div></div><b>' + money(i.price * i.qty) + '</b></div>' +
+        '<div style="display:grid;gap:2px;margin:2px 0 12px 4px">' + orderPieces(o).filter(function (x) { return x.item === n; }).map(function (x) { var tk = Store.ticks(o.code), on = !!tk[x.k], pr = !!tk['p' + x.k]; return '<div style="display:flex;align-items:center;gap:12px;min-height:36px;padding:4px 0;flex-wrap:wrap"><span style="flex:1 1 100%;' + (on ? 'text-decoration:line-through;opacity:.55' : '') + '">' + esc(x.label) + '</span><label class="switch" style="min-height:0;gap:6px"><input type="checkbox" data-tk="p' + x.k + '"' + (pr ? ' checked' : '') + ' style="flex:none;width:22px;height:22px"><span>Printed</span></label><label class="switch" style="min-height:0;gap:6px"><input type="checkbox" data-tk="' + x.k + '"' + (on ? ' checked' : '') + ' style="flex:none;width:22px;height:22px"><span>Finished</span></label></div>'; }).join('') + '</div>'; }).join('') +
       '<div class="sum" style="margin-top:10px">' + (function () { var c = orderCost(o); return c == null ? '<div class="muted" style="font-size:13px"><span>Profit</span><span>add the Bambu file to each product to see it</span></div>' : '<div><span>Cost · profit</span><b style="color:var(--green)">' + money(c) + ' · ' + money(orderNet(o) - c) + '</b></div>'; })() + '<div><span>Delivery</span><b>' + (o.delivery ? money(o.delivery) : 'Free') + '</b></div>' + (orderDiscount(o) ? '<div><span>Discount</span><b style="color:var(--red)">− ' + money(orderDiscount(o)) + '</b></div>' : '') + '<div class="tot" style="font-size:18px"><span>Total</span><span>' + money(o.total) + '</span></div></div></div>' +
       '<div class="dlv"><div class="dlv-h"><b>' + (o.method === 'pickup' ? 'Pickup' : 'Delivery') + ' details</b><span>' + (o.paid ? 'Paid' : 'Collect ' + money(o.total) + (o.payment === 'whish' ? ' (Whish)' : ' cash')) + '</span></div>' +
         '<div class="kv"><span>Customer</span><b>' + esc(c.name) + '</b>' +
@@ -1981,17 +1981,23 @@
             if (b.dataset.s === 'cancelled') confirmBox('Cancel order ' + o.code + '?', 'Cancel order', go); else go();
           };
         });
-        var tkN = function () { var d = orderDone(o); box.querySelector('#mTkN').textContent = d.n + ' / ' + d.of + ' done'; return d; };
+        var tkN = function () { var d = orderDone(o), t = Store.ticks(o.code), pn = orderPieces(o).filter(function (x) { return t['p' + x.k]; }).length; box.querySelector('#mTkN').textContent = pn + ' / ' + d.of + ' printed · ' + d.n + ' / ' + d.of + ' finished'; return d; };
         tkN();
         $$('[data-tk]', box).forEach(function (cb) {
           cb.onchange = function () {
-            var want = cb.checked, sp = cb.parentNode.querySelector('span');
-            Store.setTick(o.code, cb.dataset.tk, want).then(function () {
-              sp.style.textDecoration = want ? 'line-through' : ''; sp.style.opacity = want ? '.55' : '';
+            var want = cb.checked, key = cb.dataset.tk, isP = key.charAt(0) === 'p';
+            Store.setTick(o.code, key, want).then(function () {
+              // ticking Finished also ticks Printed
+              if (!isP && want && !Store.ticks(o.code)['p' + key]) { var pb = box.querySelector('[data-tk="p' + key + '"]'); if (pb) pb.checked = true; Store.setTick(o.code, 'p' + key, true).catch(function () {}); }
+              if (!isP) { var sp = cb.closest('div').firstChild; sp.style.textDecoration = want ? 'line-through' : ''; sp.style.opacity = want ? '.55' : ''; }
               var d = tkN();
-              if (want && d.n === d.of && ['new', 'confirmed', 'printing'].indexOf(o.status) >= 0) {
-                Store.updateOrder(o.code, { status: 'ready' }).then(function () { close(); renderAdmin(); orderModal(o.code); toast('All pieces done — ' + o.code + ' is Ready'); }).catch(function () { toast('Ticked, but couldn’t move to Ready — tap Ready'); });
-              } else renderAdmin();
+              var after = function () { if (want && !isP && d.n === d.of && ['new', 'confirmed', 'printing'].indexOf(o.status) >= 0) {
+                Store.updateOrder(o.code, { status: 'ready' }).then(function () { close(); renderAdmin(); orderModal(o.code); toast('All pieces finished — ' + o.code + ' is Ready'); }).catch(function () { toast('Ticked, but couldn’t move to Ready — tap Ready'); });
+              } else renderAdmin(); };
+              // first tick on a confirmed order → Printing
+              if (want && o.status === 'confirmed' && !(!isP && d.n === d.of)) {
+                Store.updateOrder(o.code, { status: 'printing' }).then(function () { o.status = 'printing'; $$('[data-s]', box).forEach(function (x) { x.classList.toggle('on', x.dataset.s === 'printing'); }); setWa(); toast(o.code + ' is now Printing'); after(); }).catch(after);
+              } else after();
             }).catch(function () { cb.checked = !want; toast('Couldn’t save the tick — try again'); });
           };
         });
