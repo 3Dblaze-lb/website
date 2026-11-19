@@ -552,6 +552,7 @@
         var tpatch = { updatedAt: now };
         if ('status' in patch) tpatch.status = patch.status;
         if ('paid' in patch) tpatch.paid = patch.paid;
+        if ('total' in patch) { tpatch.total = patch.total; if (!tpatch.status) tpatch.status = o.status; }
         if (!live) {
           Object.assign(o, patch); ls('orders', state.orders);
           var tr = ls('tracking') || {}; tr[code] = Object.assign(tr[code] || {}, tpatch); ls('tracking', tr); emit(); return Promise.resolve();
@@ -721,6 +722,10 @@
   function bagCostOf(p) { var m = Store.settings().bagCost || {}; return p && m[p.id] ? +m[p.id] || 0 : 0; }
   function isPack(p) { return !!(p && p.pack && !(p.parts && p.parts.length)); }
   function productCost(p) { return unitCostOf(p); }
+  // discount given by the owner after the order was placed: kept as a lower total (total = items + delivery − discount).
+  // Customers can't do this: the database only accepts a new order whose total = items + delivery.
+  function orderDiscount(o) { var d = (o.subtotal || 0) + (o.delivery || 0) - (o.total || 0); return d > 0.001 ? Math.round(d * 100) / 100 : 0; }
+  function orderNet(o) { return Math.round(((o.subtotal || 0) - orderDiscount(o)) * 100) / 100; }   // what the items really bring in
   function orderCost(o) {
     var c = 0, known = true;
     o.items.forEach(function (i) {
@@ -1599,8 +1604,8 @@
     document.title = (newCount ? '(' + newCount + ') ' : '') + '3DBlaze — Orders';
     var now = new Date(), monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime(), dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
     var valid = orders.filter(function (o) { return o.status !== 'cancelled'; });
-    var revMonth = valid.filter(function (o) { return o.createdAt >= monthStart; }).reduce(function (n, o) { return n + (o.subtotal || 0); }, 0);
-    var profMonth = valid.filter(function (o) { return o.createdAt >= monthStart; }).reduce(function (n, o) { var c = orderCost(o); return n + (c == null ? 0 : (o.subtotal || 0) - c); }, 0);
+    var revMonth = valid.filter(function (o) { return o.createdAt >= monthStart; }).reduce(function (n, o) { return n + orderNet(o); }, 0);
+    var profMonth = valid.filter(function (o) { return o.createdAt >= monthStart; }).reduce(function (n, o) { var c = orderCost(o); return n + (c == null ? 0 : orderNet(o) - c); }, 0);
     var toCollect = valid.filter(function (o) { return !o.paid && o.status !== 'delivered'; }).reduce(function (n, o) { return n + o.total; }, 0);
     var inQueue = valid.filter(function (o) { return ['confirmed', 'printing'].indexOf(o.status) >= 0; }).length;
     var today = orders.filter(function (o) { return o.createdAt >= dayStart; }).length;
@@ -1639,7 +1644,7 @@
           '<div class="n"><b>' + esc(o.customer.name) + '</b><small>' + esc(isDirect(o) ? 'Sold direct' : o.method === 'pickup' ? 'Pickup' : [o.customer.town, o.customer.region].filter(Boolean).join(' · ')) + '</small><small class="ph">' + esc(fmtPhone(o.customer.phone)) + '</small></div>' +
           '<div class="it"><small>' + n + ' item' + (n > 1 ? 's' : '') + ' · ' + esc(o.items.map(function (i) { return i.name; }).join(', ')) + '</small></div>' +
           '<div class="pm"><small class="' + (o.paid ? 'paid' : 'unpaid') + '">' + (o.payment === 'whish' ? 'Whish' : 'Cash') + (o.paid ? ' ✓' : '') + '</small></div>' +
-          '<div>' + statusBadge(o.status) + '</div><div class="tt">' + money(o.total) + '</div></div>';
+          '<div>' + statusBadge(o.status) + '</div><div class="tt">' + money(o.total) + (orderDiscount(o) ? '<small class="muted" style="display:block;font-weight:500;font-size:12px">−' + money(orderDiscount(o)) + ' discount</small>' : '') + '</div></div>';
       }).join('') : '<div class="panel empty"><p class="muted">' + (Store.ordersReady() === true ? 'No orders here yet. Share the site on Instagram and they’ll show up live.' : 'Loading orders…') + '</p></div>') + '</div>';
     $$('[data-f]').forEach(function (b) { b.onclick = function () { adm.filter = b.dataset.f; admOrders(); }; });
     var q = $('#oq'); q.oninput = function () { adm.q = q.value; var pos = q.selectionStart; admOrders(); var nq = $('#oq'); nq.focus(); nq.setSelectionRange(pos, pos); };
@@ -1739,7 +1744,7 @@
   }
 
   var CUSTOMER_MSG = {
-    new: function (o) { return 'Hi ' + o.customer.name.split(' ')[0] + '! This is 3DBlaze ⚡ We got your order ' + o.code + ':\n' + o.items.map(function (i) { return '• ' + i.name + (i.color ? ' (' + i.color + ')' : '') + (i.text ? ' “' + i.text + '”' : '') + (i.geo && i.geo.label && i.geo.label.indexOf('(near ') > 0 ? ' — ' + i.geo.label : '') + ' × ' + i.qty; }).join('\n') + '\nTotal ' + money(o.total) + '. Can you confirm the details are right?'; },
+    new: function (o) { return 'Hi ' + o.customer.name.split(' ')[0] + '! This is 3DBlaze ⚡ We got your order ' + o.code + ':\n' + o.items.map(function (i) { return '• ' + i.name + (i.color ? ' (' + i.color + ')' : '') + (i.text ? ' “' + i.text + '”' : '') + (i.geo && i.geo.label && i.geo.label.indexOf('(near ') > 0 ? ' — ' + i.geo.label : '') + ' × ' + i.qty; }).join('\n') + '\nTotal ' + money(o.total) + (orderDiscount(o) ? ' (with your ' + money(orderDiscount(o)) + ' discount)' : '') + '. Can you confirm the details are right?'; },
     confirmed: function (o) { return 'Confirmed ✅ Your order ' + o.code + ' is in the print queue. We’ll message you when it’s ready.\nTrack it any time: https://3dblazelb.com/#track-' + o.code + (o.payment === 'whish' && !o.paid ? '\nWhish: please send ' + money(o.total) + ' to ' + (Store.settings().whish || '[our Whish number]') + ' with the note ' + o.code + '.' : ''); },
     printing: function (o) { return 'Your 3DBlaze order ' + o.code + ' is printing right now 🖨️'; },
     ready: function (o) { return 'Your order ' + o.code + ' is ready! ' + (o.method === 'pickup' ? 'When can you pass by to pick it up?' : 'It goes out with the driver soon.'); },
@@ -1828,7 +1833,7 @@
     if (Math.abs(sub - o.subtotal) > 0.001) bad.push('items should be ' + money(sub) + ', order says ' + money(o.subtotal));
     if (fees.indexOf(o.delivery) < 0) bad.push('delivery fee ' + money(o.delivery) + ' isn’t one of yours');
     if (o.delivery === 0 && o.method !== 'pickup' && !(s.freeOver && sub >= s.freeOver)) bad.push('free delivery but under ' + money(s.freeOver || 0));
-    if (Math.abs(o.subtotal + o.delivery - o.total) > 0.001) bad.push('total doesn’t add up');
+    if (o.total - (o.subtotal + o.delivery) > 0.001) bad.push('total doesn’t add up');
     return bad.join(' · ');
   }
   function orderModal(code) {
@@ -1839,7 +1844,7 @@
       (function () { var w = priceCheck(o); return w ? '<div class="panel" style="border:2px solid #E5484D;background:#FFF5F5;margin-bottom:14px;padding:12px 16px"><b style="color:#C8102E">⚠ Price doesn’t match the shop — possible fake order</b><div style="font-size:14px;margin-top:4px">' + esc(w) + '</div><div class="muted" style="font-size:13px;margin-top:4px">Call the customer before printing. Charge the real price.</div></div>' : ''; })() +
       '<div class="lab muted" style="font-size:13px">Move to</div><div class="stepper">' + STATUSES.map(function (s) { return '<button data-s="' + s.k + '" class="' + (o.status === s.k ? 'on' : '') + '">' + s.l + '</button>'; }).join('') + '</div>' +
       '<div class="panel" style="padding:16px 18px;background:var(--card2)">' + o.items.map(function (i) { var p = Store.product(i.id) || { id: i.id, name: i.name }; return '<div class="line" style="grid-template-columns:56px 1fr auto"><div class="th" style="width:56px;height:56px">' + thumb(p, { color: i.color, text: i.text, lat: i.geo && i.geo.lat, lon: i.geo && i.geo.lon, ar: i.geo && i.geo.ar, ele: i.geo && i.geo.ele }) + '</div><div><div class="nm">' + esc(i.name) + ' × ' + i.qty + '</div><div class="meta">' + esc([i.color, i.text ? '“' + i.text + '”' : ''].filter(Boolean).join(' · ')) + '</div></div><b>' + money(i.price * i.qty) + '</b></div>'; }).join('') +
-      '<div class="sum" style="margin-top:10px">' + (function () { var c = orderCost(o); return c == null ? '<div class="muted" style="font-size:13px"><span>Profit</span><span>add the Bambu file to each product to see it</span></div>' : '<div><span>Cost · profit</span><b style="color:var(--green)">' + money(c) + ' · ' + money((o.subtotal || 0) - c) + '</b></div>'; })() + '<div><span>Delivery</span><b>' + (o.delivery ? money(o.delivery) : 'Free') + '</b></div><div class="tot" style="font-size:18px"><span>Total</span><span>' + money(o.total) + '</span></div></div></div>' +
+      '<div class="sum" style="margin-top:10px">' + (function () { var c = orderCost(o); return c == null ? '<div class="muted" style="font-size:13px"><span>Profit</span><span>add the Bambu file to each product to see it</span></div>' : '<div><span>Cost · profit</span><b style="color:var(--green)">' + money(c) + ' · ' + money(orderNet(o) - c) + '</b></div>'; })() + '<div><span>Delivery</span><b>' + (o.delivery ? money(o.delivery) : 'Free') + '</b></div>' + (orderDiscount(o) ? '<div><span>Discount</span><b style="color:var(--red)">− ' + money(orderDiscount(o)) + '</b></div>' : '') + '<div class="tot" style="font-size:18px"><span>Total</span><span>' + money(o.total) + '</span></div></div></div>' +
       '<div class="dlv"><div class="dlv-h"><b>' + (o.method === 'pickup' ? 'Pickup' : 'Delivery') + ' details</b><span>' + (o.paid ? 'Paid' : 'Collect ' + money(o.total) + (o.payment === 'whish' ? ' (Whish)' : ' cash')) + '</span></div>' +
         '<div class="kv"><span>Customer</span><b>' + esc(c.name) + '</b>' +
         '<span>Phone</span><b>' + esc(fmtPhone(c.phone)) + ' · <a href="' + telHref(c.phone) + '">Call</a></b>' +
@@ -1850,6 +1855,7 @@
         '<div class="actions" style="margin-top:0"><button class="btn pri" id="mCpAddr">Copy for driver</button><a class="btn sec" id="mDrv" target="_blank" rel="noopener">Send to driver (WhatsApp)</a></div></div>' +
       '<div class="kv">' +
       '<span>Payment</span><b>' + (o.payment === 'whish' ? 'Whish' : 'Cash on delivery') + ' · <label class="switch" style="display:inline-flex"><input type="checkbox" id="mPaid"' + (o.paid ? ' checked' : '') + '> paid</label></b>' +
+      '<span>Discount $</span><b style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input id="mDisc" class="search" type="number" min="0" step="0.5" inputmode="decimal" style="min-width:0;width:110px" placeholder="0" value="' + (orderDiscount(o) || '') + '"><button type="button" class="btn sec" id="mDiscOk" style="padding:8px 14px">Apply</button><small class="muted" style="font-weight:400">off the total · 0 removes it</small></b>' +
       '<span>Internal note</span><input id="mNote" class="search" style="min-width:0" placeholder="Only you see this" value="' + esc(o.note || '') + '"></div>' +
       '<div class="actions">' + (needsFile(o) ? '<button class="btn pri" id="mReq">Request 3MF</button>' : '') + '<a class="btn wa" id="mWa" target="_blank" rel="noopener">WhatsApp customer</a><button class="btn sec" id="mCpMsg">Copy message</button><button class="btn sec' + (o.status === 'cancelled' ? '' : ' hidden') + '" id="mDel" style="color:var(--red);border-color:var(--red)">Delete order</button></div>' +
       '<p class="muted" style="font-size:13px;margin:12px 0 0" id="mMsgPrev"></p>', function (box, close) {
@@ -1862,6 +1868,13 @@
           };
         });
         box.querySelector('#mPaid').onchange = function (e) { Store.updateOrder(o.code, { paid: e.target.checked }).then(function () { o.paid = e.target.checked; renderAdmin(); toast(e.target.checked ? 'Marked paid' : 'Marked unpaid'); }); };
+        box.querySelector('#mDiscOk').onclick = function () {
+          var full = Math.round(((o.subtotal || 0) + (o.delivery || 0)) * 100) / 100, d = Math.round((parseFloat(box.querySelector('#mDisc').value) || 0) * 100) / 100;
+          if (d < 0 || d > full) { toast('Discount must be between $0 and ' + money(full)); return; }
+          if (d === orderDiscount(o)) { toast('Nothing to change'); return; }
+          var nt2 = Math.round((full - d) * 100) / 100;
+          Store.updateOrder(o.code, { total: nt2 }).then(function () { close(); renderAdmin(); orderModal(o.code); toast(d ? 'Discount ' + money(d) + ' applied — new total ' + money(nt2) : 'Discount removed — total ' + money(nt2)); }).catch(function () { toast('Couldn’t save the discount — try again'); });
+        };
         var nt; box.querySelector('#mNote').oninput = function (e) { clearTimeout(nt); nt = setTimeout(function () { Store.updateOrder(o.code, { note: e.target.value }); }, 600); };
         var rqb = box.querySelector('#mReq'); if (rqb) rqb.onclick = function () { makeOrderRequest(o, function () { close(); adm.tab = 'requests'; renderAdmin(); }); };
         box.querySelector('#mCpMsg').onclick = function () { copy(setWa(), 'Message copied'); };
@@ -2167,9 +2180,9 @@
       var sum = function (a) { return a.filter(inP).reduce(function (t, x) { return t + n(x.paid); }, 0); };
       var sF = sum(d.fil), sS = sum(d.sup), sB = sum(d.bag), sA = sum(d.ads), sE = sum(d.exp), spent = sF + sS + sB + sA + sE;
       var os = Store.orders().filter(function (o) { return o.status !== 'cancelled' && !o.demo && o.createdAt >= st && o.createdAt < R.en; });
-      var got = os.filter(function (o) { return o.paid; }).reduce(function (t, o) { return t + (o.subtotal || 0); }, 0);
-      var due = os.filter(function (o) { return !o.paid; }).reduce(function (t, o) { return t + (o.subtotal || 0); }, 0);
-      var prof = os.reduce(function (t, o) { var c = orderCost(o); return t + (c == null ? 0 : (o.subtotal || 0) - c); }, 0);
+      var got = os.filter(function (o) { return o.paid; }).reduce(function (t, o) { return t + orderNet(o); }, 0);
+      var due = os.filter(function (o) { return !o.paid; }).reduce(function (t, o) { return t + orderNet(o); }, 0);
+      var prof = os.reduce(function (t, o) { var c = orderCost(o); return t + (c == null ? 0 : orderNet(o) - c); }, 0);
       var bal = got - spent, sg = function (v) { return (v < 0 ? '−' : '+') + money(Math.abs(v)); }, col = function (v) { return v >= 0 ? 'var(--green)' : 'var(--red)'; };
       var st2 = function (k, v, extra) { return '<div class="stat"' + (extra || '') + '><div class="k">' + k + '</div><div class="v">' + v + '</div></div>'; };
       return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><b style="font-family:var(--head)">Balance</b><div class="tabs" style="margin:0">' + [['week', 'This week'], ['month', 'Month'], ['year', 'Year'], ['all', 'All time']].map(function (x) { return '<button type="button" data-per="' + x[0] + '" class="' + (p === x[0] ? 'on' : '') + '">' + x[1] + '</button>'; }).join('') + '</div></div>' +
