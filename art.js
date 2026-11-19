@@ -270,10 +270,10 @@
     return 'x="' + L.dx.toFixed(2) + '" y="' + (-L.dy).toFixed(2) + '" font-size="' + L.size.toFixed(2) + '" stroke-width="' + (2 * L.emb).toFixed(2) + '"';
   }
   function ornament(o, gx) {
-    var nm = ornName(o.text || 'Gabriel'), L = ornLayout(nm);
+    var nm = ornName(o.text || 'Gabriel'), L = ornLayout(nm), rn = /^red/i.test(o.color || '');   // colour = the NAME colour ("White name" / "Red name"); the ornament is always red
     return '<g' + (gx ? ' transform="' + gx + '"' : '') + '><image href="img/holy-ornament.webp?v=94852778" x="-46" y="-54" width="92" height="100"/>' +
-      (L ? '<text class="ornname" data-n="' + esc2(nm) + '" ' + ornTextAttrs(L) + ' font-family="' + OFONT + ', Pacifico, cursive" fill="#7A0402" stroke="#7A0402" stroke-linejoin="round" transform="translate(.35 .45)" opacity=".55">' + esc2(nm) + '</text>' +
-        '<text class="ornname" data-n="' + esc2(nm) + '" ' + ornTextAttrs(L) + ' font-family="' + OFONT + ', Pacifico, cursive" fill="#FFFFFF" stroke="#FFFFFF" stroke-linejoin="round">' + esc2(nm) + '</text>' : '') + '</g>';
+      (L ? '<text class="ornname" data-n="' + esc2(nm) + '" ' + ornTextAttrs(L) + ' font-family="' + OFONT + ', Pacifico, cursive" fill="' + (rn ? '#5A0201' : '#7A0402') + '" stroke="' + (rn ? '#5A0201' : '#7A0402') + '" stroke-linejoin="round" transform="translate(.35 .45)" opacity="' + (rn ? '.9' : '.55') + '">' + esc2(nm) + '</text>' +
+        '<text class="ornname" data-n="' + esc2(nm) + '" ' + ornTextAttrs(L) + ' font-family="' + OFONT + ', Pacifico, cursive" fill="' + (rn ? '#F4443E' : '#FFFFFF') + '" stroke="' + (rn ? '#F4443E' : '#FFFFFF') + '" stroke-linejoin="round">' + esc2(nm) + '</text>' : '') + '</g>';
   }
   // once Pacifico has loaded, re-fit any name drawn with the fallback metrics
   function ornRefit() {
@@ -289,7 +289,7 @@
   ART['holy-ornament'] = function (o) { return '<svg viewBox="-50 -57 100 106" class="orn" role="img" aria-label="Holy Night ornament">' + ornament(o) + '</svg>'; };
   ART['holy-ornament-3'] = function (o) {
     var d = ['Gabriel', 'Maria', 'Elie'], n = o.texts || (o.text ? String(o.text).split(' · ') : d); n = [n[0] || d[0], n[1] || d[1], n[2] || d[2]];
-    return '<svg viewBox="-99 -40 198 76" class="orn" role="img" aria-label="Three Holy Night ornaments">' + ornament({ text: n[0] }, 'translate(-64 0) scale(.64)') + ornament({ text: n[1] }, 'translate(0 0) scale(.64)') + ornament({ text: n[2] }, 'translate(64 0) scale(.64)') + '</svg>';
+    return '<svg viewBox="-99 -40 198 76" class="orn" role="img" aria-label="Three Holy Night ornaments">' + ornament({ text: n[0], color: o.color }, 'translate(-64 0) scale(.64)') + ornament({ text: n[1], color: o.color }, 'translate(0 0) scale(.64)') + ornament({ text: n[2], color: o.color }, 'translate(64 0) scale(.64)') + '</svg>';
   };
   // ---- Name ornaments made with the 3DBlaze name ornaments tool (make_orn.py): body image rendered by the tool, the name is
   // fitted with the SAME rules as the tool (cap height of "H", ink width, squeeze then shrink, ink centred) so the preview = the .3mf.
@@ -316,17 +316,24 @@
     var tx = function (col, extra) { return '<text class="nmorn" x="' + F.dx.toFixed(2) + '" y="0" font-family="' + fam + '" font-size="' + F.size.toFixed(2) + '" fill="' + col + '"' + (extra || '') + '>' + t + '</text>'; };
     return '<g transform="translate(0 ' + y + ') scale(' + F.sx.toFixed(4) + ' 1)">' + tx('#7A0402', ' transform="translate(.35 .45)" opacity=".55"') + tx(fill) + '</g>';
   }
+  // white ornament: the red render recoloured white, with a thin grey edge + soft shadow so it shows on the light page
+  var WHITE_F = '<filter id="ornW" x="-8%" y="-8%" width="116%" height="116%" color-interpolation-filters="sRGB">' +
+    '<feColorMatrix in="SourceGraphic" type="matrix" values=".5 0 0 0 .525  .5 0 0 0 .53  .5 0 0 0 .54  0 0 0 1 0" result="w"/>' +
+    '<feMorphology in="SourceAlpha" operator="dilate" radius=".4" result="d"/><feFlood flood-color="#8D97A8"/><feComposite in2="d" operator="in" result="e"/>' +
+    '<feGaussianBlur in="SourceAlpha" stdDeviation="1.3"/><feOffset dy="1.1" result="b"/><feFlood flood-color="#1B2433" flood-opacity=".3"/><feComposite in2="b" operator="in" result="s"/>' +
+    '<feMerge><feMergeNode in="s"/><feMergeNode in="e"/><feMergeNode in="w"/></feMerge></filter>';
+  function whiteWrap(o, inner) { return /^white/i.test(o.color || '') ? '<defs>' + WHITE_F + '</defs><g filter="url(#ornW)">' + inner + '</g>' : inner; }
   function plainName(t) { t = String(t || '').trim(); try { t = t.normalize('NFKD').replace(/[̀-ͯ]/g, ''); } catch (e) {} return t; }
   ART['snowflake-ornament'] = function (o) {
     var nm = plainName(o.text || 'Joseph').toUpperCase(), F = nameFit(nm, 'Caladea3DB', 29.6, 87, 0.72);
     return '<svg viewBox="-52 -72 104 124" class="orn" role="img" aria-label="Snowflake name ornament"><defs><clipPath id="snwc"><circle r="46.8"/></clipPath></defs>' +
-      '<image href="img/snowflake-ornament.webp?v=95040001" x="-51" y="-71" width="102" height="122"/><g clip-path="url(#snwc)">' + nameText(nm, 'Caladea3DB, Caladea, Georgia, serif', F, -13.4, '#E60705') + '</g></svg>';
+      whiteWrap(o, '<image href="img/snowflake-ornament.webp?v=95040001" x="-51" y="-71" width="102" height="122"/><g clip-path="url(#snwc)">' + nameText(nm, 'Caladea3DB, Caladea, Georgia, serif', F, -13.4, '#E60705') + '</g>') + '</svg>';
   };
   ART['bow-ornament'] = function (o) {
     var nm = plainName(o.text || 'Maria'), F = nameFit(nm, 'LoraBI3DB', 16, 68, 0.8), yb = 5.7, l = -F.half, r = F.half;   // svg y = -mm
     var sw = 'M-41 ' + (yb + 9) + 'C-34 ' + (yb + 4) + ' ' + (l - 8).toFixed(2) + ' ' + yb + ' ' + l.toFixed(2) + ' ' + yb + 'L' + r.toFixed(2) + ' ' + yb + 'C' + (r + 9).toFixed(2) + ' ' + yb + ' 34 ' + (yb - 2) + ' 41 ' + (yb - 8);
-    return '<svg viewBox="-55 -63 110 116" class="orn" role="img" aria-label="Bow name ornament"><image href="img/bow-ornament.webp?v=95040001" x="-54" y="-62" width="108" height="114"/>' +
-      '<path d="' + sw + '" fill="none" stroke="#E60705" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>' + nameText(nm, 'LoraBI3DB, Lora, Georgia, serif', F, -5, '#E60705') + '</svg>';
+    return '<svg viewBox="-55 -63 110 116" class="orn" role="img" aria-label="Bow name ornament">' + whiteWrap(o, '<image href="img/bow-ornament.webp?v=95040001" x="-54" y="-62" width="108" height="114"/>' +
+      '<path d="' + sw + '" fill="none" stroke="#E60705" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>' + nameText(nm, 'LoraBI3DB, Lora, Georgia, serif', F, -5, '#E60705')) + '</svg>';
   };
   function nameRefit() { NFIT = {}; if (g.document) { var e = document.querySelectorAll('svg .nmorn'); if (e.length && g.dispatchEvent) try { g.dispatchEvent(new Event('blazeart:fonts')); } catch (x) {} } }
   try { if (g.document && document.fonts) { Promise.all([document.fonts.load('100px Caladea3DB'), document.fonts.load('100px LoraBI3DB')]).then(nameRefit, function () {}); } } catch (e) {}
@@ -367,7 +374,7 @@
       for (var i = 0; i < n; i++) {
         var r = Math.floor(i / 3), inRow = Math.min(3, n - r * 3), c = i - r * 3;
         var x = (c - (inRow - 1) / 2) * gx, y = top + r * gy;
-        out += ornament({ text: t[i] || ORN_NAMES[i % ORN_NAMES.length] }, 'translate(' + x + ' ' + y + ') scale(' + sc + ')');
+        out += ornament({ text: t[i] || ORN_NAMES[i % ORN_NAMES.length], color: o.color }, 'translate(' + x + ' ' + y + ') scale(' + sc + ')');
       }
       var h = (rows - 1) * gy + 76;
       return '<svg viewBox="-99 ' + (top - 38) + ' 198 ' + h + '" class="orn" role="img" aria-label="' + n + ' Holy Night ornaments">' + out + '</svg>';
@@ -381,7 +388,7 @@
       for (var i = 0; i < n; i++) {
         var r = Math.floor(i / 3), inRow = Math.min(3, n - r * 3), c = i - r * 3;
         var x = (c - (inRow - 1) / 2) * gx, y = top + r * gy;
-        var one = ART[base]({ text: t[i] || ORN_NAMES[i % ORN_NAMES.length] });
+        var one = ART[base]({ text: t[i] || ORN_NAMES[i % ORN_NAMES.length], color: o.color });
         out += one.replace('<svg ', '<svg x="' + (x - 31) + '" y="' + (y - 36) + '" width="62" height="72" ');
       }
       var h = (rows - 1) * gy + 78;

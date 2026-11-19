@@ -69,34 +69,38 @@
       specs: ['About 23 × 17.5 cm (hangs from a cord)', 'Green or red, with the letters raised in white'] },
     { id: 'holy-ornament', col: 'xmas', name: 'Holy Night Ornament', price: 4, tag: 'Personalized', printMin: 62, grams: 14,
       text: { label: 'Name on the ornament', max: 14, ph: 'e.g. Gabriel', required: true },
+      // ornament colours (Pierre, 19 Nov): Holy Night is always red, the customer picks the NAME colour; white is the default
+      optLabel: 'Name colour', options: [{ name: 'White name' }, { name: 'Red name' }],
       blurb: 'The star of Christmas, the Holy Family, and a name.',
-      desc: 'Our own design: the star of Bethlehem shining over Mary, Joseph and baby Jesus in the manger, with the name of your choice in white on the banner. Type the name and see it on the ornament before you order. One for every person in the family.',
-      specs: ['10 cm round, 3 mm thick (name raised 0.8 mm)', 'Red, with the name in white raised on the banner', 'Name up to 14 letters', 'Hanging loop for string or ribbon'] },
+      desc: 'Our own design: the star of Bethlehem shining over Mary, Joseph and baby Jesus in the manger, with the name of your choice raised on the banner, in white or in red. Type the name and see it on the ornament before you order. One for every person in the family.',
+      specs: ['10 cm round, 3 mm thick (name raised 0.8 mm)', 'Red ornament, name raised on the banner in white or red', 'Name up to 14 letters', 'Hanging loop for string or ribbon'] },
     { id: 'holy-ornament-3', col: 'xmas', name: 'Holy Night Ornament — 3 for $10', price: 10, was: 12, tag: 'Save $2', printMin: 185, grams: 42,
       pack: [{ of: 'holy-ornament' }, { of: 'holy-ornament' }, { of: 'holy-ornament' }],
       blurb: 'Three ornaments, three names.',
       desc: 'Three Holy Night ornaments, each with its own name. Perfect for the family tree or as gifts.',
-      specs: ['3 ornaments, 10 cm each', 'A different name on each one', 'Red with white names'] },
+      specs: ['3 ornaments, 10 cm each', 'A different name on each one', 'Red ornaments, all three names in white or all in red'] },
     { id: 'snowflake-ornament', col: 'xmas', name: 'Snowflake Name Ornament', price: 4, tag: 'Personalized', printMin: 67, grams: 14.7,
       text: { label: 'Name on the ornament', max: 12, ph: 'e.g. Joseph', required: true },
+      optLabel: 'Ornament colour', options: [{ name: 'Red' }, { name: 'White' }],   // one colour for the whole ornament, name included
       blurb: 'Snowflakes, scrolls and a name in big letters.',
       desc: 'Our snowflake ornament with the name of your choice in big letters across the middle, between swirls and snowflakes. Type the name and see it on the ornament before you order.',
-      specs: ['10 cm round (about 12 cm with the loop), 3 mm thick', 'All red, the name in big letters across the middle', 'Name up to 12 letters', 'Hanging loop for string or ribbon'] },
+      specs: ['10 cm round (about 12 cm with the loop), 3 mm thick', 'One colour, red or white, the name in big letters across the middle', 'Name up to 12 letters', 'Hanging loop for string or ribbon'] },
     { id: 'bow-ornament', col: 'xmas', name: 'Bow Name Ornament', price: 4, tag: 'Personalized', printMin: 43, grams: 12.4,
       text: { label: 'Name on the ornament', max: 12, ph: 'e.g. Maria', required: true },
-      blurb: 'A red frame with bows, holly and a name.',
-      desc: 'An oval frame with a big bow on top, holly and a small bow below, and the name of your choice on a swash, all in red. Type the name and see it before you order.',
-      specs: ['10 × 8 cm oval (about 11 cm with the loop)', 'All red, with the bow, holly and name raised', 'Name up to 12 letters', 'Hanging loop for string or ribbon'] },
+      optLabel: 'Ornament colour', options: [{ name: 'Red' }, { name: 'White' }],
+      blurb: 'A frame with bows, holly and a name.',
+      desc: 'An oval frame with a big bow on top, holly and a small bow below, and the name of your choice on a swash, all in red or all in white. Type the name and see it before you order.',
+      specs: ['10 × 8 cm oval (about 11 cm with the loop)', 'One colour, red or white, with the bow, holly and name raised', 'Name up to 12 letters', 'Hanging loop for string or ribbon'] },
     { id: 'bow-ornament-3', col: 'xmas', name: 'Bow Name Ornament - Pack of 3', price: 10, was: 12, tag: 'Save 2$', printMin: 129, grams: 37.2,
       pack: [{ of: 'bow-ornament' }, { of: 'bow-ornament' }, { of: 'bow-ornament' }],
       blurb: 'Three bow ornaments, three names.',
       desc: 'Three Bow Name Ornaments, each with its own name. Type the names and see them on the ornaments before you order.',
-      specs: ['3 ornaments, 10 × 8 cm each', 'A different name on each one', 'All red'] },
+      specs: ['3 ornaments, 10 × 8 cm each', 'A different name on each one', 'The whole set in red or in white'] },
     { id: 'bow-ornament-5', col: 'xmas', name: 'Bow Name Ornament - Buy 4 get 1 free', price: 16, was: 20, tag: 'Save 4$', printMin: 215, grams: 62,
       pack: [{ of: 'bow-ornament' }, { of: 'bow-ornament' }, { of: 'bow-ornament' }, { of: 'bow-ornament' }, { of: 'bow-ornament' }],
       blurb: 'Five bow ornaments for the whole family — one is free.',
       desc: 'Five Bow Name Ornaments, each with its own name. Type the names and see them on the ornaments before you order.',
-      specs: ['5 ornaments, 10 × 8 cm each', 'A different name on each one', 'All red'] },
+      specs: ['5 ornaments, 10 × 8 cm each', 'A different name on each one', 'The whole set in red or in white'] },
     { id: 'woggle-white', col: 'woggles', name: 'Woggle — white', price: 4, img: 'img/woggle-white.webp', model: 'woggle-plain', modelColors: ['white', 'white'], printMin: 40, grams: 4.1,
       blurb: 'The classic braided woggle, all white.',
       desc: 'A braided scout woggle in white. Turn it around in 3D before you order.',
@@ -115,6 +119,7 @@
   ];
   var BLAZE_ART_IDS = ['holy-ornament-3'];
   var COLOR_HEX = { black: '#30343B', white: '#F2F3F5', red: '#E2262B', green: '#1FA14E', orange: '#FF6A1F', blue: '#1A8CFF', yellow: '#FFD23F', grey: '#9AA1AB', gray: '#9AA1AB', purple: '#7A4CC2', pink: '#F47FB0', brown: '#7A4A2A', gold: '#C9A13B', silver: '#C3C7CE', navy: '#1D2B53' };
+  function hexOf(name) { var k = String(name || '').toLowerCase(); return COLOR_HEX[k] || COLOR_HEX[k.split(' ')[0]] || '#D9DDE3'; }
   function col3d(name) { var k = String(name || '').toLowerCase(); return k === 'black' ? '#23262C' : k === 'white' ? '#F4F5F7' : (COLOR_HEX[k] || '#C9CDD3'); }
   var STATUSES = [
     { k: 'new', l: 'New' }, { k: 'confirmed', l: 'Confirmed' }, { k: 'printing', l: 'Printing' },
@@ -1084,7 +1089,7 @@
   }
   function pdots(p) {
     var sl = packSlots(p), ol = sl.length ? slotOpts(sl[0].p) : optList(p), list = ol.length ? ol.map(function (o) { return o.name; }) : (p.colors && p.colors.length > 1 ? p.colors : []);
-    return list.length ? '<span class="dots" aria-label="' + esc(list.join(', ')) + '">' + list.slice(0, 5).map(function (c) { return '<i style="background:' + (COLOR_HEX[String(c).toLowerCase()] || '#D9DDE3') + '"></i>'; }).join('') + '</span>' : '';
+    return list.length ? '<span class="dots" aria-label="' + esc(list.join(', ')) + '">' + list.slice(0, 5).map(function (c) { return '<i style="background:' + hexOf(c) + '"></i>'; }).join('') + '</span>' : '';
   }
   function card2(p) {
     var out = isOut(p);
@@ -1269,11 +1274,15 @@
     var out = soon || isOut(p);
     var st = { color: ol.length ? (ol.filter(function (o) { return !o.out; })[0] || ol[0]).name : (p.colors && !slots.length) ? p.colors[0] : null, text: '', qty: 1,
       picks: slots.map(function (x, i) { var so = slotOpts(x.p), ok = so.filter(function (o) { return !o.out; }), f = (x.part ? ok[(i * 2 + 2) % Math.max(ok.length, 1)] : ok[0]) || so[0]; var pk0 = { id: x.of, name: x.p.name, color: f ? f.name : null, text: '' }; if (isDoor(x.p)) pk0.door = { family: '', dad: '', mom: '', kids: ['', '', ''] }; return pk0; }) };
-    var swatch = function (o, on, extra) { return '<button type="button" class="sw osw' + (on ? ' on' : '') + '" data-c="' + esc(o.name) + '"' + (extra || '') + (o.out ? ' disabled title="Sold out"' : '') + '>' + (o.photo ? '<img src="' + o.photo + '" alt="">' : '<i style="background:' + (COLOR_HEX[o.name.toLowerCase()] || '#D9DDE3') + '"></i>') + esc(o.name) + (o.out ? '<small>sold out</small>' : '') + '</button>'; };
+    var swatch = function (o, on, extra) { return '<button type="button" class="sw osw' + (on ? ' on' : '') + '" data-c="' + esc(o.name) + '"' + (extra || '') + (o.out ? ' disabled title="Sold out"' : '') + '>' + (o.photo ? '<img src="' + o.photo + '" alt="">' : '<i style="background:' + hexOf(o.name) + '"></i>') + esc(o.name) + (o.out ? '<small>sold out</small>' : '') + '</button>'; };
+    // name ornaments in an offer: ONE colour choice for all of them (the whole set matches), not one per piece
+    var ornGrp = function (x) { return /^(holy|snowflake|bow)-ornament$/.test(x.of) && slotOpts(x.p).length > 0; };
     var packHTML = slots.length ? '<div class="opt packopts"><span class="lab">' + (p.parts ? 'Choose the colours' : 'Choose each piece') + '</span>' + slots.map(function (x, i) {
-      var so = slotOpts(x.p);
-      return '<div class="pslot" data-slot="' + i + '"><div class="pslot-h"><b class="n">' + (i + 1) + '</b><span>' + esc(x.p.name) + '</span></div>' +
-        (so.length ? '<div class="swatches">' + so.map(function (o) { return swatch(o, o.name === st.picks[i].color, ' data-s="' + i + '"'); }).join('') + '</div>' : '') +
+      var so = slotOpts(x.p), grp = ornGrp(x), same = slots.filter(function (y) { return y.of === x.of; }).length;
+      var first = grp && slots.map(function (y) { return y.of; }).indexOf(x.of) === i;
+      return (first ? '<div class="pgrp" style="margin:6px 0 12px"><span class="lab" style="display:block;margin-bottom:8px">' + esc(x.p.optLabel || 'Colour') + (same > 1 ? ' — the same for all ' + same + ' ornaments' : '') + '</span><div class="swatches">' + so.map(function (o) { return swatch(o, o.name === st.picks[i].color, ' data-g="' + esc(x.of) + '"'); }).join('') + '</div></div>' : '') +
+        '<div class="pslot" data-slot="' + i + '"><div class="pslot-h"><b class="n">' + (i + 1) + '</b><span>' + esc(x.p.name) + '</span></div>' +
+        (so.length && !grp ? '<div class="swatches">' + so.map(function (o) { return swatch(o, o.name === st.picks[i].color, ' data-s="' + i + '"'); }).join('') + '</div>' : '') +
         (x.p.text ? '<input class="ptx" data-s="' + i + '" maxlength="' + (x.p.text.max || 20) + '" placeholder="' + esc(x.p.text.label + (x.p.text.ph ? ' — ' + x.p.text.ph : '')) + '">' : '') +
         (isDoor(x.p) ? '<input class="ptx pdf" data-s="' + i + '" data-f="family" maxlength="22" placeholder="Family name — e.g. ' + DOOR_EX.family + '" autocomplete="off">' +
           (x.p.art === 'door-xmas' ? '<div class="drow"><input class="ptx pdf" data-s="' + i + '" data-f="dad" maxlength="12" placeholder="Dad (Santa) — e.g. ' + DOOR_EX.dad + '" autocomplete="off"><input class="ptx pdf" data-s="' + i + '" data-f="mom" maxlength="12" placeholder="Mom (Mama Claus) — e.g. ' + DOOR_EX.mom + '" autocomplete="off"></div>' +
@@ -1319,7 +1328,7 @@
       if (p.priceSame != null && !soon && $('#pPrice')) $('#pPrice').textContent = money(unitPrice(p, { picks: st.picks }));
       if (v3) { if (slots.length) v3.setColors(st.picks.map(function (k) { return col3d(k.color); })); if (hasReal && curPh()) $('.realph').src = curPh(); return; }
       if (mlive) { if ($('#pLive').classList.contains('hidden') && st.text) $('[data-v=live]').click(); mlive.set({ text: st.text || 'Your village', ar: st.geo && st.geo.ar, ele: st.geo && st.geo.ele, lat: st.geo && st.geo.lat, lon: st.geo && st.geo.lon }); return; }
-      if (slots.length && window.BlazeArt && BlazeArt.has(p.art || p.id)) { artBox(thumb(p, { texts: st.picks.map(function (k, i) { return k.text || ((window.BlazeArt && BlazeArt.ornNames) || ['Gabriel', 'Maria', 'Elie'])[i % 10]; }) })); return; }
+      if (slots.length && window.BlazeArt && BlazeArt.has(p.art || p.id)) { artBox(thumb(p, { color: st.picks[0].color, texts: st.picks.map(function (k, i) { return k.text || ((window.BlazeArt && BlazeArt.ornNames) || ['Gabriel', 'Maria', 'Elie'])[i % 10]; }) })); return; }
       if (slots.length && st.focus != null) { var fx = slots[st.focus], pk = st.picks[st.focus]; artBox(thumb(fx.p, { color: pk.color, text: pk.door ? doorText(pk.door, fx.p.art === 'door-xmas', true) : pk.text || undefined })); return; }
       artBox(thumb(p, { color: st.color, text: st.text || undefined, lat: st.geo && st.geo.lat, lon: st.geo && st.geo.lon }), st.keep);
       st.keep = false;
@@ -1327,6 +1336,11 @@
     draw();
     if (slots.length) {
       $$('.pslot .osw').forEach(function (b) { b.onclick = function () { var i = +b.dataset.s; st.picks[i].color = b.dataset.c; st.focus = i; $$('.pslot[data-slot="' + i + '"] .osw').forEach(function (x) { x.classList.toggle('on', x === b); }); $('#packErr').textContent = ''; draw(); }; });
+      $$('.pgrp .osw').forEach(function (b) { b.onclick = function () {
+        var of = b.dataset.g, firstI = -1; slots.forEach(function (x, i) { if (x.of === of) { st.picks[i].color = b.dataset.c; if (firstI < 0) firstI = i; } });
+        if (st.focus == null || slots[st.focus].of !== of) st.focus = firstI;
+        $$('.pgrp .osw').forEach(function (x) { if (x.dataset.g === of) x.classList.toggle('on', x === b); }); $('#packErr').textContent = ''; draw();
+      }; });
       $$('.ptx').forEach(function (t) { if (t.classList.contains('pdf')) return; t.oninput = function () { var i = +t.dataset.s; st.picks[i].text = t.value.trim(); st.focus = i; $('#packErr').textContent = ''; draw(); }; });
       // door sign inside the offer: family / dad / mom / kids, drawn live like on its own page
       var doorSync = function (i) { var pk = st.picks[i]; pk.text = String(pk.door.family || '').trim(); pk.full = doorText(pk.door, slots[i].p.art === 'door-xmas'); st.focus = i; $('#packErr').textContent = ''; draw(); };
@@ -1367,7 +1381,14 @@
         var picks = st.picks.map(function (k) { return { id: k.id, name: k.name, color: k.color || null, text: k.text || null }; });
         var allTxt = st.picks.filter(function (k) { return k.text; }).map(function (k) { return k.full || k.text; }).join(' · ');
         if (allTxt.length > 200) { $('#packErr').textContent = 'The names are too long together — please shorten one.'; return false; }
-        Cart.add(p, st.qty, picks.some(function (k) { return k.color; }) ? picks.map(function (k) { return k.color || '—'; }).join(' + ') : null, allTxt, null, picks);
+        // colour line of the offer: a set that is all name ornaments in one colour says it once ("White name");
+        // otherwise piece by piece, shortened ("Red + White ×3 + Red ×2") if it would pass the 40 letters an order can hold
+        var cl = picks.map(function (k) { return k.color || '—'; }), ctxt = null;
+        if (picks.some(function (k) { return k.color; })) {
+          if (slots.every(ornGrp) && cl.every(function (c) { return c === cl[0]; })) ctxt = cl[0];
+          else { ctxt = cl.join(' + '); if (ctxt.length > 40) { var runs = []; cl.forEach(function (c) { var l = runs[runs.length - 1]; if (l && l.c === c) l.n++; else runs.push({ c: c, n: 1 }); }); ctxt = runs.map(function (r) { return r.c + (r.n > 1 ? ' ×' + r.n : ''); }).join(' + '); } }
+        }
+        Cart.add(p, st.qty, ctxt, allTxt, null, picks);
         return true;
       }
       var so = optFor(p, st.color); if (so && so.out) { toast(so.name + ' is sold out'); return false; }
@@ -1982,20 +2003,27 @@
   function makeOrderRequest(o, done) {
     var orn = o.items.filter(isOrn), data;
     if (orn.length) {
-      var names = [], groups = { holy: [], snowflake: [], bow: [] };
-      orn.forEach(function (i) { var ps = i.picks ? (Array.isArray(i.picks) ? i.picks : Object.keys(i.picks).map(function (k) { return i.picks[k]; })) : [{ id: i.id, text: i.text }]; for (var q = 0; q < i.qty; q++) ps.forEach(function (pk) { if (pk.text && ORN_RE.test(pk.id || i.id)) { names.push(pk.text); groups[ornKind(pk.id || i.id)].push(pk.text); } }); });
+      var names = [], groups = { holy: [], snowflake: [], bow: [] }, cols = { holy: [], snowflake: [], bow: [] };
+      orn.forEach(function (i) { var ps = i.picks ? (Array.isArray(i.picks) ? i.picks : Object.keys(i.picks).map(function (k) { return i.picks[k]; })) : [{ id: i.id, text: i.text, color: i.color }]; for (var q = 0; q < i.qty; q++) ps.forEach(function (pk) { if (pk.text && ORN_RE.test(pk.id || i.id)) { var kd = ornKind(pk.id || i.id); names.push(pk.text); groups[kd].push(pk.text); cols[kd].push(ornColor(kd, pk.color)); } }); });
       var tt = Object.keys(groups).filter(function (k) { return groups[k].length; }).map(function (k) { return ORN_TOOL[k].name + ' × ' + groups[k].length; });
-      data = { type: 'ornament', title: tt.join(' + '), names: groups.holy, groups: groups, order: o.code, status: 'sent', createdAt: Date.now() };
+      data = { type: 'ornament', title: tt.join(' + '), names: groups.holy, groups: groups, cols: cols, order: o.code, status: 'sent', createdAt: Date.now() };
     } else {
       var it = o.items.filter(function (i) { return i.id === 'my-village'; })[0] || o.items.filter(function (i) { return i.text; })[0];
       data = { type: it.id === 'my-village' ? 'map' : 'custom', geo: it.geo || null, title: it.id === 'my-village' ? (it.text || '') : it.name + (it.text ? ' with “' + it.text + '”' : ''), base: 'black', mapc: 'white', place: o.customer.region || '', notes: '', size: '', order: o.code, status: 'sent', createdAt: Date.now() };
     }
     Store.saveRequest(null, data).then(function (id) { data.id = id; copy(requestText(data), 'Copied — paste it in your Claude chat'); if (done) done(); });
   }
+  // colour of one ornament in an order → what to print. Holy Night: red ornament, NAME white (default) or red.
+  // Snowflake / Bow: the whole ornament red (default) or white. AMS slots: 2 white, 4 red.
+  function ornColor(kind, c) {
+    var red = /^red/i.test(c || ''), white = /^white/i.test(c || '');
+    if (kind === 'holy') return red ? 'RED name (ornament slot 4 red, name part slot 4 red too)' : 'WHITE name (ornament slot 4 red, name part slot 2 white)';
+    return white ? 'ALL WHITE (every part slot 2 white)' : 'ALL RED (every part slot 4 red)';
+  }
   var ORN_TOOL = {
-    holy: { name: 'Holy Night Ornament', sample: 'Christmass\\3DBlaze Holy Night Ornament - Gabriel - sample.3mf', tool: 'Christmass\\3DBlaze ornament tool.zip → python3 make_holy.py "Name" "3DBlaze Holy Night Ornament - Name.3mf"', spec: '10 cm red ornament (slot 4 red), 3 mm, name in white Pacifico RAISED 0.8 mm on the banner (slot 2 white)' },
-    snowflake: { name: 'Snowflake Name Ornament', sample: 'Christmass\\3DBlaze Snowflake Ornament - Joseph - sample.3mf', tool: 'Christmass\\3DBlaze name ornaments tool.zip → python3 make_orn.py snowflake "Name" "3DBlaze Snowflake Ornament - Name.3mf"', spec: '10 cm, 3 mm flat, all red (slot 4, name part too), name UPPERCASE Caladea Bold' },
-    bow: { name: 'Bow Name Ornament', sample: 'Christmass\\3DBlaze Bow Ornament - Maria - sample.3mf', tool: 'Christmass\\3DBlaze name ornaments tool.zip → python3 make_orn.py bow "Name" "3DBlaze Bow Ornament - Name.3mf"', spec: 'oval 10 × 8 cm, red 3 mm base with raised bow/holly, ALL RED (slot 4, name part too), name Lora Bold Italic raised 0.8 mm' }
+    holy: { name: 'Holy Night Ornament', sample: 'Christmass\\3DBlaze Holy Night Ornament - Gabriel - sample.3mf', tool: 'Christmass\\3DBlaze ornament tool.zip → python3 make_holy.py "Name" "3DBlaze Holy Night Ornament - Name.3mf"', spec: '10 cm red ornament (slot 4 red), 3 mm, name in Pacifico RAISED 0.8 mm on the banner — name colour per name as listed above (white = slot 2, red = slot 4)' },
+    snowflake: { name: 'Snowflake Name Ornament', sample: 'Christmass\\3DBlaze Snowflake Ornament - Joseph - sample.3mf', tool: 'Christmass\\3DBlaze name ornaments tool.zip → python3 make_orn.py snowflake "Name" "3DBlaze Snowflake Ornament - Name.3mf"', spec: '10 cm, 3 mm flat, ONE colour for the whole ornament incl. the name part — per name as listed above (red = slot 4, white = slot 2), name UPPERCASE Caladea Bold' },
+    bow: { name: 'Bow Name Ornament', sample: 'Christmass\\3DBlaze Bow Ornament - Maria - sample.3mf', tool: 'Christmass\\3DBlaze name ornaments tool.zip → python3 make_orn.py bow "Name" "3DBlaze Bow Ornament - Name.3mf"', spec: 'oval 10 × 8 cm, 3 mm base with raised bow/holly, ONE colour for the whole ornament incl. the name part — per name as listed above (red = slot 4, white = slot 2), name Lora Bold Italic raised 0.8 mm' }
   };
   var REQ_STATUS = [['new', 'New'], ['sent', 'Sent to Claude'], ['ready', 'File ready'], ['done', 'Printed']];
   function requestText(r) {
@@ -2013,7 +2041,7 @@
     }
     else if (r.type === 'ornament') {
       var gr = r.groups || { holy: r.names || [] };
-      t += Object.keys(ORN_TOOL).filter(function (k) { return gr[k] && gr[k].length; }).map(function (k) { var T = ORN_TOOL[k]; return 'Product: ' + T.name + ' (3DBlaze original) — one .3mf per name\nSample: ' + T.sample + '\nTool: ' + T.tool + '\nNames: ' + gr[k].join(', ') + '\n' + T.spec; }).join('\n\n');
+      t += Object.keys(ORN_TOOL).filter(function (k) { return gr[k] && gr[k].length; }).map(function (k) { var T = ORN_TOOL[k]; return 'Product: ' + T.name + ' (3DBlaze original) — one .3mf per name\nSample: ' + T.sample + '\nTool: ' + T.tool + '\nNames: ' + gr[k].join(', ') + '\nColours:\n' + gr[k].map(function (nm, j) { return '- ' + nm + ': ' + ((r.cols && r.cols[k] && r.cols[k][j]) || ornColor(k, null)); }).join('\n') + '\n' + T.spec; }).join('\n\n');
     }
     else if (/door ?sign|santa|elf|elves/i.test(r.title + ' ' + (r.notes || ''))) t += 'Product: Family door sign (3DBlaze original) (.3mf for Bambu Studio)\nTool: Christmass\\3DBlaze door sign tool.zip (door.py) — run it with the family name, Dad, Mum, kids and green|red. Sample: Christmass\\3DBlaze Door Sign Santa Elves - Sassine - sample.3mf\nWhat: ' + r.title;
     else t += 'Product: custom design (.3mf for Bambu Studio)\nWhat: ' + r.title;
