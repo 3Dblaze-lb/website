@@ -642,6 +642,7 @@
   }
   function slotOpts(bp) {
     var ol = optList(bp); if (ol.length) return ol;
+    if (isDoor(bp)) return [{ name: 'Green' }, { name: 'Red' }];
     return (bp.colors || []).map(function (c) { return { name: c.charAt(0).toUpperCase() + c.slice(1) }; });
   }
   function packOut(p) {
@@ -681,7 +682,7 @@
       if (!opts || !opts.text) return '<img src="' + (p.photo || 'img/my-village.jpg') + '" alt="' + esc(p.name) + ' — real printed piece">';   // My Village keeps its uploaded photo on the card
       return '<div class="mapart">' + BlazeArt.draw('my-village', opts) + '</div>';
     }
-    if (k === 'art' && isDoor(p) && opts && opts.text) return artHTML(p, doorOpts(opts.color, opts.text));
+    if (k === 'art' && isDoor(p) && opts && opts.text) return artHTML(p, doorOpts(String(opts.color || '').toLowerCase(), opts.text));
     if (k === 'art') return artHTML(p, opts);
     if (p.img) return '<img src="' + p.img + '" alt="' + esc(p.name) + '">';
     var ph = realPhoto(p, opts && opts.color);
@@ -1045,7 +1046,20 @@
     return (pr.length ? (of.length ? '<h3 class="dsub">Products</h3>' : '') + '<div class="dgrid" role="list">' + pr.map(xcard).join('') + '</div>' : '') +
       (of.length ? '<h3 class="dsub">Offers</h3><div class="dgrid" role="list">' + of.map(xcard).join('') + '</div>' : '');
   }
-  function isDoor(p) { return p.art === 'door-xmas' || p.art === 'door-plain'; }
+  function isDoor(p) { return !!p && (p.art === 'door-xmas' || p.art === 'door-plain'); }
+  // a door sign inside an offer: same names as on its own page (family, and for Santa & Elves: dad, mom, 1-5 kids)
+  var DOOR_EX = { family: 'The Haddads', dad: 'Georges', mom: 'Rita', kids: ['Jad', 'Lea', 'Sami', 'Nour', 'Karim'] };
+  function doorText(d, xm, ex) {
+    var t = function (v, e) { return String(v || '').trim() || (ex ? e : ''); }, txt = t(d.family, DOOR_EX.family);
+    if (xm) txt += ' — Dad ' + t(d.dad, DOOR_EX.dad) + ', Mom ' + t(d.mom, DOOR_EX.mom) + ', Kids ' + d.kids.map(function (k, i) { return t(k, DOOR_EX.kids[i]); }).join(', ');
+    return txt;
+  }
+  // in an order, a door sign piece keeps only the family name (short); its full names are in the item's text
+  function doorFull(itemText, pk) {
+    if (!pk || !pk.text) return pk && pk.text;
+    var hit = String(itemText || '').split(' · ').filter(function (x) { return x.indexOf(pk.text + ' — Dad ') === 0; })[0];
+    return hit || pk.text;
+  }
   function quickAdd(id, btn) {
     var p = Store.product(id); if (!p) return;
     if ((p.text && p.text.required) || packSlots(p).length || p.contactOnly || p.comingSoon || isDoor(p)) { location.hash = 'p-' + id; return; }
@@ -1198,13 +1212,16 @@
     var ol = slots.length ? [] : optList(p);
     var out = soon || isOut(p);
     var st = { color: ol.length ? (ol.filter(function (o) { return !o.out; })[0] || ol[0]).name : (p.colors && !slots.length) ? p.colors[0] : null, text: '', qty: 1,
-      picks: slots.map(function (x, i) { var so = slotOpts(x.p), ok = so.filter(function (o) { return !o.out; }), f = (x.part ? ok[(i * 2 + 2) % Math.max(ok.length, 1)] : ok[0]) || so[0]; return { id: x.of, name: x.p.name, color: f ? f.name : null, text: '' }; }) };
+      picks: slots.map(function (x, i) { var so = slotOpts(x.p), ok = so.filter(function (o) { return !o.out; }), f = (x.part ? ok[(i * 2 + 2) % Math.max(ok.length, 1)] : ok[0]) || so[0]; var pk0 = { id: x.of, name: x.p.name, color: f ? f.name : null, text: '' }; if (isDoor(x.p)) pk0.door = { family: '', dad: '', mom: '', kids: ['', '', ''] }; return pk0; }) };
     var swatch = function (o, on, extra) { return '<button type="button" class="sw osw' + (on ? ' on' : '') + '" data-c="' + esc(o.name) + '"' + (extra || '') + (o.out ? ' disabled title="Sold out"' : '') + '>' + (o.photo ? '<img src="' + o.photo + '" alt="">' : '<i style="background:' + (COLOR_HEX[o.name.toLowerCase()] || '#D9DDE3') + '"></i>') + esc(o.name) + (o.out ? '<small>sold out</small>' : '') + '</button>'; };
     var packHTML = slots.length ? '<div class="opt packopts"><span class="lab">' + (p.parts ? 'Choose the colours' : 'Choose each piece') + '</span>' + slots.map(function (x, i) {
       var so = slotOpts(x.p);
       return '<div class="pslot" data-slot="' + i + '"><div class="pslot-h"><b class="n">' + (i + 1) + '</b><span>' + esc(x.p.name) + '</span></div>' +
         (so.length ? '<div class="swatches">' + so.map(function (o) { return swatch(o, o.name === st.picks[i].color, ' data-s="' + i + '"'); }).join('') + '</div>' : '') +
-        (x.p.text ? '<input class="ptx" data-s="' + i + '" maxlength="' + (x.p.text.max || 20) + '" placeholder="' + esc(x.p.text.label + (x.p.text.ph ? ' — ' + x.p.text.ph : '')) + '">' : '') + '</div>';
+        (x.p.text ? '<input class="ptx" data-s="' + i + '" maxlength="' + (x.p.text.max || 20) + '" placeholder="' + esc(x.p.text.label + (x.p.text.ph ? ' — ' + x.p.text.ph : '')) + '">' : '') +
+        (isDoor(x.p) ? '<input class="ptx pdf" data-s="' + i + '" data-f="family" maxlength="22" placeholder="Family name — e.g. ' + DOOR_EX.family + '" autocomplete="off">' +
+          (x.p.art === 'door-xmas' ? '<div class="drow"><input class="ptx pdf" data-s="' + i + '" data-f="dad" maxlength="12" placeholder="Dad (Santa) — e.g. ' + DOOR_EX.dad + '" autocomplete="off"><input class="ptx pdf" data-s="' + i + '" data-f="mom" maxlength="12" placeholder="Mom (Mama Claus) — e.g. ' + DOOR_EX.mom + '" autocomplete="off"></div>' +
+            '<div class="pkn"><span>Kids (elves)</span><div class="swatches">' + [1, 2, 3, 4, 5].map(function (k) { return '<button type="button" class="sw pkb' + (k === 3 ? ' on' : '') + '" data-s="' + i + '" data-n="' + k + '">' + k + '</button>'; }).join('') + '</div></div><div class="drow pkids" data-s="' + i + '"></div>' : '') : '') + '</div>';
     }).join('') + '<div class="err" id="packErr"></div></div>' : '';
     if (p.id === 'my-village') st.text = ls('prefillVillage') || '';
     app.innerHTML = '<div class="wrap"><a class="back" href="#' + colHash(p) + '">← Back</a><div class="ppage">' +
@@ -1247,14 +1264,26 @@
       if (v3) { if (slots.length) v3.setColors(st.picks.map(function (k) { return col3d(k.color); })); if (hasReal && curPh()) $('.realph').src = curPh(); return; }
       if (mlive) { if ($('#pLive').classList.contains('hidden') && st.text) $('[data-v=live]').click(); mlive.set({ text: st.text || 'Your village', ar: st.geo && st.geo.ar, ele: st.geo && st.geo.ele, lat: st.geo && st.geo.lat, lon: st.geo && st.geo.lon }); return; }
       if (slots.length && window.BlazeArt && BlazeArt.has(p.art || p.id)) { artBox(thumb(p, { texts: st.picks.map(function (k, i) { return k.text || ((window.BlazeArt && BlazeArt.ornNames) || ['Gabriel', 'Maria', 'Elie'])[i % 10]; }) })); return; }
-      if (slots.length && st.focus != null) { var fx = slots[st.focus], pk = st.picks[st.focus]; artBox(thumb(fx.p, { color: pk.color, text: pk.text || undefined })); return; }
+      if (slots.length && st.focus != null) { var fx = slots[st.focus], pk = st.picks[st.focus]; artBox(thumb(fx.p, { color: pk.color, text: pk.door ? doorText(pk.door, fx.p.art === 'door-xmas', true) : pk.text || undefined })); return; }
       artBox(thumb(p, { color: st.color, text: st.text || undefined, lat: st.geo && st.geo.lat, lon: st.geo && st.geo.lon }), st.keep);
       st.keep = false;
     };
     draw();
     if (slots.length) {
-      $$('.pslot .sw').forEach(function (b) { b.onclick = function () { var i = +b.dataset.s; st.picks[i].color = b.dataset.c; st.focus = i; $$('.pslot[data-slot="' + i + '"] .sw').forEach(function (x) { x.classList.toggle('on', x === b); }); $('#packErr').textContent = ''; draw(); }; });
-      $$('.ptx').forEach(function (t) { t.oninput = function () { var i = +t.dataset.s; st.picks[i].text = t.value.trim(); st.focus = i; $('#packErr').textContent = ''; draw(); }; });
+      $$('.pslot .osw').forEach(function (b) { b.onclick = function () { var i = +b.dataset.s; st.picks[i].color = b.dataset.c; st.focus = i; $$('.pslot[data-slot="' + i + '"] .osw').forEach(function (x) { x.classList.toggle('on', x === b); }); $('#packErr').textContent = ''; draw(); }; });
+      $$('.ptx').forEach(function (t) { if (t.classList.contains('pdf')) return; t.oninput = function () { var i = +t.dataset.s; st.picks[i].text = t.value.trim(); st.focus = i; $('#packErr').textContent = ''; draw(); }; });
+      // door sign inside the offer: family / dad / mom / kids, drawn live like on its own page
+      var doorSync = function (i) { var pk = st.picks[i]; pk.text = String(pk.door.family || '').trim(); pk.full = doorText(pk.door, slots[i].p.art === 'door-xmas'); st.focus = i; $('#packErr').textContent = ''; draw(); };
+      var doorKids = function (i) {
+        var box = $('.pkids[data-s="' + i + '"]'); if (!box) return; var d = st.picks[i].door;
+        box.innerHTML = d.kids.map(function (k, n) { return '<input class="ptx pdk" data-n="' + n + '" maxlength="10" value="' + esc(k) + '" placeholder="Kid ' + (n + 1) + ' — e.g. ' + DOOR_EX.kids[n] + '" autocomplete="off">'; }).join('');
+        [].forEach.call(box.querySelectorAll('.pdk'), function (t) { t.oninput = function () { d.kids[+t.dataset.n] = t.value; doorSync(i); }; });
+      };
+      $$('.pdf').forEach(function (t) { t.oninput = function () { var i = +t.dataset.s; st.picks[i].door[t.dataset.f] = t.value; doorSync(i); }; });
+      $$('.pkb').forEach(function (b) { b.onclick = function () { var i = +b.dataset.s, n = +b.dataset.n, d = st.picks[i].door; while (d.kids.length < n) d.kids.push(''); d.kids = d.kids.slice(0, n); $$('.pkb[data-s="' + i + '"]').forEach(function (x) { x.classList.toggle('on', x === b); }); doorKids(i); doorSync(i); }; });
+      slots.forEach(function (x, i) { if (x.p.art === 'door-xmas') doorKids(i); });
+      // an offer with no picture of its own shows its first piece
+      if (st.focus == null && !mk && !curPh()) { st.focus = 0; draw(); }
     } else $$('.sw').forEach(function (b) { b.onclick = function () { st.color = b.dataset.c; st.keep = true; $$('.sw').forEach(function (x) { x.classList.toggle('on', x === b); }); draw(); }; });
     var isMap = (p.art || p.id) === 'my-village';
     var geoLook = function () { Geo.find(st.text, function (hit, gs) { st.geo = gs === 'searching' ? null : hit; st.needPick = gs === 'pick'; draw(); var g = $('#pGeo'); if (g) g.innerHTML = Geo.status(hit, gs, 'pText', st.text); }); };
@@ -1267,10 +1296,23 @@
         for (var i = 0; i < slots.length; i++) {
           var bp = slots[i].p, pk = st.picks[i], o = optFor(bp, pk.color);
           if (o && o.out) { $('#packErr').textContent = 'Piece ' + (i + 1) + ': ' + o.name + ' is sold out — pick another colour.'; return false; }
+          if (pk.door) {
+            var dq = function (m, sel) { $('#packErr').textContent = 'Piece ' + (i + 1) + ': ' + m; toast(m.charAt(0).toUpperCase() + m.slice(1)); var el = $('.pslot[data-slot="' + i + '"] ' + sel); if (el) el.focus(); };
+            var dt = function (v) { return String(v || '').trim(); }, dd = pk.door;
+            if (!dt(dd.family)) { dq('please type your family name.', '[data-f=family]'); return false; }
+            if (bp.art === 'door-xmas') {
+              if (!dt(dd.dad)) { dq('please type Dad’s name.', '[data-f=dad]'); return false; }
+              if (!dt(dd.mom)) { dq('please type Mom’s name.', '[data-f=mom]'); return false; }
+              for (var ki = 0; ki < dd.kids.length; ki++) if (!dt(dd.kids[ki])) { dq('please type the name of kid ' + (ki + 1) + ' (or choose fewer kids).', '.pdk[data-n="' + ki + '"]'); return false; }
+            }
+            pk.text = dt(dd.family); pk.full = doorText(dd, bp.art === 'door-xmas');
+          }
           if (bp.text && bp.text.required && !pk.text) { $('#packErr').textContent = 'Piece ' + (i + 1) + ': please fill in “' + bp.text.label + '”.'; var ti2 = $('.ptx[data-s="' + i + '"]'); if (ti2) ti2.focus(); return false; }
         }
         var picks = st.picks.map(function (k) { return { id: k.id, name: k.name, color: k.color || null, text: k.text || null }; });
-        Cart.add(p, st.qty, picks.some(function (k) { return k.color; }) ? picks.map(function (k) { return k.color || '—'; }).join(' + ') : null, picks.filter(function (k) { return k.text; }).map(function (k) { return k.text; }).join(' · '), null, picks);
+        var allTxt = st.picks.filter(function (k) { return k.text; }).map(function (k) { return k.full || k.text; }).join(' · ');
+        if (allTxt.length > 200) { $('#packErr').textContent = 'The names are too long together — please shorten one.'; return false; }
+        Cart.add(p, st.qty, picks.some(function (k) { return k.color; }) ? picks.map(function (k) { return k.color || '—'; }).join(' + ') : null, allTxt, null, picks);
         return true;
       }
       var so = optFor(p, st.color); if (so && so.out) { toast(so.name + ' is sold out'); return false; }
@@ -1836,7 +1878,7 @@
     var orn = o.items.filter(isOrn), data;
     if (orn.length) {
       var names = [], groups = { holy: [], snowflake: [], bow: [] };
-      orn.forEach(function (i) { var ps = i.picks ? (Array.isArray(i.picks) ? i.picks : Object.keys(i.picks).map(function (k) { return i.picks[k]; })) : [{ id: i.id, text: i.text }]; for (var q = 0; q < i.qty; q++) ps.forEach(function (pk) { if (pk.text) { names.push(pk.text); groups[ornKind(pk.id || i.id)].push(pk.text); } }); });
+      orn.forEach(function (i) { var ps = i.picks ? (Array.isArray(i.picks) ? i.picks : Object.keys(i.picks).map(function (k) { return i.picks[k]; })) : [{ id: i.id, text: i.text }]; for (var q = 0; q < i.qty; q++) ps.forEach(function (pk) { if (pk.text && ORN_RE.test(pk.id || i.id)) { names.push(pk.text); groups[ornKind(pk.id || i.id)].push(pk.text); } }); });
       var tt = Object.keys(groups).filter(function (k) { return groups[k].length; }).map(function (k) { return ORN_TOOL[k].name + ' × ' + groups[k].length; });
       data = { type: 'ornament', title: tt.join(' + '), names: groups.holy, groups: groups, order: o.code, status: 'sent', createdAt: Date.now() };
     } else {
@@ -1926,7 +1968,7 @@
     orders.forEach(function (o) { o.items.forEach(function (i) {
       if (i.id === 'design') return;
       var ownParts = (Store.product(i.id) || {}).parts;
-      var pieces = i.picks && !ownParts ? (Array.isArray(i.picks) ? i.picks : Object.keys(i.picks).map(function (k2) { return i.picks[k2]; })).map(function (pk) { return { id: pk.id, name: pk.name, color: pk.color, text: pk.text, qty: i.qty, from: i.name }; }) : [i];
+      var pieces = i.picks && !ownParts ? (Array.isArray(i.picks) ? i.picks : Object.keys(i.picks).map(function (k2) { return i.picks[k2]; })).map(function (pk) { return { id: pk.id, name: pk.name, color: pk.color, text: isDoor(Store.product(pk.id)) ? doorFull(i.text, pk) : pk.text, qty: i.qty, from: i.name }; }) : [i];
       pieces.forEach(function (i) {
         var k = i.id + '|' + (i.color || ''); var p = Store.product(i.id) || { id: i.id, name: i.name, printMin: i.printMin || 60 };
         if (!groups[k]) groups[k] = { p: p, color: i.color, qty: 0, texts: [], orders: [] };
