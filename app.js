@@ -235,7 +235,12 @@
 
   // ---------- data store: demo (this browser) or live (Firebase) ----------
   var Store = (function () {
-    var cfg = window.BLAZE_FIREBASE, live = !!(cfg && cfg.apiKey);
+    var cfg = window.BLAZE_FIREBASE;
+    // Demo mode (sample orders + passcode, saved in this browser only) exists for local testing ONLY.
+    // On the real site a slow or failed connection must never turn into demo mode: the page shows
+    // "can't reach the server" and retries (down = true) instead.
+    var demoOk = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname) || /\.(localhost|test)$/.test(location.hostname) || location.protocol === 'file:';
+    var live = !!(cfg && cfg.apiKey) || !demoOk, down = false;
     var state = { overrides: {}, extra: {}, photos: {}, settings: Object.assign({}, DEFAULT_SETTINGS), orders: {}, requests: {}, user: null };
     var subs = [], rev = 0, got = { products: false, extra: false, settings: false }, offline = false, cacheT = null;
     function emit() { subs.forEach(function (f) { f(); }); }
@@ -277,7 +282,23 @@
 
     function loadScript(src) { return new Promise(function (res, rej) { var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); }); }
 
+    function goDown() {
+      down = true;
+      if (!window.BLAZE_ADMIN) { useCache(); offline = true; got.products = got.extra = got.settings = true; rev++; }
+      emit(); setTimeout(retry, 8000); return Promise.resolve();
+    }
+    function retry() {
+      if (!down) return;
+      if (navigator.onLine === false) { setTimeout(retry, 4000); return; }
+      if (window.BLAZE_ADMIN) { location.reload(); return; }
+      loadScript('firebase-config.js?r=' + Date.now()).then(function () {
+        cfg = window.BLAZE_FIREBASE; if (!(cfg && cfg.apiKey)) throw new Error('no config');
+        down = false; return init();
+      }).then(emit, function () { setTimeout(retry, 8000); });
+    }
+
     function init() {
+      if (live && !(cfg && cfg.apiKey)) return goDown();
       if (!live) {
         state.overrides = ls('overrides') || {}; state.extra = ls('extra') || {};
         state.settings = Object.assign({}, DEFAULT_SETTINGS, ls('settings') || {});
@@ -322,7 +343,7 @@
           });
         })
         .catch(function () {
-          if (window.BLAZE_ADMIN) { live = false; toast('Could not reach the server — showing demo mode'); return init(); }
+          if (window.BLAZE_ADMIN) return goDown();
           // Customers: never fall back to demo mode (orders would only be saved on their phone). Show the shop
           // from the device cache / defaults; placing an order then shows a WhatsApp fallback.
           offline = true; got.products = got.extra = got.settings = true; rev++;
@@ -362,6 +383,7 @@
       })).then(function (r) { if (r.every(Boolean)) offline = false; return r.every(Boolean); });
     }
     function rest(method, path, body) {
+      if (down || !cfg) return Promise.reject(new Error('offline'));
       return fetch(cfg.databaseURL.replace(/\/$/, '') + '/' + path + '.json', { method: method, body: body == null ? undefined : JSON.stringify(body), cache: 'no-store' })
         .then(function (r) { if (!r.ok) throw new Error('save failed ' + r.status); return r.json(); });
     }
@@ -371,7 +393,7 @@
     function lsGet(k) { try { return localStorage.getItem('3db:' + k); } catch (e) { return null; } }
     function lsSet(k, v) { try { localStorage.setItem('3db:' + k, v); } catch (e) { try { Object.keys(localStorage).filter(function (x) { return x.indexOf('3db:ph:') === 0; }).forEach(function (x) { localStorage.removeItem(x); }); localStorage.setItem('3db:' + k, v); } catch (e2) {} } }
     function loadPhotoKeys() {
-      if (!live || photoKeysP) return photoKeysP;
+      if (!live || down || photoKeysP) return photoKeysP;
       photoKeysP = fetch(cfg.databaseURL.replace(/\/$/, '') + '/photos.json?shallow=true', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : {}; }).then(function (k) { photoKeys = k || {}; Object.keys(photoWant).forEach(fetchPhoto); }, function () { photoKeys = {}; Object.keys(photoWant).forEach(fetchPhoto); });
       return photoKeysP;
     }
@@ -414,7 +436,7 @@
     function photoOf(v) {
       if (typeof v !== 'string' || v.charAt(0) !== '@') return v;
       var ref = v.slice(1); if (state.photos[ref]) return state.photos[ref];
-      if (!live) return null;
+      if (!live || down) return null;
       needPhoto(ref); return state.photos[ref] || pend(ref);
     }
     function resolvePhotos(p) {
@@ -491,6 +513,7 @@
 
     return {
       get live() { return live; },
+      get down() { return down; },
       ready: function () { return !live || (got.products && got.extra && got.settings); },
       get offline() { return offline; },
       ordersReady: function () { return !live || ordersReady; },
@@ -524,6 +547,7 @@
 
       placeOrder: function (o) {
         var track = { status: o.status, total: o.total, paid: false, payment: o.payment, createdAt: o.createdAt, updatedAt: o.createdAt, items: o.items.reduce(function (n, i) { return n + i.qty; }, 0) };
+        if (down) return Promise.reject(new Error('offline'));
         if (!live) {
           state.orders[o.code] = o; ls('orders', state.orders);
           var tr = ls('tracking') || {}; tr[o.code] = track; ls('tracking', tr); emit(); return Promise.resolve(o);
@@ -534,6 +558,7 @@
         return fb.ref('orders/' + o.code).set(o).then(function () { return fb.ref('tracking/' + o.code).set(track).catch(function () {}); }).then(function () { return o; });
       },
       track: function (code) {
+        if (down) return Promise.reject(new Error('offline'));
         if (!live) { var tr = ls('tracking') || {}; return Promise.resolve(Clean.track(tr[code])); }
         if (!/^[A-Z0-9-]{3,20}$/.test(code)) return Promise.resolve(null);
         if (!fb) return rest('GET', 'tracking/' + code).then(Clean.track);
@@ -574,6 +599,7 @@
         return fb.ref('settings').update(s);
       },
       login: function (email, pass) {
+        if (down) return Promise.reject(new Error('offline'));
         if (!live) { if (pass === 'blaze2026') { state.user = { email: 'demo' }; ls('demoAdmin', true); emit(); return Promise.resolve(); } return Promise.reject(new Error('Wrong passcode')); }
         var p = new firebase.auth.GoogleAuthProvider(); p.setCustomParameters({ prompt: 'select_account' });
         return firebase.auth().signInWithPopup(p).then(function (r) { if (!r.user || r.user.email !== '3dbllaze@gmail.com') { firebase.auth().signOut(); throw new Error('Not the shop account'); } });
@@ -1579,6 +1605,13 @@
   function statusBadge(k) { var s = STATUSES.filter(function (x) { return x.k === k; })[0] || STATUSES[0]; return '<span class="badge s-' + s.k + '">' + s.l + '</span>'; }
 
   function viewAdmin() {
+    if (Store.down) {
+      // never demo mode on the real site: no passcode, no sample orders
+      document.title = '3DBlaze — reconnecting…';
+      app.innerHTML = '<div class="wrap"><div class="login"><h1 style="font-size:28px">3DBlaze Studio</h1><div class="panel"><p style="margin:0 0 8px"><b>Can’t reach the server right now.</b></p><p class="muted" style="margin:0 0 14px">Your orders are safe online — nothing is lost. Retrying automatically every few seconds…</p><button class="btn pri full" id="rlNow">Retry now</button></div></div></div>';
+      $('#rlNow').onclick = function () { location.reload(); };
+      return;
+    }
     var u = Store.user();
     if (!u) {
       app.innerHTML = '<div class="wrap"><div class="login"><h1 style="font-size:28px">3DBlaze Studio</h1><p class="muted">3DBlaze order manager</p><form class="panel" id="lg">' +
