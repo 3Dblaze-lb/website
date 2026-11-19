@@ -687,6 +687,13 @@
     if (p.img) return '<img src="' + p.img + '" alt="' + esc(p.name) + '">';
     var ph = realPhoto(p, opts && opts.color);
     if (ph) return '<img src="' + ph + '" alt="' + esc(p.name) + '">';
+    // an offer with no picture of its own = its pieces side by side, each as its own product shows it (standard example names)
+    var sl = isPack(p) ? packSlots(p) : [];
+    if (sl.length) {
+      var gs = []; sl.forEach(function (x) { var g = gs.filter(function (y) { return y.id === x.of; })[0]; if (g) g.n++; else gs.push({ id: x.of, p: x.p, n: 1 }); });
+      gs = gs.slice(0, 4);
+      return '<div class="pcol pcol' + gs.length + '" role="img" aria-label="' + esc(p.name + ': ' + gs.map(function (g) { return g.n + ' × ' + g.p.name; }).join(', ')) + '">' + gs.map(function (g) { return '<div class="pcol-t">' + thumb(g.p) + (g.n > 1 ? '<b class="pcol-n">×' + g.n + '</b>' : '') + '</div>'; }).join('') + '</div>';
+    }
     return '<div class="ph"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="13" width="36" height="26" rx="6" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M17 13 l3-5 h8 l3 5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><circle cx="24" cy="26" r="7" fill="none" stroke="currentColor" stroke-width="2.5"/></svg><span>' + esc(p.name) + '</span><small>Photo coming soon</small></div>';
   }
   function fee(region) {
@@ -1282,8 +1289,7 @@
       $$('.pdf').forEach(function (t) { t.oninput = function () { var i = +t.dataset.s; st.picks[i].door[t.dataset.f] = t.value; doorSync(i); }; });
       $$('.pkb').forEach(function (b) { b.onclick = function () { var i = +b.dataset.s, n = +b.dataset.n, d = st.picks[i].door; while (d.kids.length < n) d.kids.push(''); d.kids = d.kids.slice(0, n); $$('.pkb[data-s="' + i + '"]').forEach(function (x) { x.classList.toggle('on', x === b); }); doorKids(i); doorSync(i); }; });
       slots.forEach(function (x, i) { if (x.p.art === 'door-xmas') doorKids(i); });
-      // an offer with no picture of its own shows its first piece
-      if (st.focus == null && !mk && !curPh()) { st.focus = 0; draw(); }
+
     } else $$('.sw').forEach(function (b) { b.onclick = function () { st.color = b.dataset.c; st.keep = true; $$('.sw').forEach(function (x) { x.classList.toggle('on', x === b); }); draw(); }; });
     var isMap = (p.art || p.id) === 'my-village';
     var geoLook = function () { Geo.find(st.text, function (hit, gs) { st.geo = gs === 'searching' ? null : hit; st.needPick = gs === 'pick'; draw(); var g = $('#pGeo'); if (g) g.innerHTML = Geo.status(hit, gs, 'pText', st.text); }); };
