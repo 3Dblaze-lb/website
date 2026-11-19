@@ -155,7 +155,7 @@
   var DEFAULT_SETTINGS = {
     whatsapp: '96178801186', whish: '', whishName: '3DBlaze', instagram: '3dblaze.lb',
     feeBeirut: 5, feeMount: 5, feeOther: 5, freeOver: 0, pickup: true, open: true,
-    banner: '🇱🇧 Independence Day drop is live — order by 19 Nov for delivery before the 22nd',
+    banner: '🎄 Christmas collection is live — order by 18 Dec for delivery before Christmas · 🇱🇧 Lebanon drop still available',
     xmasCutoff: '2026-12-18',
     calcPla: 25, calcMachine: 0.35, calcPack: 0.25, calcFail: 10, calcMarkup: 3, calcMin: 5, calcInfill: 15, calcGph: 15, calcOrderPack: 0
   };
@@ -991,7 +991,7 @@
     // floating section tabs
     var bar = document.createElement('nav');
     bar.className = 'sectabs'; bar.setAttribute('aria-label', 'Sections');
-    bar.innerHTML = [['shop', 'Lebanon drop'], ['christmas', 'Christmas'], ['woggles', 'Woggles'], ['how', 'How it works'], ['faq', 'FAQ']].map(function (t) { return '<a href="#' + (t[0] === 'how' ? 'home' : t[0]) + '" data-sec="' + t[0] + '">' + t[1] + '</a>'; }).join('');
+    bar.innerHTML = [['christmas', 'Christmas'], ['shop', 'Lebanon drop'], ['woggles', 'Woggles'], ['how', 'How it works'], ['faq', 'FAQ']].map(function (t) { return '<a href="#' + (t[0] === 'how' ? 'home' : t[0]) + '" data-sec="' + t[0] + '">' + t[1] + '</a>'; }).join('');
     if (!window.BLAZE_ADMIN) document.body.appendChild(bar);
     $$('a', bar).forEach(function (a) { a.addEventListener('click', function (e) { var el = $('#sec-' + a.dataset.sec); if (el) { e.preventDefault(); el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' }); } }); });
     var head = $('header.top'), prog = document.createElement('div'); prog.className = 'scrollprog'; document.body.appendChild(prog);
@@ -1008,7 +1008,7 @@
       prog.style.transform = 'scaleX(' + (max > 0 ? Math.min(1, y / max) : 0) + ')';
       if (home) {
         var cur = null;
-        ['shop', 'christmas', 'woggles', 'how', 'faq'].forEach(function (k) { var el = $('#sec-' + k); if (el && el.getBoundingClientRect().top < 160) cur = k; });
+        ['christmas', 'shop', 'woggles', 'how', 'faq'].forEach(function (k) { var el = $('#sec-' + k); if (el && el.getBoundingClientRect().top < 160) cur = k; });
         $$('a', bar).forEach(function (a) { a.classList.toggle('on', a.dataset.sec === cur); });
       }
     }
@@ -1034,9 +1034,13 @@
       '<section class="hero2"><div class="wrap">' +
         '<h1>Ideas you can <span class="bl">hold</span>.</h1>' +
         '<p class="lead">3D printed gifts, made to order on our own printers and delivered anywhere in Lebanon.</p>' +
-        '<div class="hcta"><a class="btn pri" href="#shop">Shop now</a>' + (vp ? '<a class="btn sec" href="#make">Make my village</a>' : '') + '</div>' +
+        '<div class="hcta"><a class="btn pri" href="#christmas">Shop Christmas</a>' + (vp ? '<a class="btn sec" href="#make">Make my village</a>' : '') + '</div>' +
         '<div class="trust"><span>✓ Cash on delivery</span><span>✓ Whish accepted</span><span>✓ Ready in 2–4 days</span><span class="dk">✓ Delivery all over Lebanon</span></div>' +
       '</div></section>' +
+
+      '<section class="blk2" id="sec-christmas"><div class="wrap"><div class="shead"><h2>Christmas collection <small class="custhint">Click to customize yours</small></h2><span class="soonlbl">' + (xm.length && !soonCol('xmas') ? 'Order by ' + new Date(s.xmasCutoff).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }) : 'Coming soon') + '</span></div>' +
+        (xm.length ? dropGrid(xm)
+          : '<div class="xempty"><b>New Christmas pieces are on the way.</b><span class="muted">Personalized gifts with your name on them — follow <a href="https://instagram.com/3dblaze.lb" target="_blank" rel="noopener">@3dblaze.lb</a> to see them first.</span></div>') + '</div></section>' +
 
       '<section class="blk2" id="sec-shop"><div class="wrap">' +
         '<div class="shead"><h2>Lebanon drop</h2>' + (soonCol('lebanon') ? '<span class="soonlbl">Coming soon</span>' : '<span class="muted">' + leb.length + ' piece' + (leb.length === 1 ? '' : 's') + '</span>') + '</div>' +
@@ -1044,10 +1048,6 @@
         (lebOffers.length ? '<h3 class="dsub">Offers</h3><div class="pgrid">' + lebOffers.map(card2).join('') + '</div>' : '') +
         '<div class="cdline" id="countdown"></div>' +
       '</div></section>' +
-
-      '<section class="blk2" id="sec-christmas"><div class="wrap"><div class="shead"><h2>Christmas collection <small class="custhint">Click to customize yours</small></h2><span class="soonlbl">' + (xm.length && !soonCol('xmas') ? 'Order by ' + new Date(s.xmasCutoff).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }) : 'Coming soon') + '</span></div>' +
-        (xm.length ? dropGrid(xm)
-          : '<div class="xempty"><b>New Christmas pieces are on the way.</b><span class="muted">Personalized gifts with your name on them — follow <a href="https://instagram.com/3dblaze.lb" target="_blank" rel="noopener">@3dblaze.lb</a> to see them first.</span></div>') + '</div></section>' +
 
       (wg.length ? '<section class="blk2" id="sec-woggles"><div class="wrap"><div class="shead"><h2>Scout woggles</h2>' + (soonCol('woggles') ? '<span class="soonlbl">Coming soon</span>' : '<span class="muted">' + wg.length + ' piece' + (wg.length === 1 ? '' : 's') + '</span>') + '</div>' +
         '<p class="wogsub">Send us your patrol’s totem animal, or anything you want, and we’ll put it on your woggle.</p>' +
