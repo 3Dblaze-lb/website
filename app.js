@@ -526,7 +526,7 @@
       fullPhoto: fullOf,
       orders: function () { return Object.keys(state.orders).map(function (k) { return state.orders[k]; }).filter(Boolean).sort(function (a, b) { return b.createdAt - a.createdAt; }); },
       user: function () { return state.user; },
-      requests: function () { return Object.keys(state.requests).filter(function (k) { return k !== '_costs'; }).map(function (k) { return Object.assign({ id: k }, state.requests[k]); }).sort(function (a, b) { return b.createdAt - a.createdAt; }); },
+      requests: function () { return Object.keys(state.requests).filter(function (k) { return k.charAt(0) !== '_'; }).map(function (k) { return Object.assign({ id: k }, state.requests[k]); }).sort(function (a, b) { return b.createdAt - a.createdAt; }); },
       saveRequest: function (id, data) {
         id = id || 'R' + Date.now().toString(36).toUpperCase();
         if (!live) { state.requests[id] = Object.assign(state.requests[id] || {}, data); ls('requests', state.requests); emit(); return Promise.resolve(id); }
@@ -534,6 +534,24 @@
         return fb.ref('requests/' + id).update(data).then(function () { return id; });
       },
       costs: function () { var c = state.requests._costs || {}; var a = function (x) { return x ? Object.keys(x).map(function (k) { return x[k]; }).filter(Boolean) : []; }; return { fil: a(c.fil), sup: a(c.sup), bag: a(c.bag), bagOf: Object.assign({}, c.bagOf || {}), ads: a(c.ads), exp: a(c.exp) }; },
+      // pieces ticked as done in an order — owner-only, kept beside _costs (orders can't hold extra fields)
+      ticks: function (code) { return (state.requests._ticks || {})[code] || {}; },
+      setTick: function (code, key, on) {
+        var all = state.requests._ticks || (state.requests._ticks = {}), t = all[code] || (all[code] = {});
+        var undo = function (e) { if (on) delete t[key]; else t[key] = true; emit(); throw e; };
+        if (on) t[key] = true; else delete t[key];
+        if (!live) { ls('requests', state.requests); emit(); return Promise.resolve(); }
+        var patch = {}; patch[key] = on ? true : null;
+        if (!sockOrders) { emit(); return restWrite('PATCH', 'requests/_ticks/' + code, patch).catch(undo); }
+        return fb.ref('requests/_ticks/' + code + '/' + key).set(on ? true : null).catch(undo);
+      },
+      clearTicks: function (code) {
+        if (!(state.requests._ticks || {})[code]) return Promise.resolve();
+        delete state.requests._ticks[code];
+        if (!live) { ls('requests', state.requests); return Promise.resolve(); }
+        if (!sockOrders) return restWrite('DELETE', 'requests/_ticks/' + code, null).catch(function () {});
+        return fb.ref('requests/_ticks/' + code).remove().catch(function () {});
+      },
       saveCosts: function (c) {
         if (!live) { state.requests._costs = c; ls('requests', state.requests); emit(); return Promise.resolve(); }
         if (!sockOrders) { state.requests._costs = c; emit(); return restWrite('PUT', 'requests/_costs', c); }
@@ -1675,9 +1693,9 @@
         var n = o.items.reduce(function (a, i) { return a + i.qty; }, 0);
         return '<div class="orow" data-o="' + esc(o.code) + '"><div><div class="c">' + esc(o.code) + (priceCheck(o) ? ' <span title="Price doesn’t match" style="color:#C8102E">⚠</span>' : '') + '</div><small class="muted">' + fmtDate(o.createdAt) + '</small></div>' +
           '<div class="n"><b>' + esc(o.customer.name) + '</b><small>' + esc(isDirect(o) ? 'Sold direct' : o.method === 'pickup' ? 'Pickup' : [o.customer.town, o.customer.region].filter(Boolean).join(' · ')) + '</small><small class="ph">' + esc(fmtPhone(o.customer.phone)) + '</small></div>' +
-          '<div class="it"><small>' + n + ' item' + (n > 1 ? 's' : '') + ' · ' + esc(o.items.map(function (i) { return i.name; }).join(', ')) + '</small></div>' +
+          '<div class="it"><small>' + n + ' item' + (n > 1 ? 's' : '') + ' · ' + esc(o.items.map(function (i) { return i.name; }).join(', ')) + '</small>' + '</div>' +
           '<div class="pm"><small class="' + (o.paid ? 'paid' : 'unpaid') + '">' + (o.payment === 'whish' ? 'Whish' : 'Cash') + (o.paid ? ' ✓' : '') + '</small></div>' +
-          '<div>' + statusBadge(o.status) + '</div><div class="tt">' + money(o.total) + (orderDiscount(o) ? '<small class="muted" style="display:block;font-weight:500;font-size:12px">−' + money(orderDiscount(o)) + ' discount</small>' : '') + '</div></div>';
+          '<div>' + statusBadge(o.status) + (function () { var d = orderDone(o); return d.n && d.n < d.of ? '<small style="display:block;font-weight:600;font-size:12px;color:var(--green);margin-top:3px;white-space:nowrap">✓ ' + d.n + ' / ' + d.of + ' done</small>' : ''; })() + '</div><div class="tt">' + money(o.total) + (orderDiscount(o) ? '<small class="muted" style="display:block;font-weight:500;font-size:12px">−' + money(orderDiscount(o)) + ' discount</small>' : '') + '</div></div>';
       }).join('') : '<div class="panel empty"><p class="muted">' + (Store.ordersReady() === true ? 'No orders here yet. Share the site on Instagram and they’ll show up live.' : 'Loading orders…') + '</p></div>') + '</div>';
     $$('[data-f]').forEach(function (b) { b.onclick = function () { adm.filter = b.dataset.f; admOrders(); }; });
     var q = $('#oq'); q.oninput = function () { adm.q = q.value; var pos = q.selectionStart; admOrders(); var nq = $('#oq'); nq.focus(); nq.setSelectionRange(pos, pos); };
@@ -1869,6 +1887,26 @@
     if (o.total - (o.subtotal + o.delivery) > 0.001) bad.push('total doesn’t add up');
     return bad.join(' · ');
   }
+  // every piece to make for an order = one tick box (a pack → one box per piece, "× 2" → two boxes)
+  function orderPieces(o) {
+    var out = [];
+    o.items.forEach(function (i, n) {
+      var ownParts = (Store.product(i.id) || {}).parts;
+      var pk = i.picks && !ownParts ? (Array.isArray(i.picks) ? i.picks : Object.keys(i.picks).map(function (k) { return i.picks[k]; })) : null;
+      var q = Math.min(i.qty || 1, 30);
+      for (var u = 0; u < q; u++) {
+        var nth = q > 1 ? ' (' + (u + 1) + ' of ' + q + ')' : '';
+        if (pk && pk.length) pk.forEach(function (x, j) {
+          var tx = isDoor(Store.product(x.id)) ? doorFull(i.text, x) : x.text;
+          out.push({ k: n + '_' + u + '_' + j, item: n, label: [(x.name || i.name) + nth, x.color, tx ? '“' + tx + '”' : ''].filter(Boolean).join(' · ') });
+        });
+        else out.push({ k: n + '_' + u, item: n, label: [i.name + nth, i.color, i.text ? '“' + i.text + '”' : ''].filter(Boolean).join(' · ') });
+      }
+    });
+    return out;
+  }
+  function orderDone(o) { var ps = orderPieces(o), t = Store.ticks(o.code); return { n: ps.filter(function (x) { return t[x.k]; }).length, of: ps.length }; }
+
   function orderModal(code) {
     var o = Store.orders().filter(function (x) { return x.code === code; })[0]; if (!o) return;
     var c = o.customer;
@@ -1876,7 +1914,8 @@
       '<p class="muted" style="margin:4px 0 16px;font-size:14px">' + fmtDate(o.createdAt) + '</p>' +
       (function () { var w = priceCheck(o); return w ? '<div class="panel" style="border:2px solid #E5484D;background:#FFF5F5;margin-bottom:14px;padding:12px 16px"><b style="color:#C8102E">⚠ Price doesn’t match the shop — possible fake order</b><div style="font-size:14px;margin-top:4px">' + esc(w) + '</div><div class="muted" style="font-size:13px;margin-top:4px">Call the customer before printing. Charge the real price.</div></div>' : ''; })() +
       '<div class="lab muted" style="font-size:13px">Move to</div><div class="stepper">' + STATUSES.map(function (s) { return '<button data-s="' + s.k + '" class="' + (o.status === s.k ? 'on' : '') + '">' + s.l + '</button>'; }).join('') + '</div>' +
-      '<div class="panel" style="padding:16px 18px;background:var(--card2)">' + o.items.map(function (i) { var p = Store.product(i.id) || { id: i.id, name: i.name }; return '<div class="line" style="grid-template-columns:56px 1fr auto"><div class="th" style="width:56px;height:56px">' + thumb(p, { color: i.color, text: i.text, lat: i.geo && i.geo.lat, lon: i.geo && i.geo.lon, ar: i.geo && i.geo.ar, ele: i.geo && i.geo.ele }) + '</div><div><div class="nm">' + esc(i.name) + ' × ' + i.qty + '</div><div class="meta">' + esc([i.color, i.text ? '“' + i.text + '”' : ''].filter(Boolean).join(' · ')) + '</div></div><b>' + money(i.price * i.qty) + '</b></div>'; }).join('') +
+      '<div class="panel" style="padding:16px 18px;background:var(--card2)"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px;font-size:13px" class="muted"><span>Tick each piece when it’s done — all ticked = Ready</span><b id="mTkN" style="white-space:nowrap"></b></div>' + o.items.map(function (i, n) { var p = Store.product(i.id) || { id: i.id, name: i.name }; return '<div class="line" style="grid-template-columns:56px 1fr auto"><div class="th" style="width:56px;height:56px">' + thumb(p, { color: i.color, text: i.text, lat: i.geo && i.geo.lat, lon: i.geo && i.geo.lon, ar: i.geo && i.geo.ar, ele: i.geo && i.geo.ele }) + '</div><div><div class="nm">' + esc(i.name) + ' × ' + i.qty + '</div><div class="meta">' + esc([i.color, i.text ? '“' + i.text + '”' : ''].filter(Boolean).join(' · ')) + '</div></div><b>' + money(i.price * i.qty) + '</b></div>' +
+        '<div style="display:grid;gap:2px;margin:2px 0 12px 4px">' + orderPieces(o).filter(function (x) { return x.item === n; }).map(function (x) { var on = !!Store.ticks(o.code)[x.k]; return '<label class="switch" style="padding:7px 0;min-height:36px"><input type="checkbox" data-tk="' + x.k + '"' + (on ? ' checked' : '') + ' style="flex:none;width:22px;height:22px"><span style="' + (on ? 'text-decoration:line-through;opacity:.55' : '') + '">' + esc(x.label) + '</span></label>'; }).join('') + '</div>'; }).join('') +
       '<div class="sum" style="margin-top:10px">' + (function () { var c = orderCost(o); return c == null ? '<div class="muted" style="font-size:13px"><span>Profit</span><span>add the Bambu file to each product to see it</span></div>' : '<div><span>Cost · profit</span><b style="color:var(--green)">' + money(c) + ' · ' + money(orderNet(o) - c) + '</b></div>'; })() + '<div><span>Delivery</span><b>' + (o.delivery ? money(o.delivery) : 'Free') + '</b></div>' + (orderDiscount(o) ? '<div><span>Discount</span><b style="color:var(--red)">− ' + money(orderDiscount(o)) + '</b></div>' : '') + '<div class="tot" style="font-size:18px"><span>Total</span><span>' + money(o.total) + '</span></div></div></div>' +
       '<div class="dlv"><div class="dlv-h"><b>' + (o.method === 'pickup' ? 'Pickup' : 'Delivery') + ' details</b><span>' + (o.paid ? 'Paid' : 'Collect ' + money(o.total) + (o.payment === 'whish' ? ' (Whish)' : ' cash')) + '</span></div>' +
         '<div class="kv"><span>Customer</span><b>' + esc(c.name) + '</b>' +
@@ -1900,6 +1939,20 @@
             if (b.dataset.s === 'cancelled') confirmBox('Cancel order ' + o.code + '?', 'Cancel order', go); else go();
           };
         });
+        var tkN = function () { var d = orderDone(o); box.querySelector('#mTkN').textContent = d.n + ' / ' + d.of + ' done'; return d; };
+        tkN();
+        $$('[data-tk]', box).forEach(function (cb) {
+          cb.onchange = function () {
+            var want = cb.checked, sp = cb.parentNode.querySelector('span');
+            Store.setTick(o.code, cb.dataset.tk, want).then(function () {
+              sp.style.textDecoration = want ? 'line-through' : ''; sp.style.opacity = want ? '.55' : '';
+              var d = tkN();
+              if (want && d.n === d.of && ['new', 'confirmed', 'printing'].indexOf(o.status) >= 0) {
+                Store.updateOrder(o.code, { status: 'ready' }).then(function () { close(); renderAdmin(); orderModal(o.code); toast('All pieces done — ' + o.code + ' is Ready'); }).catch(function () { toast('Ticked, but couldn’t move to Ready — tap Ready'); });
+              } else renderAdmin();
+            }).catch(function () { cb.checked = !want; toast('Couldn’t save the tick — try again'); });
+          };
+        });
         box.querySelector('#mPaid').onchange = function (e) { Store.updateOrder(o.code, { paid: e.target.checked }).then(function () { o.paid = e.target.checked; renderAdmin(); toast(e.target.checked ? 'Marked paid' : 'Marked unpaid'); }); };
         box.querySelector('#mDiscOk').onclick = function () {
           var full = Math.round(((o.subtotal || 0) + (o.delivery || 0)) * 100) / 100, d = Math.round((parseFloat(box.querySelector('#mDisc').value) || 0) * 100) / 100;
@@ -1911,7 +1964,7 @@
         var nt; box.querySelector('#mNote').oninput = function (e) { clearTimeout(nt); nt = setTimeout(function () { Store.updateOrder(o.code, { note: e.target.value }); }, 600); };
         var rqb = box.querySelector('#mReq'); if (rqb) rqb.onclick = function () { makeOrderRequest(o, function () { close(); adm.tab = 'requests'; renderAdmin(); }); };
         box.querySelector('#mCpMsg').onclick = function () { copy(setWa(), 'Message copied'); };
-        box.querySelector('#mDel').onclick = function () { confirmBox('Delete ' + o.code + ' for good? This can’t be undone.', 'Delete', function () { Store.deleteOrder(o.code).then(function () { close(); renderAdmin(); toast(o.code + ' deleted'); }).catch(function () { toast('Couldn’t delete — try again'); }); }); };
+        box.querySelector('#mDel').onclick = function () { confirmBox('Delete ' + o.code + ' for good? This can’t be undone.', 'Delete', function () { Store.deleteOrder(o.code).then(function () { Store.clearTicks(o.code); close(); renderAdmin(); toast(o.code + ' deleted'); }).catch(function () { toast('Couldn’t delete — try again'); }); }); };
         var setDrv = function () { box.querySelector('#mDrv').href = 'https://wa.me/?text=' + encodeURIComponent(driverText(o)); };
         setDrv();
         box.querySelector('#mPaid').addEventListener('change', setDrv);
