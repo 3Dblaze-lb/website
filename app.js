@@ -119,7 +119,7 @@
       specs: ['Price on request', 'Totem animal, name or logo on the front', 'We confirm if it can be made before anything is printed'] }
   ];
   var BLAZE_ART_IDS = ['holy-ornament-3'];
-  var COLOR_HEX = { black: '#30343B', white: '#F2F3F5', red: '#E2262B', green: '#1FA14E', orange: '#FF6A1F', blue: '#1A8CFF', yellow: '#FFD23F', grey: '#9AA1AB', gray: '#9AA1AB', purple: '#7A4CC2', pink: '#F47FB0', brown: '#7A4A2A', gold: '#C9A13B', silver: '#C3C7CE', navy: '#1D2B53' };
+  var COLOR_HEX = { black: '#30343B', white: '#F2F3F5', red: '#E2262B', green: '#01796F', orange: '#FF6A1F', blue: '#1A8CFF', yellow: '#FFD23F', grey: '#9AA1AB', gray: '#9AA1AB', purple: '#7A4CC2', pink: '#F47FB0', brown: '#7A4A2A', gold: '#C9A13B', silver: '#C3C7CE', navy: '#1D2B53' };
   function hexOf(name) { var k = String(name || '').toLowerCase(); return COLOR_HEX[k] || COLOR_HEX[k.split(' ')[0]] || '#D9DDE3'; }
   // a product whose options are "A · B" pairs with a second title (optLabel2) shows TWO rows of buttons: A, then B
   function dualOpts(p) {
@@ -1241,7 +1241,7 @@
       '<div class="big ornart doorbig" id="pArt"></div><div>' +
       '<div class="eyebrow">Christmas 2026</div><h1>' + esc(p.name) + '</h1><div class="price">' + (sale ? money(p.price) + (p.was ? '<s>' + money(p.was) + '</s>' : '') : '<span class="soonpill">Coming soon</span>') + '</div>' +
       '<p style="color:#3A4352;font-size:17px;margin:16px 0 0">' + esc(p.desc || '') + '</p>' +
-      '<div class="opt"><span class="lab">Colour</span><div class="swatches" id="dCol"><button type="button" class="sw on" data-c="green"><i style="background:#126854"></i>Green</button><button type="button" class="sw" data-c="red"><i style="background:#BE202C"></i>Red</button></div></div>' +
+      '<div class="opt"><span class="lab">Colour</span><div class="swatches" id="dCol"><button type="button" class="sw on" data-c="green"><i style="background:#01796F"></i>Green</button><button type="button" class="sw" data-c="red"><i style="background:#BE202C"></i>Red</button></div></div>' +
       '<div class="opt">' + field('dFam', 'Family name', o.family, 22, 'e.g. The Haddads') + '</div>' +
       (xm ? '<div class="opt drow">' + field('dDad', 'Dad (Santa)', o.dad, 12, 'e.g. ' + EX.dad) + field('dMom', 'Mom (Mama Claus)', o.mom, 12, 'e.g. ' + EX.mom) + '</div>' +
         '<div class="opt"><span class="lab">Kids (elves)</span><div class="swatches" id="dN">' + [1, 2, 3, 4, 5].map(function (k) { return '<button type="button" class="sw' + (k === 3 ? ' on' : '') + '" data-n="' + k + '">' + k + '</button>'; }).join('') + '</div><div class="drow" id="dKids"></div></div>' : '') +
@@ -2351,7 +2351,7 @@
         '<div class="muted" style="font-size:14px;margin-top:6px">Real cash ' + lbl + ': money received from paid orders and sales (without delivery fees) minus everything you paid, by purchase date.</div>' +
         '<div class="stats" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">' +
           st2('Cash received', '<span style="color:var(--green)">' + money(got) + '</span>') + st2('Spent', money(spent)) +
-          st2('Balance', '<span style="color:' + col(bal) + '">' + sg(bal) + '</span>', ' style="background:' + (bal >= 0 ? '#E8F7EE' : '#FDECEC') + '"') +
+          st2('Balance', '<span style="color:' + col(bal) + '">' + sg(bal) + '</span>', ' style="background:' + (bal >= 0 ? '#E8F7F6' : '#FDECEC') + '"') +
           st2('Still to collect', money(due)) + st2('Balance once collected', '<span style="color:' + col(bal + due) + '">' + sg(bal + due) + '</span>') +
         '</div><div class="stats" style="grid-template-columns:repeat(auto-fit,minmax(120px,1fr));margin-top:0">' +
           st2('Filament', money(sF)) + st2('Supplies', money(sS)) + st2('Bags', money(sB)) + st2('Ads', money(sA)) + st2('Other', money(sE)) + st2('Profit on orders', '<span style="color:' + col(prof) + '">' + sg(prof) + '</span>') +

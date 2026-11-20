@@ -1,6 +1,6 @@
 /* 3DBlaze product art — extruded "printed" look, pure SVG, no images needed */
 (function (g) {
-  var C = { white: '#F2F3F5', black: '#30343B', red: '#E2262B', orange: '#FF6A1F', green: '#1FA14E', blue: '#1A8CFF', gold: '#F2F3F5' };
+  var C = { white: '#F2F3F5', black: '#30343B', red: '#E2262B', orange: '#FF6A1F', green: '#01796F', blue: '#1A8CFF', gold: '#F2F3F5' };
 
   function shade(hex, f) {
     var n = parseInt(hex.slice(1), 16), r = n >> 16, gg = (n >> 8) & 255, b = n & 255;
@@ -80,7 +80,7 @@
     'cedar-ornament': function (o) {
       o = o || {}; var col = C[o.color] || C.green;
       var tree = '<path d="' + cedarPath(200, 110, 190, 190) + '" fill="currentColor"/>';
-      return svg(hook(200, 70, 112) + solid(tree, col, 11), col === C.white ? '#9fd' : col);
+      return svg(hook(200, 70, 112) + solid(tree, col, 11), col === C.white ? '#99FFF6' : col);
     },
     'name-ornament': function (o) {
       o = o || {}; var col = C[o.color] || C.red;
@@ -185,10 +185,10 @@
       '<g clip-path="url(#' + id + 'c)"><path d="' + mpath(MPLATE, 1.4, -1.1) + '" fill="#0C0D0F"/>' +
       '<image href="img/map-face.webp" x="' + (MX - 0.5 * MS).toFixed(2) + '" y="' + (MY + (MTOP - 168) * MS).toFixed(2) + '" width="' + (125 * MS).toFixed(2) + '" height="' + (168.5 * MS).toFixed(2) + '" preserveAspectRatio="none"/></g>' +
       '<g class="vpin" style="transform:translate(' + pin[0].toFixed(1) + 'px,' + pin[1].toFixed(1) + 'px)">' +
-        '<circle class="vping" r="5" fill="#1FA14E"/>' +
+        '<circle class="vping" r="5" fill="#01796F"/>' +
         '<g class="vdrop"><ellipse cx="1.5" cy="0.5" rx="7" ry="2.2" fill="#0B1220" opacity=".2"/>' +
-        '<path d="' + PINPATH + '" transform="translate(1.6 1.2)" fill="#0E5A2A"/>' +
-        '<path d="' + PINPATH + '" fill="#1FA14E"/>' +
+        '<path d="' + PINPATH + '" transform="translate(1.6 1.2)" fill="#01675E"/>' +
+        '<path d="' + PINPATH + '" fill="#01796F"/>' +
         '<ellipse cx="-3.5" cy="-20" rx="2.8" ry="4" fill="#fff" opacity=".28"/></g></g>' +
       // raised white text lying on the top face (squashed for the viewing angle), like the print
       (function () {
@@ -343,7 +343,7 @@
 
   // ---- Family door signs (Christmas: Santa = dad, Mama Claus = mom, elves = kids; plain: family name) ----
   var DOOR = {"xmas":{"1":[[80.47,194.86,33.49,11.72],[125.12,207.14,29.02,14.51],[169.78,190.4,33.49,11.72]],"2":[[52.48,207.14,29.02,14.51],[97.13,194.86,33.49,11.72],[152.94,190.4,33.49,11.72],[197.59,207.14,29.02,14.51]],"3":[[40.88,208.27,27.34,13.67],[82.94,196.71,31.55,11.04],[125.0,208.27,27.34,13.67],[167.06,192.5,31.55,11.04],[209.12,208.27,27.34,13.67]],"4":[[38.48,210.58,23.68,11.84],[65.8,210.58,23.68,11.84],[102.23,200.57,27.32,9.56],[147.77,196.92,27.32,9.56],[184.2,210.58,23.68,11.84],[211.52,210.58,23.68,11.84]],"5":[[36.65,212.22,20.88,10.44],[60.75,212.22,20.88,10.44],[92.87,203.39,24.09,8.43],[133.03,200.17,24.09,8.43],[165.16,212.22,20.88,10.44],[189.25,212.22,20.88,10.44],[213.35,212.22,20.88,10.44]]},"plain":{},"xmasSize":[250,248],"plainSize":[230,200],"xmasFamily":[125,114,184,34],"plainFamily":[115,136,170,44],"roles":{"1":["S","E","M"],"2":["E","S","M","E"],"3":["E","S","E","M","E"],"4":["E","E","S","M","E","E"],"5":["E","E","S","M","E","E","E"]}};
-  var DOORC = { green: '#126854', red: '#BE202C' };
+  var DOORC = { green: '#01796F', red: '#BE202C' };
   var _mc = null;
   function tw(txt, font) { try { _mc = _mc || document.createElement('canvas').getContext('2d'); _mc.font = font; return _mc.measureText(txt).width; } catch (e) { return txt.length * 0.6 * parseFloat(font.match(/(\d+(?:\.\d+)?)px/)[1]); } }
   function fitText(txt, x, y, maxw, maxh, fam, weight, fill, extra) {
