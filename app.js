@@ -201,7 +201,7 @@
       return r;
     }
     function orders(m) { var out = {}; if (!m || typeof m !== 'object') return out; Object.keys(m).forEach(function (k) { if (!/^[A-Za-z0-9-]{3,20}$/.test(k)) return; var o = order(m[k], k); if (o) out[k] = o; }); return out; }
-    function track(t) { if (!t || typeof t !== 'object') return null; return { status: oneOf(t.status, ST, 'new'), total: num(t.total, 0, 1e6), paid: t.paid === true, payment: oneOf(t.payment, ['cash', 'whish'], 'cash'), createdAt: num(t.createdAt, 0, 9e12), updatedAt: num(t.updatedAt || t.createdAt, 0, 9e12), items: Math.round(num(t.items, 0, 9999)) }; }
+    function track(t) { if (!t || typeof t !== 'object') return null; return { status: oneOf(t.status, ST, 'new'), total: num(t.total, 0, 1e6), paid: t.paid === true, payment: oneOf(t.payment, ['cash', 'whish'], 'cash'), createdAt: num(t.createdAt, 0, 9e12), updatedAt: num(t.updatedAt || t.createdAt, 0, 9e12), items: Math.round(num(t.items, 0, 9999)), pieces: arr(t.pieces).slice(0, 100).filter(function (x) { return x && typeof x === 'object'; }).map(function (x) { return { n: str(x.n, 160) || '', s: x.s === 2 ? 2 : 1 }; }).filter(function (x) { return x.n; }) }; }
     return { order: order, orders: orders, track: track, str: str };
   })();
   function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -562,6 +562,13 @@
         var patch = {}; patch[key] = on ? true : null;
         if (!sockOrders) { emit(); return restWrite('PATCH', 'requests/_ticks/' + code, patch).catch(undo); }
         return fb.ref('requests/_ticks/' + code + '/' + key).set(on ? true : null).catch(undo);
+      },
+      // what the customer sees while tracking: [{ n: piece label, s: 1 printing | 2 finished }]
+      setPieces: function (code, list) {
+        var v = list && list.length ? list : null;
+        if (!live) { var tr = ls('tracking') || {}; if (tr[code]) { if (v) tr[code].pieces = v; else delete tr[code].pieces; ls('tracking', tr); } return Promise.resolve(); }
+        if (!sockOrders) return restWrite(v ? 'PUT' : 'DELETE', 'tracking/' + code + '/pieces', v).catch(function () {});
+        return fb.ref('tracking/' + code + '/pieces').set(v).catch(function () {});
       },
       clearTicks: function (code) {
         if (!(state.requests._ticks || {})[code]) return Promise.resolve();
@@ -1542,19 +1549,39 @@
     window.scrollTo(0, 0);
   }
 
+  var trackTimer = null;
+  var PRN_ICON = '<span class="prn" aria-hidden="true"><span class="ly l1"></span><span class="ly l2"></span><span class="ly l3"></span><span class="nz"></span></span>';
+  function trackHtml(code, t) {
+    if (!t) return '<p class="err" style="margin-top:14px">We couldn’t find ' + esc(code) + '. Check the code, or message us on Instagram.</p>';
+    if (t.status === 'cancelled') return '<p style="margin-top:16px">This order was cancelled. Message us if that’s a surprise.</p>';
+    var idx = CUSTOMER_STEPS.map(function (s) { return s.k; }).indexOf(t.status);
+    // piece by piece, only until the whole order is Ready
+    var ps = idx <= 2 ? (t.pieces || []) : [];
+    var list = function (st) {
+      var l = ps.filter(function (x) { return x.s === st; }); if (!l.length) return '';
+      return '<ul class="tlp' + (st === 2 ? ' fin' : '') + '">' + l.map(function (x) { return '<li>' + (st === 2 ? '<span class="tlok" aria-hidden="true">✓</span>' : PRN_ICON) + '<span>' + esc(x.n) + '</span></li>'; }).join('') + '</ul>';
+    };
+    return '<div style="display:flex;justify-content:space-between;margin:20px 0 14px"><b class="code" style="margin:0;font-size:18px">' + esc(code) + '</b><span class="price">' + money(t.total) + '</span></div>' +
+      '<div class="timeline">' + CUSTOMER_STEPS.map(function (s, i) { return '<div class="tl' + (i <= idx ? ' on' : '') + (i === idx ? ' cur' : '') + '"><i>' + (i <= idx ? '✓' : '') + '</i><div><b>' + s.l + '</b><small>' + s.d + '</small>' + (s.k === 'printing' ? list(1) : s.k === 'ready' ? list(2) : '') + '</div></div>'; }).join('') + '</div>' +
+      '<p class="muted" style="font-size:13px;margin:4px 0 0">Payment: ' + (t.payment === 'whish' ? 'Whish' : 'Cash on delivery') + ' · ' + (t.paid ? '<span class="paid">Paid</span>' : 'Not paid yet') + '</p>';
+  }
   function viewTrack(code0) {
     var last = ls('lastOrder'), mine = ls('myOrders') || (last ? [last.code] : []);
     app.innerHTML = '<div class="wrap page"><div class="done" style="text-align:left"><h1>Track your order</h1><div class="panel"><label class="field">Order code<input id="trCode" placeholder="3DB-XXXXX" value="' + esc(code0 || (last ? last.code : '')) + '" autocomplete="off" style="text-transform:uppercase"></label>' + (mine.length ? '<div class="mychips"><span class="muted">Your orders on this phone:</span>' + mine.map(function (c) { return '<button type="button" class="chip" data-tc="' + esc(c) + '">' + esc(c) + '</button>'; }).join('') + '</div>' : '') + '<button class="btn pri full" id="trBtn" style="margin-top:14px">Track</button><div id="trOut"></div></div></div></div>';
     $('#trBtn').onclick = function () {
       var code = $('#trCode').value.trim().toUpperCase().replace(/\s/g, ''); if (code && code.indexOf('3DB-') !== 0) code = '3DB-' + code.replace(/^3DB/, '');
       $('#trOut').innerHTML = '<p class="muted">Looking…</p>';
+      clearInterval(trackTimer);
       Store.track(code).then(function (t) {
-        if (!t) { $('#trOut').innerHTML = '<p class="err" style="margin-top:14px">We couldn’t find ' + esc(code) + '. Check the code, or message us on Instagram.</p>'; return; }
-        if (t.status === 'cancelled') { $('#trOut').innerHTML = '<p style="margin-top:16px">This order was cancelled. Message us if that’s a surprise.</p>'; return; }
-        var idx = CUSTOMER_STEPS.map(function (s) { return s.k; }).indexOf(t.status);
-        $('#trOut').innerHTML = '<div style="display:flex;justify-content:space-between;margin:20px 0 14px"><b class="code" style="margin:0;font-size:18px">' + esc(code) + '</b><span class="price">' + money(t.total) + '</span></div>' +
-          '<div class="timeline">' + CUSTOMER_STEPS.map(function (s, i) { return '<div class="tl' + (i <= idx ? ' on' : '') + (i === idx ? ' cur' : '') + '"><i>' + (i <= idx ? '✓' : '') + '</i><div><b>' + s.l + '</b><small>' + s.d + '</small></div></div>'; }).join('') + '</div>' +
-          '<p class="muted" style="font-size:13px;margin:4px 0 0">Payment: ' + (t.payment === 'whish' ? 'Whish' : 'Cash on delivery') + ' · ' + (t.paid ? '<span class="paid">Paid</span>' : 'Not paid yet') + '</p>';
+        var shown = trackHtml(code, t); $('#trOut').innerHTML = shown;
+        if (!t || t.status === 'cancelled' || t.status === 'delivered') return;
+        // keep it live while the page is open: pieces move from Printing to Ready as they are ticked
+        clearInterval(trackTimer);
+        trackTimer = setInterval(function () {
+          var out = $('#trOut'); if (!out || location.hash.indexOf('#track') !== 0) { clearInterval(trackTimer); return; }
+          if (document.hidden) return;
+          Store.track(code).then(function (t2) { var h = t2 && $('#trOut') === out ? trackHtml(code, t2) : shown; if (h !== shown) { shown = h; out.innerHTML = h; } }).catch(function () {});
+        }, 30000);
       }).catch(function () { $('#trOut').innerHTML = '<p class="err">Could not check right now. Try again.</p>'; });
     };
     if (last) $('#trBtn').click();
@@ -1963,6 +1990,11 @@
     });
     return out;
   }
+  // pieces ticked Printing / Finished, as shown to the customer on the tracking page
+  function publishPieces(o) {
+    var t = Store.ticks(o.code);
+    return Store.setPieces(o.code, orderPieces(o).map(function (x) { return t[x.k] ? { n: x.label.slice(0, 150), s: 2 } : t['p' + x.k] ? { n: x.label.slice(0, 150), s: 1 } : null; }).filter(Boolean));
+  }
   function orderDone(o) { var ps = orderPieces(o), t = Store.ticks(o.code); return { n: ps.filter(function (x) { return t[x.k]; }).length, of: ps.length }; }
 
   function orderModal(code) {
@@ -1999,12 +2031,14 @@
         });
         var tkN = function () { var d = orderDone(o), t = Store.ticks(o.code), pn = orderPieces(o).filter(function (x) { return t['p' + x.k]; }).length; box.querySelector('#mTkN').textContent = pn + ' / ' + d.of + ' printing · ' + d.n + ' / ' + d.of + ' finished'; return d; };
         tkN();
+        if (['new', 'confirmed', 'printing'].indexOf(o.status) >= 0 && Object.keys(Store.ticks(o.code)).length) publishPieces(o);
         $$('[data-tk]', box).forEach(function (cb) {
           cb.onchange = function () {
             var want = cb.checked, key = cb.dataset.tk, isP = key.charAt(0) === 'p';
             Store.setTick(o.code, key, want).then(function () {
               // ticking Finished also ticks Printed
               if (!isP && want && !Store.ticks(o.code)['p' + key]) { var pb = box.querySelector('[data-tk="p' + key + '"]'); if (pb) pb.checked = true; Store.setTick(o.code, 'p' + key, true).catch(function () {}); }
+              publishPieces(o);
               if (!isP) { var sp = cb.closest('div').firstChild; sp.style.textDecoration = want ? 'line-through' : ''; sp.style.opacity = want ? '.55' : ''; }
               var d = tkN(), tt = Store.ticks(o.code), all = d.n === d.of && orderPieces(o).every(function (x) { return tt['p' + x.k]; });
               var after = function () { if (want && all && ['new', 'confirmed', 'printing'].indexOf(o.status) >= 0) {

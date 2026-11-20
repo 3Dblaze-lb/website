@@ -182,7 +182,7 @@
     "tracking": {
       "$code": {
         ".read": true,
-        ".write": "(!data.exists() && newData.exists() && root.child('orders').child($code).exists() && newData.child('status').val() === 'new' && newData.child('paid').val() === false && newData.child('total').val() === root.child('orders').child($code).child('total').val()) || (auth != null && auth.token.email === '3dbllaze@gmail.com' && auth.token.email_verified === true)",
+        ".write": "(!data.exists() && newData.exists() && root.child('orders').child($code).exists() && newData.child('status').val() === 'new' && newData.child('paid').val() === false && !newData.child('pieces').exists() && newData.child('total').val() === root.child('orders').child($code).child('total').val()) || (auth != null && auth.token.email === '3dbllaze@gmail.com' && auth.token.email_verified === true)",
         ".validate": "newData.hasChildren(['status', 'updatedAt'])",
         "status": {
           ".validate": "newData.isString() && (newData.val() === 'new' || newData.val() === 'confirmed' || newData.val() === 'printing' || newData.val() === 'ready' || newData.val() === 'out' || newData.val() === 'delivered' || newData.val() === 'cancelled')"
@@ -204,6 +204,20 @@
         },
         "items": {
           ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100000"
+        },
+        "pieces": {
+          "$i": {
+            ".validate": "$i.matches(/^[0-9]{1,3}$/) && newData.hasChildren(['n', 's'])",
+            "n": {
+              ".validate": "newData.isString() && newData.val().length <= 160"
+            },
+            "s": {
+              ".validate": "newData.val() === 1 || newData.val() === 2"
+            },
+            "$other": {
+              ".validate": "false"
+            }
+          }
         },
         "$other": {
           ".validate": "false"
