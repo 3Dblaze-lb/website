@@ -2290,6 +2290,7 @@
     } else {
       var it = o.items.filter(function (i) { return i.id === 'my-village'; })[0] || o.items.filter(function (i) { return i.text; })[0];
       data = { type: it.id === 'my-village' ? 'map' : 'custom', geo: it.geo || null, title: it.id === 'my-village' ? (it.text || '') : it.name + (it.text ? ' with “' + it.text + '”' : ''), base: 'black', mapc: 'white', place: o.customer.region || '', notes: '', size: '', order: o.code, status: 'sent', createdAt: Date.now() };
+      if (it.id !== 'my-village' && it.color && isDoor(Store.product(it.id))) data.color = String(it.color);
     }
     Store.saveRequest(null, data).then(function (id) { data.id = id; copy(requestText(data), 'Copied — paste it in your Claude chat'); if (done) done(); });
   }
@@ -2329,7 +2330,16 @@
       var gr = r.groups || { holy: r.names || [] };
       t += Object.keys(ORN_TOOL).filter(function (k) { return gr[k] && gr[k].length; }).map(function (k) { var T = ORN_TOOL[k]; return 'Product: ' + T.name + ' (3DBlaze original) — one .3mf per name\nSample: ' + T.sample + '\nTool: ' + T.tool + '\nNames: ' + gr[k].join(', ') + '\nColours:\n' + gr[k].map(function (nm, j) { return '- ' + nm + ': ' + ((r.cols && r.cols[k] && r.cols[k][j]) || ornColor(k, null)); }).join('\n') + '\n' + T.spec; }).join('\n\n');
     }
-    else if (/door ?sign|santa|elf|elves/i.test(r.title + ' ' + (r.notes || ''))) t += 'Product: Family door sign (3DBlaze original) (.3mf for Bambu Studio)\nTool: Christmass\\3DBlaze door sign tool.zip (door.py) — run it with the family name, Dad, Mum, kids and green|red. Sample: Christmass\\3DBlaze Door Sign Santa Elves - Sassine - sample.3mf\nWhat: ' + r.title;
+    else if (/door ?sign|santa|elf|elves/i.test(r.title + ' ' + (r.notes || ''))) {
+      // door signs: design v2 (20 Nov 2026) — detailed Santa / Mama Claus / elves, plate names in Oleo Script Bold. The old blocky design is retired.
+      var dxm = /santa|elf|elves/i.test(r.title + ' ' + (r.notes || ''));
+      t += 'Product: ' + (dxm ? 'Santa & Elves Family Door Sign' : 'Family Door Sign (plain)') + ' (3DBlaze original) (.3mf for Bambu Studio)' +
+        (dxm ? '\nDesign: the CURRENT design only (v2, 20 Nov 2026) — detailed Santa, Mama Claus and elves, names in Oleo Script Bold cut into the white plates. The old blocky characters / plain bold names are retired: never use them.' : '') +
+        '\nTool: Christmass\\Door Sign\\3DBlaze door sign tool.zip → ' + (dxm ? 'python3 door_site.py "Family name" "Dad" "Mum" "Kid1,Kid2" "3DBlaze Door Sign Santa Elves - Family.3mf" green|red "preview.png"' : 'python3 door_site.py --plain "Family name" "3DBlaze Family Door Sign - Family.3mf" green|red "preview.png"') +
+        '\nSample: Christmass\\Door Sign\\' + (dxm ? '3DBlaze Door Sign Santa Elves - Sassine - sample.3mf' : '3DBlaze Family Door Sign - Sassine - sample.3mf') +
+        '\nWhat: ' + r.title + (r.color ? '\nColour: ' + r.color : '\nColour: take it from the order (items[].color)') +
+        '\nThe .3mf must look exactly like the website preview. Save it in Orders\\<Client name>\\<order number> - <date>\\.';
+    }
     else t += 'Product: custom design (.3mf for Bambu Studio)\nWhat: ' + r.title;
     if (r.size) t += '\nSize: ' + r.size;
     if (r.notes) t += '\nNotes: ' + r.notes;

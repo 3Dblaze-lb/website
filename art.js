@@ -351,7 +351,7 @@
   try { if (g.document && document.fonts) { Promise.all([document.fonts.load('100px Caladea3DB'), document.fonts.load('100px LoraBI3DB')]).then(nameRefit, function () {}); } } catch (e) {}
 
   // ---- Family door signs (Christmas: Santa = dad, Mama Claus = mom, elves = kids; plain: family name) ----
-  var DOOR = {"xmas":{"1":[[80.47,194.86,33.49,11.72],[125.12,207.14,29.02,14.51],[169.78,190.4,33.49,11.72]],"2":[[52.48,207.14,29.02,14.51],[97.13,194.86,33.49,11.72],[152.94,190.4,33.49,11.72],[197.59,207.14,29.02,14.51]],"3":[[40.88,208.27,27.34,13.67],[82.94,196.71,31.55,11.04],[125.0,208.27,27.34,13.67],[167.06,192.5,31.55,11.04],[209.12,208.27,27.34,13.67]],"4":[[38.48,210.58,23.68,11.84],[65.8,210.58,23.68,11.84],[102.23,200.57,27.32,9.56],[147.77,196.92,27.32,9.56],[184.2,210.58,23.68,11.84],[211.52,210.58,23.68,11.84]],"5":[[36.65,212.22,20.88,10.44],[60.75,212.22,20.88,10.44],[92.87,203.39,24.09,8.43],[133.03,200.17,24.09,8.43],[165.16,212.22,20.88,10.44],[189.25,212.22,20.88,10.44],[213.35,212.22,20.88,10.44]]},"plain":{},"xmasSize":[250,248],"plainSize":[230,200],"xmasFamily":[125,114,184,34],"plainFamily":[115,136,170,44],"roles":{"1":["S","E","M"],"2":["E","S","M","E"],"3":["E","S","E","M","E"],"4":["E","E","S","M","E","E"],"5":["E","E","S","M","E","E","E"]}};
+  var DOOR = {"xmas":{"1":[[79.9,197.16,33.48,11.16],[125.0,209.62,27.9,12.09],[170.1,195.2,33.48,11.16]],"2":[[52.69,209.62,27.9,12.09],[97.8,197.16,33.48,11.16],[152.2,195.2,33.48,11.16],[197.31,209.62,27.9,12.09]],"3":[[44.38,211.2,24.94,10.81],[84.69,200.06,29.92,9.97],[125.0,211.2,24.94,10.81],[165.31,198.32,29.92,9.97],[205.62,211.2,24.94,10.81]],"4":[[42.18,213.1,21.37,9.26],[69.61,213.1,21.37,9.26],[104.16,203.55,25.65,8.55],[145.84,202.06,25.65,8.55],[180.39,213.1,21.37,9.26],[207.82,213.1,21.37,9.26]],"5":[[40.53,214.53,18.7,8.1],[64.53,214.53,18.7,8.1],[94.77,206.17,22.44,7.48],[131.23,204.86,22.44,7.48],[161.47,214.53,18.7,8.1],[185.47,214.53,18.7,8.1],[209.47,214.53,18.7,8.1]]},"plain":{},"xmasSize":[250,248],"plainSize":[230,200],"xmasFamily":[125,114,184,34],"plainFamily":[115,136,170,44],"roles":{"1":["S","E","M"],"2":["E","S","M","E"],"3":["E","S","E","M","E"],"4":["E","E","S","M","E","E"],"5":["E","E","S","M","E","E","E"]}};
   var DOORC = { green: '#01796F', red: '#BE202C' };
   var _mc = null;
   function tw(txt, font) { try { _mc = _mc || document.createElement('canvas').getContext('2d'); _mc.font = font; return _mc.measureText(txt).width; } catch (e) { return txt.length * 0.6 * parseFloat(font.match(/(\d+(?:\.\d+)?)px/)[1]); } }
@@ -361,6 +361,16 @@
     var size = Math.min(maxh, maxw / w1);
     return '<text x="' + x + '" y="' + y + '" text-anchor="middle" dominant-baseline="central" font-family="' + fam.replace(/"/g, '') + '" font-weight="' + weight + '" font-size="' + size.toFixed(2) + '" fill="' + fill + '"' + (extra || '') + '>' + esc2(txt) + '</text>';
   }
+  // Plate names (20 Nov 2026): Oleo Script Bold, cut into the white plates. Widths come from the font's own advance table (kerning off),
+  // so the size is right before the web font loads and matches the .3mf tool exactly. Baseline = plate centre + 0.30 x size.
+  var DOORADV = (function () { var c = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~¡¢£¤¥¦§¨©ª«¬®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿħĨĩıĲĳĴĵķĸĿŀŁłŃńŒœŔŖŗŘř", v = [200,334,393,614,505,864,786,236,379,403,420,528,255,423,272,373,617,398,531,513,581,515,585,460,513,560,341,341,446,512,430,407,832,611,631,578,681,545,517,610,712,361,437,652,524,997,689,675,583,670,651,508,529,705,603,920,627,670,580,394,378,426,471,614,636,531,520,424,542,436,326,508,544,300,298,551,297,790,554,446,512,518,392,385,338,542,427,660,424,505,425,468,268,471,540,311,415,551,696,516,278,502,548,794,414,523,455,794,502,255,583,397,356,616,544,643,325,512,312,331,554,790,791,865,368,604,604,604,604,604,604,748,578,545,545,545,545,361,361,361,361,694,689,675,675,675,675,675,511,675,705,705,705,705,670,584,663,531,531,531,526,531,531,671,415,436,437,437,437,300,300,300,300,490,554,446,446,446,446,446,546,444,542,542,542,542,505,483,505,544,369,300,300,787,593,437,303,551,562,538,424,537,377,689,554,866,754,651,651,392,661,392], o = {}, i; for (i = 0; i < v.length; i++) o[c.charAt(i)] = v[i]; return o; })();
+  var DOORV = 2;
+  function plateText(txt, b, fill) {
+    txt = String(txt == null ? '' : txt); if (!txt) return '';
+    var w = 0, i; for (i = 0; i < txt.length; i++) w += DOORADV[txt.charAt(i)] || 560;
+    var size = Math.min(b[3] * 0.72, b[2] * 0.80 / (w / 1000));
+    return '<text x="' + b[0] + '" y="' + (b[1] + size * 0.30).toFixed(2) + '" text-anchor="middle" font-family="OleoScript3DB, Oleo Script, Pacifico3DB, cursive" font-weight="400" font-size="' + size.toFixed(2) + '" fill="' + fill + '" style="font-kerning:none;font-variant-ligatures:none;font-feature-settings:\'kern\' 0,\'liga\' 0,\'calt\' 0">' + esc2(txt) + '</text>';
+  }
   function doorCol(o) { return o.color === 'red' ? 'red' : 'green'; }
   ART['door-xmas'] = function (o) {
     var kids = (o.kids && o.kids.length ? o.kids : ['Jad', 'Lea', 'Sami']).slice(0, 5), n = kids.length, c = doorCol(o), roles = DOOR.roles[n], pl = DOOR.xmas[n], ki = 0, t = '';
@@ -368,9 +378,9 @@
     t += fitText(fam, F[0], F[1] + 2, F[2], F[3] * 0.82, 'Pacifico3DB, Pacifico, cursive', 400, '#FFFFFF', ' style="filter:drop-shadow(0 .6px .5px rgba(0,0,0,.35))"');
     roles.forEach(function (r, i) {
       var b = pl[i], nm = r === 'S' ? (o.dad == null ? 'Georges' : o.dad) : r === 'M' ? (o.mom == null ? 'Rita' : o.mom) : (kids[ki++] || '');
-      t += fitText(nm, b[0], b[1] + 0.3, b[2] - 4, b[3] * 0.62, 'Inter, Manrope, system-ui, sans-serif', 800, DOORC[c]);
+      t += plateText(nm, b, DOORC[c]);
     });
-    return '<svg viewBox="0 0 250 248" class="door" role="img" aria-label="Family Christmas door sign"><image href="img/door/xmas-' + c + '-' + n + '.webp" x="0" y="0" width="250" height="248"/>' + t + '</svg>';
+    return '<svg viewBox="0 0 250 248" class="door" role="img" aria-label="Family Christmas door sign"><image href="img/door/xmas-' + c + '-' + n + '.webp?v=' + DOORV + '" x="0" y="0" width="250" height="248"/>' + t + '</svg>';
   };
   ART['door-plain'] = function (o) {
     var c = doorCol(o), F = DOOR.plainFamily, fam = o.family == null ? 'The Haddads' : o.family;
