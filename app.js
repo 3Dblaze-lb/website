@@ -975,7 +975,7 @@
     var io = ('IntersectionObserver' in window) ? new IntersectionObserver(function (es) {
       es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
     }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 }) : null;
-    var SEL = '.hero .grid > div, .stage, .sechead, .pcard, .step, .faq details, .panel, .countdown, .cd, .ppage > *, .soon-badge';
+    var SEL = '.hero .grid > div, .stage, .sechead, .pcard, .step, .faq details, .panel, .countdown, .cd, .ppage > *, .soon-badge, .h2t, .hstage, .shead, .blk2 > .wrap > .dgrid, .offbox, .vfeat, .pc, .cdline, .st2, .duo > *';
     function scan() {
       if (window.BLAZE_ADMIN) return;
       var groups = {};
@@ -1030,22 +1030,24 @@
     var leb = all.filter(function (p) { return p.col === 'lebanon'; }), xm = all.filter(function (p) { return p.col === 'xmas'; }), wg = all.filter(function (p) { return p.col === 'woggles'; });
     var vp = leb.filter(function (p) { return (p.art || p.id) === 'my-village' && !p.blurred; })[0], split = leb.length > 4, others = leb.filter(function (p) { return p !== vp && (!split || !isOffer(p)); }), lebOffers = split ? leb.filter(isOffer) : [];
     var fee = (+s.feeBeirut === +s.feeMount && +s.feeMount === +s.feeOther) ? money(s.feeOther) + ' anywhere in Lebanon' + (s.freeOver ? ', free over ' + money(s.freeOver) : '') : (s.feeMount === s.feeBeirut ? money(s.feeBeirut) + ' in Beirut &amp; Mount Lebanon' : money(s.feeBeirut) + ' in Beirut, ' + money(s.feeMount) + ' in Mount Lebanon') + ', ' + money(s.feeOther) + ' elsewhere' + (s.freeOver ? ', free over ' + money(s.freeOver) : '');
+    var stage = heroStage(all, vp);
     app.innerHTML =
-      '<section class="hero2"><div class="wrap">' +
+      '<section class="hero2"><div class="wrap"><div class="h2g' + (stage ? '' : ' solo') + '"><div class="h2t">' +
         '<h1>Ideas you can <span class="bl">hold</span>.</h1>' +
         '<p class="lead">3D printed gifts, made to order on our own printers and delivered anywhere in Lebanon.</p>' +
         '<div class="hcta"><a class="btn pri" href="#christmas">Shop Christmas</a>' + (vp ? '<a class="btn sec" href="#make">Make my village</a>' : '') + '</div>' +
-        '<div class="trust"><span>✓ Cash on delivery</span><span>✓ Whish accepted</span><span>✓ Ready in 2–4 days</span><span class="dk">✓ Delivery all over Lebanon</span></div>' +
-      '</div></section>' +
+      '</div>' + stage + '</div></div>' +
+        '<div class="mq"><div class="mq-t">' + trustRow(false) + trustRow(true) + '</div></div>' +
+      '</section>' +
 
-      '<section class="blk2" id="sec-christmas"><div class="wrap"><div class="shead"><h2>Christmas collection <small class="custhint">Click to customize yours</small></h2><span class="soonlbl">' + (xm.length && !soonCol('xmas') ? 'Order by ' + new Date(s.xmasCutoff).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }) : 'Coming soon') + '</span></div>' +
+      '<section class="blk2" id="sec-christmas"><div class="wrap"><div class="shead"><h2><small class="custhint">Click to customize yours</small>Christmas collection</h2><span class="soonlbl">' + (xm.length && !soonCol('xmas') ? 'Order by ' + new Date(s.xmasCutoff).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }) : 'Coming soon') + '</span></div>' +
         (xm.length ? dropGrid(xm)
           : '<div class="xempty"><b>New Christmas pieces are on the way.</b><span class="muted">Personalized gifts with your name on them — follow <a href="https://instagram.com/3dblaze.lb" target="_blank" rel="noopener">@3dblaze.lb</a> to see them first.</span></div>') + '</div></section>' +
 
       '<section class="blk2" id="sec-shop"><div class="wrap">' +
         '<div class="shead"><h2>Lebanon drop</h2>' + (soonCol('lebanon') ? '<span class="soonlbl">Coming soon</span>' : '<span class="muted">' + leb.length + ' piece' + (leb.length === 1 ? '' : 's') + '</span>') + '</div>' +
         (lebOffers.length ? '<h3 class="dsub">Products</h3>' : '') + '<div class="pgrid">' + (vp ? villageFeature(vp) : '') + others.map(card2).join('') + (vp ? villageCompact(vp) : '') + '</div>' +
-        (lebOffers.length ? '<h3 class="dsub">Offers</h3><div class="pgrid">' + lebOffers.map(card2).join('') + '</div>' : '') +
+        (lebOffers.length ? '<div class="offbox"><h3 class="dsub">Offers</h3><div class="pgrid">' + lebOffers.map(card2).join('') + '</div></div>' : '') +
         '<div class="cdline" id="countdown"></div>' +
       '</div></section>' +
 
@@ -1056,9 +1058,9 @@
       '<section class="blk2" id="sec-how"><div class="wrap"><div class="shead"><h2>How it works</h2></div><div class="steps2">' +
         step2(1, 'Pick', 'A piece and a colour') + step2(2, 'Confirm', 'We WhatsApp you') + step2(3, 'Print', 'Ready in 2–4 days') + step2(4, 'Deliver', 'In 1–3 days · cash or Whish') +
         '</div><p class="feeline">Delivery ' + fee + '.' + (s.pickup ? ' Pickup available.' : '') + ' Pay the driver in cash, or by Whish with your order code.</p>' +
-        '<div class="trackbox custombox"><div><h3>Something else in mind?</h3><p class="muted">Custom gifts, names, logos, university projects… Send us your idea and we’ll tell you if we can print it and how much.</p></div>' +
+        '<div class="duo"><div class="trackbox custombox"><div><h3>Something else in mind?</h3><p class="muted">Custom gifts, names, logos, university projects… Send us your idea and we’ll tell you if we can print it and how much.</p></div>' +
         '<a class="btn pri" target="_blank" rel="noopener" href="' + waLink(s.whatsapp, 'Hi 3DBlaze! I have a custom idea I’d like printed:') + '">WhatsApp us</a></div>' +
-        '<form class="trackbox" id="homeTrack"><div><h3>Track your order</h3><p class="muted">Type the code you got when you ordered (3DB-XXXXX).</p></div><div class="trackin"><input name="code" placeholder="3DB-XXXXX" aria-label="Order code" autocomplete="off"><button class="btn pri" type="submit">Track</button></div></form>' +
+        '<form class="trackbox" id="homeTrack"><div><h3>Track your order</h3><p class="muted">Type the code you got when you ordered (3DB-XXXXX).</p></div><div class="trackin"><input name="code" placeholder="3DB-XXXXX" aria-label="Order code" autocomplete="off"><button class="btn pri" type="submit">Track</button></div></form></div>' +
       '</div></section>' +
 
       '<section class="blk2" id="sec-faq"><div class="wrap"><div class="shead"><h2>Questions</h2></div><div class="faq faq2">' +
@@ -1113,13 +1115,26 @@
   }
   // drops: products first, then offers (packs), each under its own label; grid = max 6 per row on PC, 2 on phone
   function isOffer(p) { return !!p.pack; }
-  function xcard(p) { return '<a class="xc" role="listitem" href="#p-' + p.id + '"><div class="xc-img' + (p.blurred ? ' soonc' : '') + '">' + thumb(p) + '</div><b>' + esc(p.name) + '</b><span>' + (p.priceText ? esc(p.priceText) : money(p.price) + (p.was ? ' <s>' + money(p.was) + '</s>' : '')) + '</span></a>'; }
+  // the label on an offer: the tag typed in the manager, else the saving worked out from its two prices
+  function saveTag(p) { return !isOffer(p) ? '' : p.tag ? String(p.tag) : (+p.was > +p.price ? 'Save ' + money(p.was - p.price) : ''); }
+  function xcard(p) { var bd = isOut(p) ? '' : saveTag(p); return '<a class="xc" role="listitem" href="#p-' + p.id + '"><div class="xc-img' + (p.blurred ? ' soonc' : '') + '">' + thumb(p) + (bd ? '<span class="xbadge">' + esc(bd) + '</span>' : '') + '</div><b>' + esc(p.name) + '</b><span>' + (p.priceText ? esc(p.priceText) : money(p.price) + (p.was ? ' <s>' + money(p.was) + '</s>' : '')) + '</span></a>'; }
   function dropGrid(list) {
     if (list.length <= 4) return '<div class="dgrid" role="list">' + list.map(xcard).join('') + '</div>';   // small drop: one row, no labels
     var pr = list.filter(function (p) { return !isOffer(p); }), of = list.filter(isOffer);
     return (pr.length ? (of.length ? '<h3 class="dsub">Products</h3>' : '') + '<div class="dgrid" role="list">' + pr.map(xcard).join('') + '</div>' : '') +
-      (of.length ? '<h3 class="dsub">Offers</h3><div class="dgrid" role="list">' + of.map(xcard).join('') + '</div>' : '');
+      (of.length ? '<div class="offbox"><h3 class="dsub">Offers</h3><div class="dgrid" role="list">' + of.map(xcard).join('') + '</div></div>' : '');
   }
+  // first screen: the shop's own product pictures (live drawings with the standard names), nothing made up
+  function heroStage(all, vp) {
+    var ok = function (p) { return p && !p.blurred && !p.comingSoon && !p.removed && !isOffer(p) && !isOut(p) && !soonCol(p.col) && !blurCol(p.col); };
+    var arts = all.filter(function (p) { return ok(p) && modelKind(p) === 'art'; });
+    var door = arts.filter(isDoor)[0], hang = arts.filter(function (p) { return !isDoor(p); }).slice(0, 2);
+    var main = door ? '<a class="hs-main" href="#p-' + door.id + '" aria-label="' + esc(door.name) + '">' + thumb(door) + '</a>'
+      : ok(vp) ? '<a class="hs-main hs-photo" href="#p-' + vp.id + '" aria-label="' + esc(vp.name) + '">' + thumb(vp) + '</a>' : '';
+    if (!main && !hang.length) return '';
+    return '<div class="hstage"><i class="hs-scan" aria-hidden="true"></i>' + main + hang.map(function (p, i) { return '<a class="hs-hang hs-h' + (i + 1) + '" href="#p-' + p.id + '" aria-label="' + esc(p.name) + '"><i aria-hidden="true"></i>' + thumb(p) + '</a>'; }).join('') + '</div>';
+  }
+  function trustRow(dup) { return '<div' + (dup ? ' aria-hidden="true"' : '') + '>' + ['Cash on delivery', 'Whish accepted', 'Ready in 2–4 days', 'Delivery all over Lebanon', 'Cash on delivery', 'Whish accepted', 'Ready in 2–4 days', 'Delivery all over Lebanon'].map(function (t, i) { return '<span' + (!dup && i < 4 ? '' : ' aria-hidden="true"') + '>' + t + '</span><i aria-hidden="true">/</i>'; }).join('') + '</div>'; }
   function isDoor(p) { return !!p && (p.art === 'door-xmas' || p.art === 'door-plain'); }
   // a door sign inside an offer: same names as on its own page (family, and for Santa & Elves: dad, mom, 1-5 kids)
   var DOOR_EX = { family: 'The Haddads', dad: 'Georges', mom: 'Rita', kids: ['Jad', 'Lea', 'Sami', 'Nour', 'Karim'] };
@@ -1158,7 +1173,8 @@
       if (now < indep) { target = indep; title = '<span class="flagbar"></span>Independence Day · 22 November'; sub = 'Order by 19 November to get it in time.'; }
       else { target = xmas; title = 'Christmas · 25 December'; sub = 'Order by ' + new Date(s.xmasCutoff).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }) + ' for delivery before Christmas.'; }
       var d = Math.max(0, target - now), D = Math.floor(d / 864e5), H = Math.floor(d / 36e5) % 24, M = Math.floor(d / 6e4) % 60, S = Math.floor(d / 1e3) % 60;
-      el.innerHTML = '<span class="cd-t">' + title + '</span><span class="cd-s muted">' + sub + '</span><span class="cd-n">' + D + 'd ' + H + 'h ' + (M < 10 ? '0' : '') + M + 'm ' + (S < 10 ? '0' : '') + S + 's</span>';
+      var u = function (v, l) { return '<span><b>' + (v < 10 ? '0' : '') + v + '</b><small>' + l + '</small></span>'; };
+      el.innerHTML = '<div class="cd-l"><span class="cd-t">' + title + '</span><span class="cd-s">' + sub + '</span></div><div class="cd-n" role="timer" aria-label="' + D + ' days ' + H + ' hours ' + M + ' minutes left">' + u(D, 'days') + u(H, 'hours') + u(M, 'min') + u(S, 'sec') + '</div>';
     };
     tick(); cdTimer = setInterval(tick, 1000);
   }
