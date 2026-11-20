@@ -270,11 +270,15 @@
     return 'x="' + L.dx.toFixed(2) + '" y="' + (-L.dy).toFixed(2) + '" font-size="' + L.size.toFixed(2) + '" stroke-width="' + (2 * L.emb).toFixed(2) + '"';
   }
   function ornament(o, gx) {
-    // colour = "Ornament · Name", e.g. "White · Red name" (older: "Red name" / "White name" = red ornament; nothing = red + white name)
-    var nm = ornName(o.text || 'Gabriel'), L = ornLayout(nm), c = o.color || '', wb = /^white\s*·/i.test(c), rn = /red name/i.test(c) || (wb && !/white name/i.test(c));
-    var same = wb !== rn, FC = rn ? (same ? '#F4443E' : '#E60705') : '#FFFFFF', SC = rn ? (same ? '#5A0201' : '#7A0402') : (same ? '#7C8696' : '#7A0402'), SO = same ? '.9' : '.55';   // same colour as the ornament → drawn embossed
+    // colour = "Ornament · Name", e.g. "White · Red name", each red / white / pine green
+    // (older: "Red name" / "White name" = red ornament; nothing = red + white name)
+    var nm = ornName(o.text || 'Gabriel'), L = ornLayout(nm), c = o.color || '', body = bodyCol(/·/.test(c) ? c : ''), wb = body === 'white';
+    var name = /(pine|green)[a-z ]*name/i.test(c) ? 'green' : /red name/i.test(c) ? 'red' : /white name/i.test(c) ? 'white' : (wb ? 'red' : 'white');
+    var same = body === name, SO = same ? '.9' : '.55', FC, SC;   // same colour as the ornament → drawn embossed
+    if (same) { FC = { red: '#F4443E', white: '#FFFFFF', green: '#0C9186' }[name]; SC = { red: '#5A0201', white: '#7C8696', green: '#013F3A' }[name]; }
+    else { FC = { red: '#E60705', white: '#FFFFFF', green: '#01796F' }[name]; SC = name === 'white' ? (body === 'green' ? '#014A44' : '#7A0402') : name === 'red' ? '#7A0402' : '#014A44'; }
     var img = '<image href="img/holy-ornament.webp?v=94852778" x="-46" y="-54" width="92" height="100"/>';
-    return '<g' + (gx ? ' transform="' + gx + '"' : '') + '>' + (wb ? '<defs>' + WHITE_F + '</defs><g filter="url(#ornW)">' + img + '</g>' : img) +
+    return '<g' + (gx ? ' transform="' + gx + '"' : '') + '>' + tint(body, img) +
       (L ? '<text class="ornname" data-n="' + esc2(nm) + '" ' + ornTextAttrs(L) + ' font-family="' + OFONT + ', Pacifico, cursive" fill="' + SC + '" stroke="' + SC + '" stroke-linejoin="round" transform="translate(.35 .45)" opacity="' + SO + '">' + esc2(nm) + '</text>' +
         '<text class="ornname" data-n="' + esc2(nm) + '" ' + ornTextAttrs(L) + ' font-family="' + OFONT + ', Pacifico, cursive" fill="' + FC + '" stroke="' + FC + '" stroke-linejoin="round">' + esc2(nm) + '</text>' : '') + '</g>';
   }
@@ -325,7 +329,12 @@
     '<feMorphology in="SourceAlpha" operator="dilate" radius=".4" result="d"/><feFlood flood-color="#8D97A8"/><feComposite in2="d" operator="in" result="e"/>' +
     '<feGaussianBlur in="SourceAlpha" stdDeviation="1.3"/><feOffset dy="1.1" result="b"/><feFlood flood-color="#1B2433" flood-opacity=".3"/><feComposite in2="b" operator="in" result="s"/>' +
     '<feMerge><feMergeNode in="s"/><feMergeNode in="e"/><feMergeNode in="w"/></feMerge></filter>';
-  function whiteWrap(o, inner) { return /^white/i.test(o.color || '') ? '<defs>' + WHITE_F + '</defs><g filter="url(#ornW)">' + inner + '</g>' : inner; }
+  // pine green ornament: the red render recoloured to pine green #01796F (shading kept from the red channel)
+  var GREEN_F = '<filter id="ornG" x="-2%" y="-2%" width="104%" height="104%" color-interpolation-filters="sRGB">' +
+    '<feColorMatrix in="SourceGraphic" type="matrix" values=".005 0 0 0 0  .539 0 0 0 0  .495 0 0 0 0  0 0 0 1 0"/></filter>';
+  function bodyCol(c) { c = String(c || ''); return /^white/i.test(c) ? 'white' : /^(pine|green)/i.test(c) ? 'green' : 'red'; }
+  function tint(body, inner) { return body === 'white' ? '<defs>' + WHITE_F + '</defs><g filter="url(#ornW)">' + inner + '</g>' : body === 'green' ? '<defs>' + GREEN_F + '</defs><g filter="url(#ornG)">' + inner + '</g>' : inner; }
+  function whiteWrap(o, inner) { return tint(bodyCol(o.color), inner); }
   function plainName(t) { t = String(t || '').trim(); try { t = t.normalize('NFKD').replace(/[̀-ͯ]/g, ''); } catch (e) {} return t; }
   ART['snowflake-ornament'] = function (o) {
     var nm = plainName(o.text || 'Joseph').toUpperCase(), F = nameFit(nm, 'Caladea3DB', 29.6, 87, 0.72);

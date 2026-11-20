@@ -69,39 +69,39 @@
       specs: ['About 23 × 17.5 cm (hangs from a cord)', 'Green or red, with the letters raised in white'] },
     { id: 'holy-ornament', col: 'xmas', name: 'Holy Night Ornament', price: 4, tag: 'Personalized', printMin: 62, grams: 14,
       text: { label: 'Name on the ornament', max: 14, ph: 'e.g. Gabriel', required: true },
-      // ornament colours (Pierre, 19 Nov): the customer picks the ORNAMENT colour and the NAME colour, each red or white
+      // ornament colours (Pierre, 19 Nov; pine green added 20 Nov): the customer picks the ORNAMENT colour and the NAME colour, each red, white or pine green
       // ("Ornament · Name" → two rows of buttons, see dualOpts). First one = the classic red with a white name.
-      optLabel: 'Ornament colour', optLabel2: 'Name colour', options: [{ name: 'Red · White name' }, { name: 'Red · Red name' }, { name: 'White · Red name' }, { name: 'White · White name' }],
+      optLabel: 'Ornament colour', optLabel2: 'Name colour', options: [{ name: 'Red · White name' }, { name: 'Red · Red name' }, { name: 'Red · Pine green name' }, { name: 'White · Red name' }, { name: 'White · White name' }, { name: 'White · Pine green name' }, { name: 'Pine green · White name' }, { name: 'Pine green · Red name' }, { name: 'Pine green · Pine green name' }],
       blurb: 'The star of Christmas, the Holy Family, and a name.',
-      desc: 'Our own design: the star of Bethlehem shining over Mary, Joseph and baby Jesus in the manger, with the name of your choice raised on the banner. Choose a red or a white ornament, and the name in white or red. Type the name and see it on the ornament before you order. One for every person in the family.',
-      specs: ['10 cm round, 3 mm thick (name raised 0.8 mm)', 'Red or white ornament, name raised on the banner in white or red', 'Name up to 14 letters', 'Hanging loop for string or ribbon'] },
+      desc: 'Our own design: the star of Bethlehem shining over Mary, Joseph and baby Jesus in the manger, with the name of your choice raised on the banner. Choose a red, white or pine green ornament, and the name in white, red or pine green. Type the name and see it on the ornament before you order. One for every person in the family.',
+      specs: ['10 cm round, 3 mm thick (name raised 0.8 mm)', 'Red, white or pine green ornament, name raised on the banner in white, red or pine green', 'Name up to 14 letters', 'Hanging loop for string or ribbon'] },
     { id: 'holy-ornament-3', col: 'xmas', name: 'Holy Night Ornament — 3 for $10', price: 10, was: 12, tag: 'Save $2', printMin: 185, grams: 42,
       pack: [{ of: 'holy-ornament' }, { of: 'holy-ornament' }, { of: 'holy-ornament' }],
       blurb: 'Three ornaments, three names.',
       desc: 'Three Holy Night ornaments, each with its own name. Perfect for the family tree or as gifts.',
-      specs: ['3 ornaments, 10 cm each', 'A different name on each one', 'One look for the whole set: red or white ornaments, names in white or red'] },
+      specs: ['3 ornaments, 10 cm each', 'A different name on each one', 'One look for the whole set: red, white or pine green ornaments, names in white, red or pine green'] },
     { id: 'snowflake-ornament', col: 'xmas', name: 'Snowflake Name Ornament', price: 4, tag: 'Personalized', printMin: 67, grams: 14.7,
       text: { label: 'Name on the ornament', max: 12, ph: 'e.g. Joseph', required: true },
-      optLabel: 'Ornament colour', options: [{ name: 'Red' }, { name: 'White' }],   // one colour for the whole ornament, name included
+      optLabel: 'Ornament colour', options: [{ name: 'Red' }, { name: 'White' }, { name: 'Pine green' }],   // one colour for the whole ornament, name included
       blurb: 'Snowflakes, scrolls and a name in big letters.',
       desc: 'Our snowflake ornament with the name of your choice in big letters across the middle, between swirls and snowflakes. Type the name and see it on the ornament before you order.',
-      specs: ['10 cm round (about 12 cm with the loop), 3 mm thick', 'One colour, red or white, the name in big letters across the middle', 'Name up to 12 letters', 'Hanging loop for string or ribbon'] },
+      specs: ['10 cm round (about 12 cm with the loop), 3 mm thick', 'One colour, red, white or pine green, the name in big letters across the middle', 'Name up to 12 letters', 'Hanging loop for string or ribbon'] },
     { id: 'bow-ornament', col: 'xmas', name: 'Bow Name Ornament', price: 4, tag: 'Personalized', printMin: 43, grams: 12.4,
       text: { label: 'Name on the ornament', max: 12, ph: 'e.g. Maria', required: true },
-      optLabel: 'Ornament colour', options: [{ name: 'Red' }, { name: 'White' }],
+      optLabel: 'Ornament colour', options: [{ name: 'Red' }, { name: 'White' }, { name: 'Pine green' }],
       blurb: 'A frame with bows, holly and a name.',
-      desc: 'An oval frame with a big bow on top, holly and a small bow below, and the name of your choice on a swash, all in red or all in white. Type the name and see it before you order.',
-      specs: ['10 × 8 cm oval (about 11 cm with the loop)', 'One colour, red or white, with the bow, holly and name raised', 'Name up to 12 letters', 'Hanging loop for string or ribbon'] },
+      desc: 'An oval frame with a big bow on top, holly and a small bow below, and the name of your choice on a swash, all in red, all in white or all in pine green. Type the name and see it before you order.',
+      specs: ['10 × 8 cm oval (about 11 cm with the loop)', 'One colour, red, white or pine green, with the bow, holly and name raised', 'Name up to 12 letters', 'Hanging loop for string or ribbon'] },
     { id: 'bow-ornament-3', col: 'xmas', name: 'Bow Name Ornament - Pack of 3', price: 10, was: 12, tag: 'Save 2$', printMin: 129, grams: 37.2,
       pack: [{ of: 'bow-ornament' }, { of: 'bow-ornament' }, { of: 'bow-ornament' }],
       blurb: 'Three bow ornaments, three names.',
       desc: 'Three Bow Name Ornaments, each with its own name. Type the names and see them on the ornaments before you order.',
-      specs: ['3 ornaments, 10 × 8 cm each', 'A different name on each one', 'The whole set in red or in white'] },
+      specs: ['3 ornaments, 10 × 8 cm each', 'A different name on each one', 'The whole set in red, white or pine green'] },
     { id: 'bow-ornament-5', col: 'xmas', name: 'Bow Name Ornament - Buy 4 get 1 free', price: 16, was: 20, tag: 'Save 4$', printMin: 215, grams: 62,
       pack: [{ of: 'bow-ornament' }, { of: 'bow-ornament' }, { of: 'bow-ornament' }, { of: 'bow-ornament' }, { of: 'bow-ornament' }],
       blurb: 'Five bow ornaments for the whole family — one is free.',
       desc: 'Five Bow Name Ornaments, each with its own name. Type the names and see them on the ornaments before you order.',
-      specs: ['5 ornaments, 10 × 8 cm each', 'A different name on each one', 'The whole set in red or in white'] },
+      specs: ['5 ornaments, 10 × 8 cm each', 'A different name on each one', 'The whole set in red, white or pine green'] },
     { id: 'woggle-white', col: 'woggles', name: 'Woggle — white', price: 4, img: 'img/woggle-white.webp', model: 'woggle-plain', modelColors: ['white', 'white'], printMin: 40, grams: 4.1,
       blurb: 'The classic braided woggle, all white.',
       desc: 'A braided scout woggle in white. Turn it around in 3D before you order.',
@@ -119,7 +119,7 @@
       specs: ['Price on request', 'Totem animal, name or logo on the front', 'We confirm if it can be made before anything is printed'] }
   ];
   var BLAZE_ART_IDS = ['holy-ornament-3'];
-  var COLOR_HEX = { black: '#30343B', white: '#F2F3F5', red: '#E2262B', green: '#01796F', orange: '#FF6A1F', blue: '#1A8CFF', yellow: '#FFD23F', grey: '#9AA1AB', gray: '#9AA1AB', purple: '#7A4CC2', pink: '#F47FB0', brown: '#7A4A2A', gold: '#C9A13B', silver: '#C3C7CE', navy: '#1D2B53' };
+  var COLOR_HEX = { black: '#30343B', white: '#F2F3F5', red: '#E2262B', green: '#01796F', pine: '#01796F', orange: '#FF6A1F', blue: '#1A8CFF', yellow: '#FFD23F', grey: '#9AA1AB', gray: '#9AA1AB', purple: '#7A4CC2', pink: '#F47FB0', brown: '#7A4A2A', gold: '#C9A13B', silver: '#C3C7CE', navy: '#1D2B53' };
   function hexOf(name) { var k = String(name || '').toLowerCase(); return COLOR_HEX[k] || COLOR_HEX[k.split(' ')[0]] || '#D9DDE3'; }
   // a product whose options are "A · B" pairs with a second title (optLabel2) shows TWO rows of buttons: A, then B
   function dualOpts(p) {
@@ -2056,20 +2056,23 @@
     }
     Store.saveRequest(null, data).then(function (id) { data.id = id; copy(requestText(data), 'Copied — paste it in your Claude chat'); if (done) done(); });
   }
-  // colour of one ornament in an order → what to print. Holy Night: ornament red (default) or white, NAME white (default) or red.
-  // Snowflake / Bow: the whole ornament red (default) or white. AMS slots: 2 white, 4 red.
+  // colour of one ornament in an order → what to print. Holy Night: ornament red (default), white or pine green,
+  // NAME white (default), red or pine green. Snowflake / Bow: the whole ornament red (default), white or pine green.
+  // AMS slots: 2 white, 3 green (pine green), 4 red.
   function ornColor(kind, c) {
-    var red = /^red/i.test(c || ''), white = /^white/i.test(c || '');
+    c = String(c || '');
+    var SL = { red: '4 red', white: '2 white', green: '3 pine green' }, UP = { red: 'RED', white: 'WHITE', green: 'PINE GREEN' };
+    var of = function (t) { return /^white/i.test(t) ? 'white' : /^(pine|green)/i.test(t) ? 'green' : 'red'; };
     if (kind === 'holy') {   // "White · Red name" (older orders: "Red name" / "White name" / nothing = red ornament)
-      var wb = /^white\s*·/i.test(c || ''), rn = /red name/i.test(c || '') || (wb && !/white name/i.test(c || ''));
-      return (wb ? 'WHITE ornament' : 'RED ornament') + ' + ' + (rn ? 'RED name' : 'WHITE name') + ' (ornament slot ' + (wb ? '2 white' : '4 red') + ', name part slot ' + (rn ? '4 red' : '2 white') + ')';
+      var body = /·/.test(c) ? of(c) : 'red', nm = /(pine|green)[a-z ]*name/i.test(c) ? 'green' : /red name/i.test(c) ? 'red' : /white name/i.test(c) ? 'white' : (body === 'white' ? 'red' : 'white');
+      return UP[body] + ' ornament + ' + UP[nm] + ' name (ornament slot ' + SL[body] + ', name part slot ' + SL[nm] + ')';
     }
-    return white ? 'ALL WHITE (every part slot 2 white)' : 'ALL RED (every part slot 4 red)';
+    var k = of(c); return 'ALL ' + UP[k] + ' (every part slot ' + SL[k] + ')';
   }
   var ORN_TOOL = {
-    holy: { name: 'Holy Night Ornament', sample: 'Christmass\\3DBlaze Holy Night Ornament - Gabriel - sample.3mf', tool: 'Christmass\\3DBlaze ornament tool.zip → python3 make_holy.py "Name" "3DBlaze Holy Night Ornament - Name.3mf"', spec: '10 cm ornament, 3 mm, name in Pacifico RAISED 0.8 mm on the banner — ornament colour and name colour per name as listed above (white = slot 2, red = slot 4)' },
-    snowflake: { name: 'Snowflake Name Ornament', sample: 'Christmass\\3DBlaze Snowflake Ornament - Joseph - sample.3mf', tool: 'Christmass\\3DBlaze name ornaments tool.zip → python3 make_orn.py snowflake "Name" "3DBlaze Snowflake Ornament - Name.3mf"', spec: '10 cm, 3 mm flat, ONE colour for the whole ornament incl. the name part — per name as listed above (red = slot 4, white = slot 2), name UPPERCASE Caladea Bold' },
-    bow: { name: 'Bow Name Ornament', sample: 'Christmass\\3DBlaze Bow Ornament - Maria - sample.3mf', tool: 'Christmass\\3DBlaze name ornaments tool.zip → python3 make_orn.py bow "Name" "3DBlaze Bow Ornament - Name.3mf"', spec: 'oval 10 × 8 cm, 3 mm base with raised bow/holly, ONE colour for the whole ornament incl. the name part — per name as listed above (red = slot 4, white = slot 2), name Lora Bold Italic raised 0.8 mm' }
+    holy: { name: 'Holy Night Ornament', sample: 'Christmass\\3DBlaze Holy Night Ornament - Gabriel - sample.3mf', tool: 'Christmass\\3DBlaze ornament tool.zip → python3 make_holy.py "Name" "3DBlaze Holy Night Ornament - Name.3mf"', spec: '10 cm ornament, 3 mm, name in Pacifico RAISED 0.8 mm on the banner — ornament colour and name colour per name as listed above (white = slot 2, pine green = slot 3, red = slot 4)' },
+    snowflake: { name: 'Snowflake Name Ornament', sample: 'Christmass\\3DBlaze Snowflake Ornament - Joseph - sample.3mf', tool: 'Christmass\\3DBlaze name ornaments tool.zip → python3 make_orn.py snowflake "Name" "3DBlaze Snowflake Ornament - Name.3mf"', spec: '10 cm, 3 mm flat, ONE colour for the whole ornament incl. the name part — per name as listed above (red = slot 4, white = slot 2, pine green = slot 3), name UPPERCASE Caladea Bold' },
+    bow: { name: 'Bow Name Ornament', sample: 'Christmass\\3DBlaze Bow Ornament - Maria - sample.3mf', tool: 'Christmass\\3DBlaze name ornaments tool.zip → python3 make_orn.py bow "Name" "3DBlaze Bow Ornament - Name.3mf"', spec: 'oval 10 × 8 cm, 3 mm base with raised bow/holly, ONE colour for the whole ornament incl. the name part — per name as listed above (red = slot 4, white = slot 2, pine green = slot 3), name Lora Bold Italic raised 0.8 mm' }
   };
   var REQ_STATUS = [['new', 'New'], ['sent', 'Sent to Claude'], ['ready', 'File ready'], ['done', 'Printed']];
   function requestText(r) {
