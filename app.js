@@ -1063,7 +1063,7 @@
         dropGrid(wg) + '</div></section>' : '') +
 
       '<section class="blk2" id="sec-how"><div class="wrap"><div class="shead"><h2>How it works</h2></div><div class="steps2">' +
-        step2(1, 'Pick', 'A piece and a colour') + step2(2, 'Confirm', 'We WhatsApp you') + step2(3, 'Print', 'Ready in 2–4 days') + step2(4, 'Deliver', 'In 1–3 days · cash or Whish') +
+        step2(1, 'Pick', 'A piece and a colour') + step2(2, 'Confirm', 'We WhatsApp you') + step2(3, 'Print', 'Ready in under a week') + step2(4, 'Deliver', 'In 1–3 days · cash or Whish') +
         '</div><p class="feeline">Delivery ' + fee + '.' + (s.pickup ? ' Pickup available.' : '') + ' Pay the driver in cash, or by Whish with your order code.</p>' +
         '<div class="duo"><div class="trackbox custombox"><div><h3>Something else in mind?</h3><p class="muted">Custom gifts, names, logos, university projects… Send us your idea and we’ll tell you if we can print it and how much.</p></div>' +
         '<a class="btn pri" target="_blank" rel="noopener" href="' + waLink(s.whatsapp, 'Hi 3DBlaze! I have a custom idea I’d like printed:') + '">WhatsApp us</a></div>' +
@@ -1071,7 +1071,7 @@
       '</div></section>' +
 
       '<section class="blk2" id="sec-faq"><div class="wrap"><div class="shead"><h2>Questions</h2></div><div class="faq faq2">' +
-        faq('How long does it take?', 'Most orders are printed in 2–4 days, then delivered within 1–3 days. Personalized pieces are printed one by one, so order early for 22 November and Christmas.') +
+        faq('How long does it take?', 'Most orders are printed in less than a week (one week at most), then delivered within 1–3 days. Personalized pieces are printed one by one, so order early for 22 November and Christmas.') +
         faq('Where do you deliver?', 'All over Lebanon through our delivery partner. Delivery is ' + fee + '.') +
         faq('How do I pay?', 'Cash to the driver on delivery, or Whish Money. If you choose Whish, the payment details appear right after you order.') +
         faq('What is it made of?', 'PLA, a plant-based plastic. It is strong and light, but keep it away from high heat like a car dashboard in summer.') +
@@ -1141,7 +1141,7 @@
     if (!main && !hang.length) return '';
     return '<div class="hstage"><i class="hs-scan" aria-hidden="true"></i>' + main + hang.map(function (p, i) { return '<a class="hs-hang hs-h' + (i + 1) + '" href="#p-' + p.id + '" aria-label="' + esc(p.name) + '"><i aria-hidden="true"></i>' + thumb(p) + '</a>'; }).join('') + '</div>';
   }
-  function trustRow(dup) { return '<div' + (dup ? ' aria-hidden="true"' : '') + '>' + ['Cash on delivery', 'Whish accepted', 'Ready in 2–4 days', 'Delivery all over Lebanon', 'Cash on delivery', 'Whish accepted', 'Ready in 2–4 days', 'Delivery all over Lebanon'].map(function (t, i) { return '<span' + (!dup && i < 4 ? '' : ' aria-hidden="true"') + '>' + t + '</span><i aria-hidden="true">/</i>'; }).join('') + '</div>'; }
+  function trustRow(dup) { return '<div' + (dup ? ' aria-hidden="true"' : '') + '>' + ['Cash on delivery', 'Whish accepted', 'Ready in under a week', 'Delivery all over Lebanon', 'Cash on delivery', 'Whish accepted', 'Ready in under a week', 'Delivery all over Lebanon'].map(function (t, i) { return '<span' + (!dup && i < 4 ? '' : ' aria-hidden="true"') + '>' + t + '</span><i aria-hidden="true">/</i>'; }).join('') + '</div>'; }
   function isDoor(p) { return !!p && (p.art === 'door-xmas' || p.art === 'door-plain'); }
   // a door sign inside an offer: same names as on its own page (family, and for Santa & Elves: dad, mom, 1-5 kids)
   var DOOR_EX = { family: 'The Haddads', dad: 'Georges', mom: 'Rita', kids: ['Jad', 'Lea', 'Sami', 'Nour', 'Karim'] };
@@ -1336,7 +1336,7 @@
       (p.text && !slots.length ? '<div class="opt"><label class="field">' + esc(p.text.label) + '<input id="pText" maxlength="' + p.text.max + '" placeholder="' + esc(p.text.ph) + '" value="' + esc(st.text) + '"></label><div class="err" id="pErr"></div></div>' : '') +
       '<div class="opt"><span class="lab">Quantity</span><div class="qty"><button data-q="-1" aria-label="Less">−</button><span id="pQty">1</span><button data-q="1" aria-label="More">+</button></div></div>' +
       '<div class="buyrow"><button class="btn pri" id="pAdd"' + (out ? ' disabled' : '') + '>' + (soon ? 'Coming soon' : out ? 'Sold out' : 'Add to cart') + '</button>' + (out ? '' : '<button class="btn sec" id="pBuy">Buy now</button>') + '</div>' +
-      '<div class="specs">' + (p.specs || []).map(function (s) { return '<div>' + esc(s) + '</div>'; }).join('') + (soon ? '<div>Not for sale yet' + (p.text && !p.blurred ? ' — you can already try your name' : '') + '</div>' : '<div>Made to order · ready in 2–4 days, then delivered in 1–3 days</div><div>Cash on delivery or Whish</div>') + '</div>' +
+      '<div class="specs">' + (p.specs || []).map(function (s) { return '<div>' + esc(s) + '</div>'; }).join('') + (soon ? '<div>Not for sale yet' + (p.text && !p.blurred ? ' — you can already try your name' : '') + '</div>' : '<div>Made to order · ready in less than a week (max 1 week), then delivered in 1–3 days</div><div>Cash on delivery or Whish</div>') + '</div>' +
       '</div></div></div>';
     if (p.blurred) { $('#pArt').classList.add('soonbig'); $('.ppage').classList.add('soonpage'); }
     var isMapP = (p.art || p.id) === 'my-village', mlive = null;
