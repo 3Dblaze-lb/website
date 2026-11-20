@@ -1897,6 +1897,7 @@
     var lineTotal = function (l) { return l.kind === 'custom' || (l.price !== '' && l.price != null) ? priceOf(l) * l.qty : l.units.reduce(function (t, u) { return t + unitBase(l, u); }, 0); };
     var suggest = function (cost) { var v = Math.max(+S.calcMin || 0, cost * (+S.calcMarkup || 3)); return Math.ceil(v * 2) / 2; };
     var feeNow = function () { return cust.method === 'pickup' ? 0 : cust.fee !== null && cust.fee !== '' ? Math.max(0, +cust.fee || 0) : fee(cust.region); };
+    var discNow = function (full) { var el = document.querySelector('#nf [name=disc]'), v = el ? Math.round((parseFloat(el.value) || 0) * 100) / 100 : 0; return Math.max(0, Math.min(v, full)); };
     var unitTxt = function (l) { return l.kind === 'custom' ? 'piece' : 'unit'; };
 
     modal('<h3 style="font-size:20px;margin:0 44px 4px 0">New order</h3><p class="muted" style="margin:0 0 14px;font-size:14px">Add the products, write the name on each personalised piece, or add a custom print from your file. Every piece gets its own Printing / Finished tick and shows on the customer’s tracking page.</p>' +
@@ -1905,7 +1906,8 @@
       '<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn sec" id="nAddP" style="min-height:42px;padding:8px 14px;font-size:14px">+ Add product</button><button type="button" class="btn sec" id="nAddC" style="min-height:42px;padding:8px 14px;font-size:14px">+ Custom print (my file)</button></div>' +
       '<div class="panel" style="padding:14px;display:grid;gap:10px;background:var(--card2)"><b style="font-size:15px">Customer</b>' +
         '<div class="grid2"><label class="field">Name<input name="name" maxlength="60" autocomplete="off"></label><label class="field">Phone<input name="phone" type="tel" maxlength="20" autocomplete="off"></label></div>' +
-        '<div class="grid2"><label class="field">How<select name="method"><option value="delivery">Delivery</option>' + '<option value="pickup">Pickup</option></select></label><label class="field">Payment<select name="payment"><option value="cash">Cash</option><option value="whish">Whish</option></select></label></div>' +
+        '<div class="stepper" id="nHow" style="margin:0"><button type="button" data-how="delivery" class="on">🚚 Delivery</button><button type="button" data-how="pickup">📍 Pickup</button></div>' +
+        '<div class="grid2"><label class="field">Payment<select name="payment"><option value="cash">Cash</option><option value="whish">Whish</option></select></label><label class="field">Discount $ (optional)<input name="disc" type="number" min="0" step="0.5" inputmode="decimal" placeholder="0"></label></div>' +
         '<div id="nDel" style="display:grid;gap:10px"><div class="grid2"><label class="field">Area<select name="region">' + REGIONS.map(function (x) { return '<option>' + esc(x[0]) + '</option>'; }).join('') + '</select></label><label class="field">Town<input name="town" maxlength="60"></label></div>' +
         '<div class="grid2"><label class="field">Address<input name="address" maxlength="200"></label><label class="field">Delivery $<input name="fee" type="number" min="0" step="0.5" inputmode="decimal"></label></div></div>' +
         '<label class="field">Notes for the order (optional)<input name="notes" maxlength="300"></label></div>' +
@@ -1984,8 +1986,8 @@
       }
       function sum() {
         var sub = 0; lines.forEach(function (l) { sub += lineTotal(l); });
-        sub = Math.round(sub * 100) / 100; var d = feeNow();
-        box.querySelector('#nSum').innerHTML = '<div><span>Items</span><b>' + money(sub) + '</b></div><div><span>' + (cust.method === 'pickup' ? 'Pickup' : 'Delivery') + '</span><b>' + (d ? money(d) : 'Free') + '</b></div><div class="tot" style="font-size:18px"><span>Total</span><span>' + money(sub + d) + '</span></div>';
+        sub = Math.round(sub * 100) / 100; var d = feeNow(), dc = discNow(sub + d);
+        box.querySelector('#nSum').innerHTML = '<div><span>Items</span><b>' + money(sub) + '</b></div><div><span>' + (cust.method === 'pickup' ? 'Pickup' : 'Delivery') + '</span><b>' + (d ? money(d) : 'Free') + '</b></div>' + (dc ? '<div><span>Discount</span><b style="color:var(--red)">− ' + money(dc) + '</b></div>' : '') + '<div class="tot" style="font-size:18px"><span>Total</span><span>' + money(sub + d - dc) + '</span></div>';
       }
       // the order's items: personalised pieces become one line each (so each name gets its own tick); identical pieces stay together
       function build() {
@@ -2030,7 +2032,8 @@
 
       box.querySelector('#nAddP').onclick = function () { if (!prods.length) return; var l = fresh(prods[0]); lines.push(l); draw(); var s = nl.querySelector('[data-l="' + (lines.length - 1) + '"] select'); if (s) s.focus(); };
       box.querySelector('#nAddC').onclick = function () { lines.push({ kind: 'custom', name: '', qty: 1, price: null, color: '', names: [''], file: null, cost: null }); draw(); var s = nl.querySelector('[data-l="' + (lines.length - 1) + '"] [data-k="cname0"]'); if (s) s.focus(); };
-      f.method.onchange = function () { cust.method = f.method.value; box.querySelector('#nDel').classList.toggle('hidden', cust.method === 'pickup'); sum(); };
+      $$('[data-how]', box).forEach(function (b) { b.onclick = function () { cust.method = b.dataset.how; $$('[data-how]', box).forEach(function (x) { x.classList.toggle('on', x === b); }); box.querySelector('#nDel').classList.toggle('hidden', cust.method === 'pickup'); sum(); }; });
+      f.disc.oninput = function () { sum(); };
       f.payment.onchange = function () { cust.payment = f.payment.value; };
       f.region.onchange = function () { cust.region = f.region.value; f.fee.placeholder = String(fee(cust.region)); sum(); };
       f.fee.oninput = function () { cust.fee = f.fee.value; sum(); };
@@ -2057,9 +2060,10 @@
         var b = build();
         if (b.items.length > 50) { err.textContent = 'That’s ' + b.items.length + ' separate lines — max 50 per order. Split it into two orders.'; return; }
         var now = Date.now(), sub = Math.round(b.items.reduce(function (n, i) { return n + i.price * i.qty; }, 0) * 100) / 100, d = feeNow(), pick = cust.method === 'pickup';
+        if ((parseFloat(f.disc.value) || 0) > sub + d) { err.textContent = 'The discount is bigger than the total (' + money(sub + d) + ').'; return; }
         var o = { code: newCode(), createdAt: now, status: 'confirmed', paid: false, payment: f.payment.value, method: pick ? 'pickup' : 'delivery', source: 'manual',
           customer: { name: cap(f.name.value, 60), phone: f.phone.value.replace(/[^\d+]/g, '').slice(0, 20), region: pick ? '' : cust.region, town: pick ? '' : cap(f.town.value, 60), address: pick ? '' : cap(f.address.value, 200), notes: cap(f.notes.value, 300) },
-          items: b.items, subtotal: sub, delivery: d, total: Math.round((sub + d) * 100) / 100, history: [{ s: 'confirmed', t: now }] };
+          items: b.items, subtotal: sub, delivery: d, total: Math.round((sub + d - discNow(sub + d)) * 100) / 100, history: [{ s: 'confirmed', t: now }] };
         if (b.files.length) o.note = cap('File' + (b.files.length > 1 ? 's' : '') + ': ' + b.files.join(', '), 500);
         var go = box.querySelector('#nGo'); go.disabled = true; go.textContent = 'Saving…';
         Store.placeOrder(o).then(function () { close(); adm.tab = 'orders'; adm.filter = 'active'; renderAdmin(); orderModal(o.code); toast('Order ' + o.code + ' created'); })
@@ -2752,14 +2756,15 @@
       var r = draw();
       modal('<h3 style="font-size:20px;margin-bottom:6px">New order from quote</h3><p class="muted" style="margin:0 0 16px">' + esc(calcIn.name) + ' × ' + r.qty + ' · total ' + money(r.total) + '</p><form id="mo" style="display:grid;gap:12px"><div class="grid2"><label class="field">Customer name<input name="name"></label><label class="field">Phone<input name="phone" type="tel"></label></div>' +
         '<div class="grid2"><label class="field">Area<select name="region">' + REGIONS.map(function (x) { return '<option>' + esc(x[0]) + '</option>'; }).join('') + '</select></label><label class="field">Town<input name="town"></label></div>' +
-        '<label class="field">Address / notes<input name="address"></label><div class="grid2"><label class="field">Payment<select name="payment"><option value="cash">Cash on delivery</option><option value="whish">Whish</option></select></label><label class="field">Personalization (optional)<input name="text"></label></div><div class="err" id="moErr"></div><button class="btn pri">Create order</button></form>', function (box, close) {
+        '<label class="field">Address / notes<input name="address"></label><div class="grid2"><label class="field">Delivery or pickup<select name="method"><option value="delivery"' + (calcIn.pickup ? '' : ' selected') + '>Delivery</option><option value="pickup"' + (calcIn.pickup ? ' selected' : '') + '>Pickup</option></select></label><label class="field">Discount $ (optional)<input name="disc" type="number" min="0" step="0.5" inputmode="decimal" placeholder="0"></label></div><div class="grid2"><label class="field">Payment<select name="payment"><option value="cash">Cash on delivery</option><option value="whish">Whish</option></select></label><label class="field">Personalization (optional)<input name="text"></label></div><div class="err" id="moErr"></div><button class="btn pri">Create order</button></form>', function (box, close) {
         box.querySelector('#mo').onsubmit = function (e) {
           e.preventDefault(); var f = e.target; if (!f.name.value.trim()) { box.querySelector('#moErr').textContent = 'Add the customer name.'; return; }
-          var now = Date.now(), sub = r.items;
-          var o = { code: newCode(), createdAt: now, status: 'confirmed', paid: false, payment: f.payment.value, method: calcIn.pickup ? 'pickup' : 'delivery', source: 'manual',
-            customer: { name: f.name.value.trim(), phone: f.phone.value.replace(/[^\d+]/g, ''), region: calcIn.pickup ? '' : f.region.value, town: f.town.value.trim(), address: f.address.value.trim(), notes: '' },
+          var now = Date.now(), sub = r.items, pk = f.method.value === 'pickup', dl = pk ? 0 : (r.delivery || fee(f.region.value)), dc = Math.round((parseFloat(f.disc.value) || 0) * 100) / 100;
+          if (dc < 0 || dc > sub + dl) { box.querySelector('#moErr').textContent = 'The discount must be between $0 and ' + money(sub + dl) + '.'; return; }
+          var o = { code: newCode(), createdAt: now, status: 'confirmed', paid: false, payment: f.payment.value, method: pk ? 'pickup' : 'delivery', source: 'manual',
+            customer: { name: f.name.value.trim(), phone: f.phone.value.replace(/[^\d+]/g, ''), region: pk ? '' : f.region.value, town: f.town.value.trim(), address: f.address.value.trim(), notes: '' },
             items: [{ id: 'custom', name: calcIn.name || 'Custom print', price: r.unitFinal, qty: r.qty, color: null, text: f.text.value.trim() || null, printMin: r.minutes, unitCost: Math.round(r.unitCost * 100) / 100 }].concat(r.design ? [{ id: 'design', name: 'Design / personalization', price: r.design, qty: 1, color: null, text: null, printMin: 0 }] : []),
-            subtotal: sub, delivery: r.delivery, total: r.total, history: [{ s: 'confirmed', t: now }] };
+            subtotal: sub, delivery: dl, total: Math.round((sub + dl - dc) * 100) / 100, history: [{ s: 'confirmed', t: now }] };
           Store.placeOrder(o).then(function () { close(); adm.tab = 'orders'; adm.filter = 'active'; renderAdmin(); toast('Order ' + o.code + ' created'); });
         };
       });
