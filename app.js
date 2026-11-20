@@ -2188,6 +2188,59 @@
     var t = Store.ticks(o.code);
     return Store.setPieces(o.code, orderPieces(o).map(function (x) { return t[x.k] ? { n: x.label.slice(0, 150), s: 2 } : t['p' + x.k] ? { n: x.label.slice(0, 150), s: 1 } : null; }).filter(Boolean));
   }
+  // ✎ Edit order (20 Nov 2026): fix a typo in a name, a colour, the quantity or the customer details after the order came in.
+  // Prices/totals are not touched. Ticks stay (they're keyed by line), the tracking page gets the new names.
+  function editOrderModal(code) {
+    var o = Store.orders().filter(function (x) { return x.code === code; })[0]; if (!o) return;
+    var c = o.customer || {}, arr = function (v) { return v ? (Array.isArray(v) ? v : Object.keys(v).map(function (k) { return v[k]; })) : null; };
+    var colSel = function (id, cur, attr) {
+      var bp = Store.product(id), ops = bp ? slotOpts(bp).map(function (x) { return x.name; }) : [];
+      if (cur && ops.indexOf(cur) < 0) ops.unshift(cur);
+      if (!ops.length) return '<input ' + attr + ' value="' + esc(cur || '') + '" maxlength="40" placeholder="Colour">';
+      return '<select ' + attr + '>' + (cur ? '' : '<option value="">—</option>') + ops.map(function (n) { return '<option' + (n === cur ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select>';
+    };
+    var rows = o.items.map(function (i, n) {
+      var ps = arr(i.picks);
+      return '<div class="panel" style="padding:12px 14px;margin-bottom:8px"><b>' + esc(i.name) + '</b>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr 80px;gap:8px;margin-top:8px">' +
+        (i.text != null || (!ps && ((Store.product(i.id) || {}).text || isDoor(Store.product(i.id)))) ? '<label style="grid-column:1/3;display:grid;gap:3px"><span class="muted" style="font-size:12px">Name / text</span><input data-et="' + n + '" value="' + esc(i.text || '') + '" maxlength="200" placeholder="(no text)"></label>' : '<span style="grid-column:1/3"></span>') +
+        '<label style="display:grid;gap:3px"><span class="muted" style="font-size:12px">Qty</span><input data-eq="' + n + '" type="number" min="1" max="50" value="' + (i.qty || 1) + '"></label>' +
+        (i.color != null || !ps ? '<label style="grid-column:1/3;display:grid;gap:3px"><span class="muted" style="font-size:12px">Colour</span>' + colSel(i.id, i.color, 'data-ec="' + n + '"') + '</label>' : '') + '</div>' +
+        (ps ? ps.map(function (pk, j) { return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid var(--line)"><label style="display:grid;gap:3px"><span class="muted" style="font-size:12px">' + esc(pk.name || ('Piece ' + (j + 1))) + ' — name</span><input data-pt="' + n + '_' + j + '" value="' + esc(pk.text || '') + '" maxlength="60" placeholder="(no name)"></label><label style="display:grid;gap:3px"><span class="muted" style="font-size:12px">Colour</span>' + colSel(pk.id, pk.color, 'data-pc="' + n + '_' + j + '"') + '</label></div>'; }).join('') : '') + '</div>';
+    }).join('');
+    modal('<style>.eo input,.eo select{width:100%;box-sizing:border-box}</style><div class="eo"><h3 style="font-size:20px;margin:0 44px 4px 0">Edit ' + esc(o.code) + '</h3><p class="muted" style="font-size:13px;margin:0 0 14px">Fix names, colours, qty or the customer details. Prices and total stay the same (use Discount in the order for money changes).</p>' +
+      '<div class="lab muted" style="font-size:13px;margin-bottom:6px">Items</div>' + rows +
+      '<div class="lab muted" style="font-size:13px;margin:14px 0 6px">Customer</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+      [['name', 'Name', 60], ['phone', 'Phone', 20], ['town', 'Town', 60], ['region', 'Area', 30], ['address', 'Address', 200], ['notes', 'Notes', 300]].map(function (f) { return '<label style="display:grid;gap:3px"><span class="muted" style="font-size:12px">' + f[1] + '</span><input data-cu="' + f[0] + '" value="' + esc(c[f[0]] || '') + '" maxlength="' + f[2] + '"></label>'; }).join('') + '</div>' +
+      '<div class="err" id="eoErr"></div><div class="actions" style="margin-top:16px"><button class="btn pri" id="eoSave">Save changes</button><button class="btn sec" id="eoCancel">Cancel</button></div></div>', function (box, close) {
+      box.querySelector('#eoCancel').onclick = function () { close(); orderModal(code); };
+      box.querySelector('#eoSave').onclick = function () {
+        var v = function (sel) { var e = box.querySelector(sel); return e ? e.value.trim() : null; };
+        var items = o.items.map(function (i, n) {
+          var it = JSON.parse(JSON.stringify(i)), t = v('[data-et="' + n + '"]'), q = parseInt(v('[data-eq="' + n + '"]'), 10), col = v('[data-ec="' + n + '"]');
+          if (t !== null) { if (t) it.text = t; else delete it.text; }
+          if (col !== null) { if (col) it.color = col; else delete it.color; }
+          if (q >= 1 && q <= 50) it.qty = q;
+          var ps = arr(it.picks);
+          if (ps) it.picks = ps.map(function (pk, j) { var pt = v('[data-pt="' + n + '_' + j + '"]'), pc = v('[data-pc="' + n + '_' + j + '"]'); if (pt !== null) { if (pt) pk.text = pt; else delete pk.text; } if (pc) pk.color = pc; return pk; });
+          return it;
+        });
+        var cu = JSON.parse(JSON.stringify(c));
+        $$('[data-cu]', box).forEach(function (e) { var k = e.dataset.cu, val = e.value.trim(); if (val) cu[k] = val; else if (k !== 'name' && k !== 'phone') delete cu[k]; });
+        if (!cu.name) { $('#eoErr').textContent = 'The customer needs a name.'; return; }
+        if (cu.phone == null) cu.phone = '';
+        var b = box.querySelector('#eoSave'); b.disabled = true; b.textContent = 'Saving…';
+        Store.updateOrder(code, { items: items, customer: cu, updatedAt: Date.now() }).then(function () {
+          var o2 = Store.orders().filter(function (x) { return x.code === code; })[0] || Object.assign(o, { items: items, customer: cu });
+          o2.items = items; o2.customer = cu;
+          publishPieces(o2);
+          var had = Store.requests().some(function (r) { return r.order === code; });
+          close(); renderAdmin(); orderModal(code);
+          toast(had ? 'Order updated — press Request 3MF again so Claude gets the new names' : 'Order updated');
+        }).catch(function () { b.disabled = false; b.textContent = 'Save changes'; $('#eoErr').textContent = 'Couldn’t save — check your connection and try again.'; });
+      };
+    });
+  }
   function orderDone(o) { var ps = orderPieces(o), t = Store.ticks(o.code); return { n: ps.filter(function (x) { return t[x.k]; }).length, of: ps.length }; }
 
   function orderModal(code) {
@@ -2212,7 +2265,7 @@
       '<span>Payment</span><b>' + (o.payment === 'whish' ? 'Whish' : 'Cash on delivery') + ' · <label class="switch" style="display:inline-flex"><input type="checkbox" id="mPaid"' + (o.paid ? ' checked' : '') + '> paid</label></b>' +
       '<span>Discount $</span><b style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input id="mDisc" class="search" type="number" min="0" step="0.5" inputmode="decimal" style="min-width:0;width:110px" placeholder="0" value="' + (orderDiscount(o) || '') + '"><button type="button" class="btn sec" id="mDiscOk" style="padding:8px 14px">Apply</button><small class="muted" style="font-weight:400">off the total · 0 removes it</small></b>' +
       '<span>Internal note</span><input id="mNote" class="search" style="min-width:0" placeholder="Only you see this" value="' + esc(o.note || '') + '"></div>' +
-      '<div class="actions">' + (needsFile(o) ? '<button class="btn pri" id="mReq">Request 3MF</button>' : '') + '<a class="btn wa" id="mWa" target="_blank" rel="noopener">WhatsApp customer</a><button class="btn sec" id="mCpMsg">Copy message</button><button class="btn sec' + (o.status === 'cancelled' ? '' : ' hidden') + '" id="mDel" style="color:var(--red);border-color:var(--red)">Delete order</button></div>' +
+      '<div class="actions">' + (needsFile(o) ? '<button class="btn pri" id="mReq">Request 3MF</button>' : '') + '<button class="btn sec" id="mEdit">✎ Edit order</button>' + '<a class="btn wa" id="mWa" target="_blank" rel="noopener">WhatsApp customer</a><button class="btn sec" id="mCpMsg">Copy message</button><button class="btn sec' + (o.status === 'cancelled' ? '' : ' hidden') + '" id="mDel" style="color:var(--red);border-color:var(--red)">Delete order</button></div>' +
       '<p class="muted" style="font-size:13px;margin:12px 0 0" id="mMsgPrev"></p>', function (box, close) {
         var setWa = function () { var msg = CUSTOMER_MSG[o.status](o); box.querySelector('#mWa').href = waLink(c.phone, msg); box.querySelector('#mMsgPrev').textContent = 'Message for “' + (STATUSES.filter(function (s) { return s.k === o.status; })[0].l) + '”: ' + msg; return msg; };
         setWa();
@@ -2263,6 +2316,7 @@
           Store.updateOrder(o.code, { total: nt2 }).then(function () { close(); renderAdmin(); orderModal(o.code); toast(d ? 'Discount ' + money(d) + ' applied — new total ' + money(nt2) : 'Discount removed — total ' + money(nt2)); }).catch(function () { toast('Couldn’t save the discount — try again'); });
         };
         var nt; box.querySelector('#mNote').oninput = function (e) { clearTimeout(nt); nt = setTimeout(function () { Store.updateOrder(o.code, { note: e.target.value }); }, 600); };
+        box.querySelector('#mEdit').onclick = function () { close(); editOrderModal(o.code); };
         var rqb = box.querySelector('#mReq'); if (rqb) rqb.onclick = function () { makeOrderRequest(o, function () { close(); adm.tab = 'requests'; renderAdmin(); }); };
         box.querySelector('#mCpMsg').onclick = function () { copy(setWa(), 'Message copied'); };
         box.querySelector('#mDel').onclick = function () { confirmBox('Delete ' + o.code + ' for good? This can’t be undone.', 'Delete', function () { Store.deleteOrder(o.code).then(function () { Store.clearTicks(o.code); close(); renderAdmin(); toast(o.code + ' deleted'); }).catch(function () { toast('Couldn’t delete — try again'); }); }); };
@@ -2279,19 +2333,38 @@
   var ORN_RE = /holy-ornament|snowflake-ornament|bow-ornament/;
   function ornKind(id) { return /snowflake-ornament/.test(id) ? 'snowflake' : /bow-ornament/.test(id) ? 'bow' : 'holy'; }
   function isOrn(i) { if (ORN_RE.test(i.id)) return true; var p = Store.product(i.id), pk = p && p.pack; if (!pk) return false; pk = Array.isArray(pk) ? pk : Object.keys(pk).map(function (k) { return pk[k]; }); return pk.some(function (x) { return x && ORN_RE.test(x.of); }); }
-  function needsFile(o) { return o.items.some(function (i) { return i.id === 'my-village' || isOrn(i) || (i.text && i.id !== 'design'); }); }
+  function needsFile(o) { return o.items.some(function (i) { return i.id === 'my-village' || isOrn(i) || isNapkin(i) || (i.text && i.id !== 'design' && i.id !== 'custom'); }); }
+  // Request 3MF = the WHOLE order (20 Nov 2026 fix: before, an order with ornaments sent only the ornaments,
+  // and an order without them sent only its first item — Fadi 3DB-MLL3F lost his door sign + napkin holders).
+  function reqPieces(o) {
+    var out = [];
+    o.items.forEach(function (i) {
+      var ownParts = (Store.product(i.id) || {}).parts;
+      var ps = i.picks && !ownParts ? (Array.isArray(i.picks) ? i.picks : Object.keys(i.picks).map(function (k) { return i.picks[k]; })) : null;
+      if (ps) { for (var q = 0; q < (i.qty || 1); q++) ps.forEach(function (pk) { out.push({ id: pk.id || i.id, name: pk.name || i.name, color: pk.color || i.color, text: isDoor(Store.product(pk.id)) ? doorFull(i.text, pk) : pk.text, geo: pk.geo || i.geo, from: i.name, qty: 1 }); }); }
+      else out.push({ id: i.id, name: i.name, color: i.color, text: i.text, geo: i.geo, qty: i.qty || 1 });
+    });
+    return out;
+  }
+  function isNapkin(x) { return /napkin|tissue/i.test(x.name || '') || /napkin|tissue/i.test(((Store.product(x.id) || {}).name) || ''); }
   function makeOrderRequest(o, done) {
-    var orn = o.items.filter(isOrn), data;
-    if (orn.length) {
-      var names = [], groups = { holy: [], snowflake: [], bow: [] }, cols = { holy: [], snowflake: [], bow: [] };
-      orn.forEach(function (i) { var ps = i.picks ? (Array.isArray(i.picks) ? i.picks : Object.keys(i.picks).map(function (k) { return i.picks[k]; })) : [{ id: i.id, text: i.text, color: i.color }]; for (var q = 0; q < i.qty; q++) ps.forEach(function (pk) { if (pk.text && ORN_RE.test(pk.id || i.id)) { var kd = ornKind(pk.id || i.id); names.push(pk.text); groups[kd].push(pk.text); cols[kd].push(ornColor(kd, pk.color)); } }); });
-      var tt = Object.keys(groups).filter(function (k) { return groups[k].length; }).map(function (k) { return ORN_TOOL[k].name + ' × ' + groups[k].length; });
-      data = { type: 'ornament', title: tt.join(' + '), names: groups.holy, groups: groups, cols: cols, order: o.code, status: 'sent', createdAt: Date.now() };
-    } else {
-      var it = o.items.filter(function (i) { return i.id === 'my-village'; })[0] || o.items.filter(function (i) { return i.text; })[0];
-      data = { type: it.id === 'my-village' ? 'map' : 'custom', geo: it.geo || null, title: it.id === 'my-village' ? (it.text || '') : it.name + (it.text ? ' with “' + it.text + '”' : ''), base: 'black', mapc: 'white', place: o.customer.region || '', notes: '', size: '', order: o.code, status: 'sent', createdAt: Date.now() };
-      if (it.id !== 'my-village' && it.color && isDoor(Store.product(it.id))) data.color = String(it.color);
-    }
+    var pcs = reqPieces(o), parts = [], seen = {}, groups = { holy: [], snowflake: [], bow: [] }, cols = { holy: [], snowflake: [], bow: [] }, cnt = { holy: [], snowflake: [], bow: [] }, nap = [], plain = [];
+    // identical pieces (same product, name, colour) = ONE file printed × N; napkin holders keep one numbered file per piece (19 Nov rule)
+    var addPart = function (key, part, q) { if (seen[key]) seen[key].n += q; else { part.n = q; seen[key] = part; parts.push(part); } };
+    pcs.forEach(function (x) {
+      var p = Store.product(x.id), q = x.qty || 1;
+      if (ORN_RE.test(x.id) && x.text) { var kd = ornKind(x.id), oc = ornColor(kd, x.color), j = -1; groups[kd].forEach(function (nm, z) { if (nm === x.text && cols[kd][z] === oc) j = z; }); if (j >= 0) cnt[kd][j] += q; else { groups[kd].push(x.text); cols[kd].push(oc); cnt[kd].push(q); } }
+      else if (x.id === 'my-village') addPart('map|' + (x.text || '') + '|' + JSON.stringify(x.geo || null), { type: 'map', geo: x.geo || null, title: x.text || '', place: o.customer.region || '' }, q);
+      else if (isDoor(p) || /^door-/.test(x.id)) { var xm = (p && p.art === 'door-xmas') || x.id === 'door-xmas'; addPart('door|' + x.id + '|' + x.text + '|' + x.color, { type: 'custom', title: (xm ? 'Santa & Elves Family Door Sign' : 'Family Door Sign (plain)') + (x.text ? ' with “' + x.text + '”' : ''), color: x.color ? String(x.color) : null }, q); }
+      else if (isNapkin(x)) { for (var q4 = 0; q4 < q; q4++) nap.push(x.color || 'colour not set'); }
+      else if (x.text && x.id !== 'design' && x.id !== 'custom') addPart('c|' + x.name + '|' + x.text + '|' + x.color, { type: 'custom', title: x.name + ' with “' + x.text + '”', color: x.color ? String(x.color) : null }, q);
+      else plain.push(x.name + ' × ' + q + (x.color ? ' (' + x.color + ')' : '') + (x.id === 'custom' && x.text ? ' — label “' + x.text + '” (your own file)' : ''));
+    });
+    var tt = Object.keys(groups).filter(function (k) { return groups[k].length; });
+    if (tt.length) parts.unshift({ type: 'ornament', title: tt.map(function (k) { return ORN_TOOL[k].name + ' × ' + groups[k].length; }).join(' + '), names: groups.holy, groups: groups, cols: cols, cnt: cnt });
+    if (nap.length) parts.push({ type: 'napkin', cols: nap, title: 'Napkin Holder × ' + nap.length });
+    var d = new Date(o.createdAt || Date.now()), day = d.toLocaleDateString('en-CA', { timeZone: 'Asia/Beirut' });
+    var data = { type: 'order', title: parts.map(function (x) { return x.title || (x.type === 'map' ? 'My Village' : ''); }).join(' + ') || 'Order ' + o.code, parts: parts, plain: plain, client: (o.customer && o.customer.name) || '', day: day, order: o.code, status: 'sent', createdAt: Date.now() };
     Store.saveRequest(null, data).then(function (id) { data.id = id; copy(requestText(data), 'Copied — paste it in your Claude chat'); if (done) done(); });
   }
   // colour of one ornament in an order → what to print. Holy Night: ornament red (default), white or pine green,
@@ -2315,6 +2388,30 @@
   var REQ_STATUS = [['new', 'New'], ['sent', 'Sent to Claude'], ['ready', 'File ready'], ['done', 'Printed']];
   function requestText(r) {
     var t = '3DBlaze design request ' + r.id + '\n';
+    if (r.type === 'order') {
+      var ps = r.parts || [], n = 0, list = [];
+      ps.forEach(function (x) {
+        var xN = function (n) { return n > 1 ? ' — ONE file, print × ' + n : ''; };
+        if (x.type === 'ornament') Object.keys(ORN_TOOL).forEach(function (k) { var g = (x.groups || {})[k] || []; g.forEach(function (nm, z) { list.push(ORN_TOOL[k].name + ' — ' + nm + (x.cnt && x.cnt[k] ? xN(x.cnt[k][z]) : '')); }); });
+        else if (x.type === 'napkin') (x.cols || []).forEach(function (c, j) { list.push('Napkin Holder - ' + (j + 1) + ' (' + c + ')'); });
+        else list.push((x.type === 'map' ? 'My Village map — ' + x.title : x.title + (x.color ? ' (' + x.color + ')' : '')) + xN(x.n || 1));
+      });
+      t += 'ORDER ' + r.order + (r.client ? ' — client: ' + r.client : '') + (r.day ? ' — date: ' + r.day : '') +
+        '\nSave EVERY file in: 3DBLAZE\\Orders\\' + (r.client || '<Client name>') + '\\' + r.order + ' - ' + (r.day || '<date>') + '\\' +
+        '\n\nMAKE ALL ' + list.length + ' FILES — tick each one off before you finish:\n' + list.map(function (x) { n++; return n + '. ' + x; }).join('\n') +
+        (r.plain && r.plain.length ? '\n\nAlso in the order (no new file — print from the existing file): ' + r.plain.join(', ') : '') +
+        '\n\n' + ps.map(function (x, j) { return '=== PART ' + (j + 1) + ' of ' + ps.length + ' ===\n' + reqBody(x); }).join('\n\n') +
+        '\n\nDone = all ' + list.length + ' files above are in the order folder. Don\'t stop after the first product.';
+    } else t += reqBody(r);
+    if (r.size) t += '\nSize: ' + r.size;
+    if (r.notes) t += '\nNotes: ' + r.notes;
+    if (r.order && r.type !== 'order') t += '\nFor order: ' + r.order;
+    t += '\n\nHOW TO WORK: first read the project doc "My Village .3mf recipe (read this first)". Use the SAVED TOOL/TEMPLATE from my 3DBLAZE folder (connect the folder if it is not connected). Do NOT redraw or reinvent the design. Show me the preview PNG before I print.';
+    return t;
+  }
+  function reqBody(r) {
+    var t = '';
+    if (r.type === 'napkin') return 'Product: Christmas Tree Napkin Holder × ' + r.cols.length + ' — NO new design: copy Christmass\\Napkin Holder\\3DBlaze Napkin Holder.3mf (tight-fit) into the order folder once per piece, numbered\n' + r.cols.map(function (c, j) { return '- 3DBlaze Napkin Holder - ' + (j + 1) + '.3mf → colour ' + c; }).join('\n');
     if (r.type === 'map') {
       var g = r.geo, pm = g && g.lat != null && window.BlazeArt && BlazeArt.villagePin ? BlazeArt.villagePin(g.lat, g.lon) : null;
       t += 'Product: "My Village" relief map (.3mf for Bambu Studio)\nTemplate: "3DBlaze My Village - Hadchit relief sample.3mf" — keep plate, map, relief and borders identical; change only the pin and the name' +
@@ -2340,11 +2437,7 @@
         '\nWhat: ' + r.title + (r.color ? '\nColour: ' + r.color : '\nColour: take it from the order (items[].color)') +
         '\nThe .3mf must look exactly like the website preview. Save it in Orders\\<Client name>\\<order number> - <date>\\.';
     }
-    else t += 'Product: custom design (.3mf for Bambu Studio)\nWhat: ' + r.title;
-    if (r.size) t += '\nSize: ' + r.size;
-    if (r.notes) t += '\nNotes: ' + r.notes;
-    if (r.order) t += '\nFor order: ' + r.order;
-    t += '\n\nHOW TO WORK: first read the project doc "My Village .3mf recipe (read this first)". Use the SAVED TOOL/TEMPLATE from my 3DBLAZE folder (connect the folder if it is not connected). Do NOT redraw or reinvent the design. Show me the preview PNG before I print.';
+    else t += 'Product: custom design (.3mf for Bambu Studio)\nWhat: ' + r.title + (r.color ? '\nColour: ' + r.color : '');
     return t;
   }
   function admRequests() {
