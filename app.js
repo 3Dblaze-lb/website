@@ -2038,9 +2038,19 @@
             Store.setTick(o.code, key, want).then(function () {
               // ticking Finished also ticks Printed
               if (!isP && want && !Store.ticks(o.code)['p' + key]) { var pb = box.querySelector('[data-tk="p' + key + '"]'); if (pb) pb.checked = true; Store.setTick(o.code, 'p' + key, true).catch(function () {}); }
+              // unticking Printing on a finished piece also unticks Finished (a piece can't be finished without being printed)
+              if (isP && !want && Store.ticks(o.code)[key.slice(1)]) { var fbx = box.querySelector('[data-tk="' + key.slice(1) + '"]'); if (fbx) { fbx.checked = false; var spx = fbx.closest('div').firstChild; spx.style.textDecoration = ''; spx.style.opacity = ''; } Store.setTick(o.code, key.slice(1), false).catch(function () {}); }
               publishPieces(o);
               if (!isP) { var sp = cb.closest('div').firstChild; sp.style.textDecoration = want ? 'line-through' : ''; sp.style.opacity = want ? '.55' : ''; }
               var d = tkN(), tt = Store.ticks(o.code), all = d.n === d.of && orderPieces(o).every(function (x) { return tt['p' + x.k]; });
+              // unticking moves the order back: a piece no longer finished → Ready returns to Printing; nothing ticked any more → back to Confirmed
+              var back = null;
+              if (!want) { var anyP = orderPieces(o).some(function (x) { return tt[x.k] || tt['p' + x.k]; }); if (o.status === 'ready' && d.n < d.of) back = anyP ? 'printing' : 'confirmed'; else if (o.status === 'printing' && !anyP) back = 'confirmed'; }
+              if (back) {
+                var backL = back === 'printing' ? 'Printing' : 'Confirmed';
+                Store.updateOrder(o.code, { status: back }).then(function () { o.status = back; $$('[data-s]', box).forEach(function (x) { x.classList.toggle('on', x.dataset.s === back); }); setWa(); toast(o.code + ' is back to ' + backL); renderAdmin(); }).catch(function () { toast('Unticked, but couldn’t move the order back — tap ' + backL); renderAdmin(); });
+                return;
+              }
               var after = function () { if (want && all && ['new', 'confirmed', 'printing'].indexOf(o.status) >= 0) {
                 Store.updateOrder(o.code, { status: 'ready' }).then(function () { close(); renderAdmin(); orderModal(o.code); toast('All pieces finished — ' + o.code + ' is Ready'); }).catch(function () { toast('Ticked, but couldn’t move to Ready — tap Ready'); });
               } else renderAdmin(); };
