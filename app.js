@@ -2333,7 +2333,7 @@
   var ORN_RE = /holy-ornament|snowflake-ornament|bow-ornament/;
   function ornKind(id) { return /snowflake-ornament/.test(id) ? 'snowflake' : /bow-ornament/.test(id) ? 'bow' : 'holy'; }
   function isOrn(i) { if (ORN_RE.test(i.id)) return true; var p = Store.product(i.id), pk = p && p.pack; if (!pk) return false; pk = Array.isArray(pk) ? pk : Object.keys(pk).map(function (k) { return pk[k]; }); return pk.some(function (x) { return x && ORN_RE.test(x.of); }); }
-  function needsFile(o) { return o.items.some(function (i) { return i.id === 'my-village' || isOrn(i) || isNapkin(i) || (i.text && i.id !== 'design' && i.id !== 'custom'); }); }
+  function needsFile(o) { return o.items.some(function (i) { return i.id === 'my-village' || isOrn(i) || isNapkin(i) || (i.text && i.id !== 'design'); }); }
   // Request 3MF = the WHOLE order (20 Nov 2026 fix: before, an order with ornaments sent only the ornaments,
   // and an order without them sent only its first item — Fadi 3DB-MLL3F lost his door sign + napkin holders).
   function reqPieces(o) {
@@ -2357,8 +2357,8 @@
       else if (x.id === 'my-village') addPart('map|' + (x.text || '') + '|' + JSON.stringify(x.geo || null), { type: 'map', geo: x.geo || null, title: x.text || '', place: o.customer.region || '' }, q);
       else if (isDoor(p) || /^door-/.test(x.id)) { var xm = (p && p.art === 'door-xmas') || x.id === 'door-xmas'; addPart('door|' + x.id + '|' + x.text + '|' + x.color, { type: 'custom', title: (xm ? 'Santa & Elves Family Door Sign' : 'Family Door Sign (plain)') + (x.text ? ' with “' + x.text + '”' : ''), color: x.color ? String(x.color) : null }, q); }
       else if (isNapkin(x)) { for (var q4 = 0; q4 < q; q4++) nap.push(x.color || 'colour not set'); }
-      else if (x.text && x.id !== 'design' && x.id !== 'custom') addPart('c|' + x.name + '|' + x.text + '|' + x.color, { type: 'custom', title: x.name + ' with “' + x.text + '”', color: x.color ? String(x.color) : null }, q);
-      else plain.push(x.name + ' × ' + q + (x.color ? ' (' + x.color + ')' : '') + (x.id === 'custom' && x.text ? ' — label “' + x.text + '” (your own file)' : ''));
+      else if (x.text && x.id !== 'design') addPart('c|' + x.name + '|' + x.text + '|' + x.color, { type: 'custom', title: x.name + ' with “' + x.text + '”', color: x.color ? String(x.color) : null, own: x.id === 'custom' }, q);
+      else plain.push(x.name + ' × ' + q + (x.color ? ' (' + x.color + ')' : ''));
     });
     var tt = Object.keys(groups).filter(function (k) { return groups[k].length; });
     if (tt.length) parts.unshift({ type: 'ornament', title: tt.map(function (k) { return ORN_TOOL[k].name + ' × ' + groups[k].length; }).join(' + '), names: groups.holy, groups: groups, cols: cols, cnt: cnt });
@@ -2437,7 +2437,7 @@
         '\nWhat: ' + r.title + (r.color ? '\nColour: ' + r.color : '\nColour: take it from the order (items[].color)') +
         '\nThe .3mf must look exactly like the website preview. Save it in Orders\\<Client name>\\<order number> - <date>\\.';
     }
-    else t += 'Product: custom design (.3mf for Bambu Studio)\nWhat: ' + r.title + (r.color ? '\nColour: ' + r.color : '');
+    else t += (r.own ? 'Product: custom piece (.3mf for Bambu Studio) — one file per name. If a sample/tool for this product exists (3DBLAZE folder or a project doc with its name), use it exactly; only design new if nothing exists.' : 'Product: custom design (.3mf for Bambu Studio)') + '\nWhat: ' + r.title + (r.color ? '\nColour: ' + r.color : '');
     return t;
   }
   function admRequests() {
