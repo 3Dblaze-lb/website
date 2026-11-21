@@ -727,7 +727,7 @@ body.xmas .hero2 h1 .bl{background:linear-gradient(90deg,var(--blue) 0 44%,var(-
 .xsanta{position:fixed;right:clamp(8px,2.5vw,34px);top:0;z-index:38;width:clamp(54px,6vw,84px);pointer-events:none;display:flex;flex-direction:column;align-items:center;transform-origin:top center;animation:xsw 3.2s ease-in-out infinite}
 .xsanta>i{display:block;width:3px;background:repeating-linear-gradient(180deg,#C9A36A 0 6px,#A8834B 6px 9px);border-radius:2px;margin-bottom:-6px}
 .xsanta svg{display:block;width:100%;height:auto;filter:drop-shadow(0 8px 10px rgba(11,13,18,.22))}
-@keyframes xsw{0%,100%{transform:rotate(-2.5deg)}50%{transform:rotate(2.5deg)}}
+@keyframes xsw{0%,100%{transform:rotate(calc(var(--xa,2.5deg)*-1))}50%{transform:rotate(var(--xa,2.5deg))}}
 @media (max-width:560px){.xsanta{width:48px;right:6px}}
 @media (max-width:560px){.xho{bottom:42px;font-size:14px}}
 .xsanta svg{pointer-events:auto;cursor:pointer;-webkit-tap-highlight-color:transparent}
@@ -736,7 +736,9 @@ body.xmas .hero2 h1 .bl{background:linear-gradient(90deg,var(--blue) 0 44%,var(-
 .xsanta svg{transform-origin:46% 14%}
 .xsanta.one svg{animation:xone .35s ease-in-out infinite alternate}
 @keyframes xone{from{transform:rotate(10deg)}to{transform:rotate(20deg)}}
-.xsanta.fall svg{animation:none;transition:transform 1.1s cubic-bezier(.5,0,.9,.6),opacity 1.1s;transform:translateY(110vh) rotate(220deg);opacity:.9}
+.xsanta.fall{animation:none}
+.xsanta.fall svg{animation:xfall 2s linear forwards}
+@keyframes xfall{0%{transform:translate(0,0) rotate(15deg);animation-timing-function:cubic-bezier(.2,.7,.4,1)}30%{transform:translate(-22vw,-16vh) rotate(-140deg);animation-timing-function:cubic-bezier(.5,0,.9,.55)}100%{transform:translate(-42vw,115vh) rotate(-560deg)}}
 .xsanta.gone svg{animation:none;transform:translateY(-120vh);opacity:0;pointer-events:none}
 .xsanta.back svg{transition:transform .7s cubic-bezier(.2,.9,.3,1.2),opacity .4s;transform:none;opacity:1}
 .xsanta.fall .xho,.xsanta.gone .xho{display:none}
@@ -804,10 +806,10 @@ body.xmas footer:before{content:"";position:absolute;left:0;right:0;top:-12px;he
   </div>
 </footer>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-<script src="firebase-config.js?v=95210401"></script>
-<script src="art.js?v=95210401"></script>
-<script src="w3d.js?v=95210401"></script>
-<script src="app.js?v=95210401"></script>
-<script src="xmas.js?v=95210402"></script>
+<script src="firebase-config.js?v=95210501"></script>
+<script src="art.js?v=95210501"></script>
+<script src="w3d.js?v=95210501"></script>
+<script src="app.js?v=95210501"></script>
+<script src="xmas.js?v=95210504"></script>
 </body>
 </html>

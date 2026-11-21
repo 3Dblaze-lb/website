@@ -21,7 +21,7 @@ w.innerHTML='<i></i><svg viewBox="-6 0 112 150"><path d="M50 0v26" stroke="#A883
 '<path d="M34 66 Q36 94 51 98 Q66 94 68 66 Q61 76 51 73 Q41 76 34 66Z" fill="#fff"/><path d="M42 72 Q51 68 60 72 Q51 76 42 72Z" fill="#fff" stroke="#E6E9EE" stroke-width="1"/><ellipse class="xa-dn" cx="51" cy="80" rx="4.5" ry="6" fill="#5A1020"/>'+
 '<path d="M33 48 Q48 22 70 36 L76 48 Q52 42 30 50 Z" fill="#C8102E"/><circle cx="75" cy="40" r="6" fill="#fff"/><rect x="28" y="46" width="46" height="9" rx="4.5" fill="#fff"/></svg>';
 document.body.appendChild(w);var rope=w.firstChild,hd=document.querySelector('header.top');
-function up(){var top=hd?hd.getBoundingClientRect().bottom:0,max=innerHeight-w.lastChild.getBoundingClientRect().height-top-16,d=document.documentElement,f=d.scrollHeight>innerHeight?scrollY/(d.scrollHeight-innerHeight):0;f=Math.max(0,Math.min(1,f));w.style.top=Math.max(0,top)+'px';rope.style.height=Math.max(14,14+f*Math.max(0,max-14))+'px'}
+function up(){var top=hd?hd.getBoundingClientRect().bottom:0,max=innerHeight-w.clientWidth*150/112-top-16,d=document.documentElement,f=d.scrollHeight>innerHeight?scrollY/(d.scrollHeight-innerHeight):0;f=Math.max(0,Math.min(1,f));w.style.top=Math.max(0,top)+'px';var L=Math.max(14,14+f*Math.max(0,max-14));rope.style.height=L+'px';w.style.setProperty('--xa',Math.max(.35,Math.min(2.5,2.5*110/L)).toFixed(2)+'deg')}
 addEventListener('scroll',up,{passive:true});addEventListener('resize',up);up();setTimeout(up,600);})();
 /* Tap Santa: 1 = "Ho ho ho!", 2 = one hand + scream, 3 = falls, back after 4 s */
 (function(){var w=document.querySelector('.xsanta');if(!w)return;var sv=w.querySelector('svg'),b=document.createElement('div');b.className='xho';w.appendChild(b);var n=0,t,busy=false;
@@ -32,5 +32,5 @@ sv.addEventListener('click',function(){if(busy)return;n++;
  else if(n===2){w.classList.add('one');say('Aaaaah! Help! 😱',2600);clearTimeout(w._r);w._r=setTimeout(reset,7000)}
  else{busy=true;clearTimeout(w._r);w.classList.remove('talk','jig');w.classList.add('fall');
   setTimeout(function(){w.classList.remove('fall','one');w.classList.add('gone');
-   setTimeout(function(){w.classList.remove('gone');w.classList.add('back');setTimeout(function(){w.classList.remove('back');busy=false;n=0},700)},4000)},1100)}
+   setTimeout(function(){w.classList.remove('gone');w.classList.add('back');setTimeout(function(){w.classList.remove('back');busy=false;n=0},700)},4000)},2000)}
 });})();
