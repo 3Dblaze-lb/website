@@ -10,19 +10,27 @@ rs();addEventListener('resize',rs);
 /* Santa on a rope: goes down as you scroll (look only) */
 (function(){if(!document.body.classList.contains('xmas'))return;
 var w=document.createElement('div');w.className='xsanta';w.setAttribute('aria-hidden','true');
-w.innerHTML='<i></i><svg viewBox="0 0 100 150"><path d="M50 0v26" stroke="#A8834B" stroke-width="3"/>'+
-'<path d="M30 96 Q12 64 44 24" stroke="#C8102E" stroke-width="10" fill="none" stroke-linecap="round"/><path d="M72 96 Q90 64 56 24" stroke="#C8102E" stroke-width="10" fill="none" stroke-linecap="round"/>'+
-'<circle cx="45" cy="22" r="6.5" fill="#0B1220"/><circle cx="56" cy="22" r="6.5" fill="#0B1220"/>'+
+w.innerHTML='<i></i><svg viewBox="-6 0 112 150"><path d="M50 0v26" stroke="#A8834B" stroke-width="3"/>'+
+'<path d="M30 96 Q12 64 44 24" stroke="#C8102E" stroke-width="10" fill="none" stroke-linecap="round"/><path class="xa-up" d="M72 96 Q90 64 56 24" stroke="#C8102E" stroke-width="10" fill="none" stroke-linecap="round"/><g class="xa-dn"><path d="M72 94 Q92 100 94 120" stroke="#C8102E" stroke-width="10" fill="none" stroke-linecap="round"/><circle cx="94" cy="124" r="6.5" fill="#0B1220"/></g>'+
+'<circle cx="45" cy="22" r="6.5" fill="#0B1220"/><circle class="xa-up" cx="56" cy="22" r="6.5" fill="#0B1220"/>'+
 '<path d="M28 92 Q30 84 40 88 L62 88 Q72 84 74 92 L78 124 L24 124 Z" fill="#C8102E"/>'+
 '<rect x="49" y="96" width="4" height="28" fill="#fff"/><rect x="24" y="112" width="54" height="7" fill="#0B1220"/><rect x="46" y="110" width="10" height="11" rx="1.5" fill="none" stroke="#F2C14E" stroke-width="2.5"/>'+
 '<rect x="30" y="124" width="16" height="16" fill="#C8102E"/><rect x="56" y="124" width="16" height="16" fill="#C8102E"/>'+
 '<path d="M26 140 h22 v8 h-24 Q24 140 26 140Z" fill="#0B1220"/><path d="M54 140 h22 Q78 140 78 148 h-24Z" fill="#0B1220"/>'+
 '<circle cx="51" cy="64" r="15" fill="#F5C9A8"/><circle cx="45" cy="61" r="2" fill="#0B1220"/><circle cx="57" cy="61" r="2" fill="#0B1220"/><circle cx="51" cy="67" r="3" fill="#E8907A"/>'+
-'<path d="M34 66 Q36 94 51 98 Q66 94 68 66 Q61 76 51 73 Q41 76 34 66Z" fill="#fff"/><path d="M42 72 Q51 68 60 72 Q51 76 42 72Z" fill="#fff" stroke="#E6E9EE" stroke-width="1"/>'+
+'<path d="M34 66 Q36 94 51 98 Q66 94 68 66 Q61 76 51 73 Q41 76 34 66Z" fill="#fff"/><path d="M42 72 Q51 68 60 72 Q51 76 42 72Z" fill="#fff" stroke="#E6E9EE" stroke-width="1"/><ellipse class="xa-dn" cx="51" cy="80" rx="4.5" ry="6" fill="#5A1020"/>'+
 '<path d="M33 48 Q48 22 70 36 L76 48 Q52 42 30 50 Z" fill="#C8102E"/><circle cx="75" cy="40" r="6" fill="#fff"/><rect x="28" y="46" width="46" height="9" rx="4.5" fill="#fff"/></svg>';
 document.body.appendChild(w);var rope=w.firstChild,hd=document.querySelector('header.top');
 function up(){var top=hd?hd.getBoundingClientRect().bottom:0,max=innerHeight-w.lastChild.getBoundingClientRect().height-top-16,d=document.documentElement,f=d.scrollHeight>innerHeight?scrollY/(d.scrollHeight-innerHeight):0;f=Math.max(0,Math.min(1,f));w.style.top=Math.max(0,top)+'px';rope.style.height=Math.max(14,14+f*Math.max(0,max-14))+'px'}
 addEventListener('scroll',up,{passive:true});addEventListener('resize',up);up();setTimeout(up,600);})();
-/* Tap Santa: "Ho ho ho!" bubble */
-(function(){var w=document.querySelector('.xsanta');if(!w)return;var b=document.createElement('div');b.className='xho';b.textContent='Ho ho ho! 🎅';w.appendChild(b);var t;
-w.querySelector('svg').addEventListener('click',function(){w.classList.remove('jig');void w.offsetWidth;w.classList.add('talk','jig');clearTimeout(t);t=setTimeout(function(){w.classList.remove('talk','jig')},2200)});})();
+/* Tap Santa: 1 = "Ho ho ho!", 2 = one hand + scream, 3 = falls, back after 4 s */
+(function(){var w=document.querySelector('.xsanta');if(!w)return;var sv=w.querySelector('svg'),b=document.createElement('div');b.className='xho';w.appendChild(b);var n=0,t,busy=false;
+function say(txt,ms){b.textContent=txt;w.classList.add('talk');clearTimeout(t);t=setTimeout(function(){w.classList.remove('talk')},ms)}
+function reset(){n=0;w.classList.remove('one','talk','jig')}
+sv.addEventListener('click',function(){if(busy)return;n++;
+ if(n===1){w.classList.remove('jig');void w.offsetWidth;w.classList.add('jig');say('Ho ho ho! 🎅',2200);clearTimeout(w._r);w._r=setTimeout(reset,7000)}
+ else if(n===2){w.classList.add('one');say('Aaaaah! Help! 😱',2600);clearTimeout(w._r);w._r=setTimeout(reset,7000)}
+ else{busy=true;clearTimeout(w._r);w.classList.remove('talk','jig');w.classList.add('fall');
+  setTimeout(function(){w.classList.remove('fall','one');w.classList.add('gone');
+   setTimeout(function(){w.classList.remove('gone');w.classList.add('back');setTimeout(function(){w.classList.remove('back');busy=false;n=0},700)},4000)},1100)}
+});})();
