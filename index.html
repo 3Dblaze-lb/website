@@ -714,9 +714,50 @@ footer{background:var(--text);color:#B9C1CC;border-top:0}
 footer .logo{color:#fff}footer .logo .b{color:#4BA6FF}
 footer a{color:#fff}footer a:hover{color:#4BA6FF}
 @media (prefers-reduced-motion:reduce){.hs-scan,.hs-main,.hs-hang,.mq-t,.soonlbl:before,.xc:hover .ornart svg{animation:none!important}.xc,.hcta .btn{transition:none}}
+
+/* ===== Christmas look (21 Nov 2026): look only. Turn off = remove class "xmas" from the body tag ===== */
+body.xmas{--xpine:#01796F;--xpine2:#014D47;--xred:#C8102E;--xgold:#F2C14E}
+body.xmas .announce{background:repeating-linear-gradient(-45deg,var(--xred) 0 14px,#A50D26 14px 28px);font-weight:700}
+.xlights{position:absolute;left:0;right:0;bottom:-14px;height:18px;pointer-events:none;overflow:hidden;z-index:1}
+.xlights svg{display:block;width:100%;height:18px}
+.xlights circle{animation:xtw 2.4s ease-in-out infinite}
+.xlights circle:nth-child(3n){animation-delay:-.8s}.xlights circle:nth-child(3n+1){animation-delay:-1.6s}
+@keyframes xtw{0%,100%{opacity:1}50%{opacity:.35}}
+body.xmas .hero2 h1 .bl{background:linear-gradient(90deg,var(--blue) 0 44%,var(--xred) 44% 100%);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
+.xsanta{position:fixed;right:clamp(8px,2.5vw,34px);top:0;z-index:38;width:clamp(54px,6vw,84px);pointer-events:none;display:flex;flex-direction:column;align-items:center;transform-origin:top center;animation:xsw 3.2s ease-in-out infinite}
+.xsanta>i{display:block;width:3px;background:repeating-linear-gradient(180deg,#C9A36A 0 6px,#A8834B 6px 9px);border-radius:2px;margin-bottom:-6px}
+.xsanta svg{display:block;width:100%;height:auto;filter:drop-shadow(0 8px 10px rgba(11,13,18,.22))}
+@keyframes xsw{0%,100%{transform:rotate(-2.5deg)}50%{transform:rotate(2.5deg)}}
+@media (max-width:560px){.xsanta{width:48px;right:6px}}
+body.xmas .hstage{background-color:#EAF3F1;background-image:radial-gradient(circle at 20% 30%,rgba(1,121,111,.16) 0 2px,transparent 3px),radial-gradient(circle at 70% 60%,rgba(1,121,111,.12) 0 1.5px,transparent 2.5px),radial-gradient(circle at 45% 85%,rgba(1,121,111,.14) 0 2px,transparent 3px);background-size:90px 90px,70px 70px,110px 110px}
+body.xmas .hstage:after{content:"";position:absolute;left:0;right:0;bottom:0;height:16%;background:#fff;border-radius:50% 50% 0 0/100% 100% 0 0;opacity:.95;z-index:0}
+body.xmas .hstage>*{z-index:1}
+body.xmas .hs-scan{background:var(--xgold);box-shadow:0 0 18px 2px rgba(242,193,78,.6)}
+body.xmas .hs-hang>i{background:var(--xgold)}
+body.xmas .mq{background:var(--xpine2)}
+body.xmas .mq-t i{color:var(--xgold)}
+body.xmas #sec-christmas{background:var(--xpine) radial-gradient(circle,rgba(255,255,255,.16) 0 1.5px,transparent 2.5px) 0 0/46px 46px;color:#fff;position:relative}
+body.xmas #sec-christmas .shead h2,body.xmas #sec-christmas .dsub{color:#fff}
+body.xmas #sec-christmas .custhint{color:var(--xgold)}
+body.xmas #sec-christmas .dgrid .xc,body.xmas #sec-christmas .dgrid .xc b{color:var(--text)}
+body.xmas #sec-christmas .offbox .xc,body.xmas #sec-christmas .offbox .xc b,body.xmas #sec-christmas .offbox .xc span{color:#fff}
+body.xmas #sec-christmas .soonlbl{background:#fff;color:var(--xred)}
+body.xmas #sec-christmas .soonlbl:before{background:var(--xred)}
+body.xmas .offbox{background:linear-gradient(160deg,#B00E28,#7E0A1D);box-shadow:inset 0 0 0 2px rgba(242,193,78,.45)}
+body.xmas .offbox .xc{background:rgba(0,0,0,.22);box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)}
+body.xmas .offbox .xbadge{background:var(--xgold)}
+body.xmas .cd-n span{background:var(--xred)}
+body.xmas .cd-n span:last-child b{color:var(--xgold)}
+body.xmas .cd-n small{color:#FFD9DE}
+body.xmas .st2 .n{color:var(--xred)}
+body.xmas footer{background:var(--xpine2);position:relative}
+body.xmas footer .logo .b,body.xmas footer a:hover{color:var(--xgold)}
+body.xmas footer:before{content:"";position:absolute;left:0;right:0;top:-12px;height:14px;background:radial-gradient(circle at 12px 0,transparent 12px,var(--xpine2) 12.5px) 0 0/24px 14px;transform:scaleY(-1)}
+#xsnow{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:39}
+@media (prefers-reduced-motion:reduce){#xsnow{display:none}.xlights circle{animation:none}}
 </style>
 </head>
-<body>
+<body class="xmas">
 <div class="announce" id="announce"></div>
 <header class="top">
   <div class="wrap nav">
@@ -749,9 +790,10 @@ footer a{color:#fff}footer a:hover{color:#4BA6FF}
   </div>
 </footer>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-<script src="firebase-config.js?v=95200001"></script>
-<script src="art.js?v=95200001"></script>
-<script src="w3d.js?v=95200001"></script>
-<script src="app.js?v=95200301"></script>
+<script src="firebase-config.js?v=95210101"></script>
+<script src="art.js?v=95210101"></script>
+<script src="w3d.js?v=95210101"></script>
+<script src="app.js?v=95210101"></script>
+<script src="xmas.js?v=95210101"></script>
 </body>
 </html>
