@@ -23,3 +23,6 @@ w.innerHTML='<i></i><svg viewBox="0 0 100 150"><path d="M50 0v26" stroke="#A8834
 document.body.appendChild(w);var rope=w.firstChild,hd=document.querySelector('header.top');
 function up(){var top=hd?hd.getBoundingClientRect().bottom:0,max=innerHeight-w.lastChild.getBoundingClientRect().height-top-16,d=document.documentElement,f=d.scrollHeight>innerHeight?scrollY/(d.scrollHeight-innerHeight):0;f=Math.max(0,Math.min(1,f));w.style.top=Math.max(0,top)+'px';rope.style.height=Math.max(14,14+f*Math.max(0,max-14))+'px'}
 addEventListener('scroll',up,{passive:true});addEventListener('resize',up);up();setTimeout(up,600);})();
+/* Tap Santa: "Ho ho ho!" bubble */
+(function(){var w=document.querySelector('.xsanta');if(!w)return;var b=document.createElement('div');b.className='xho';b.textContent='Ho ho ho! 🎅';w.appendChild(b);var t;
+w.querySelector('svg').addEventListener('click',function(){w.classList.remove('jig');void w.offsetWidth;w.classList.add('talk','jig');clearTimeout(t);t=setTimeout(function(){w.classList.remove('talk','jig')},2200)});})();
